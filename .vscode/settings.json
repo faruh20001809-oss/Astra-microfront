@@ -1,0 +1,15 @@
+{
+    "java.jdt.ls.java.home": "C:\\Program Files\\Java\\jdk-17",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.completion.importOrder": ["#", "java", "javax", "org", "com"],
+    "java.completion.favoriteStaticMembers": [
+        "org.springframework.web.bind.annotation.*",
+        "org.springframework.stereotype.*"
+    ],
+    "java.server.launchMode": "Standard",
+    "java.jdt.ls.vmargs": "-javaagent:${userHome}/.m2/repository/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar",
+    "java.compile.nullAnalysis.mode": "automatic"
+}
+
+
+

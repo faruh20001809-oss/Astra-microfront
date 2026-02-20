@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Дашборд')}"></head>
+
+<body><div class="layout">
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+<main class="main-content">
+<div class="page-header"><h1>Дашборд</h1></div>
+<div class="stats-grid">
+    <div class="stat-card"><div class="stat-icon">📍</div><div class="stat-value" th:text="${totalPois}">0</div><div class="stat-label">Точек интереса</div></div>
+    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" th:text="${publishedPois}">0</div><div class="stat-label">Опубликовано</div></div>
+    <div class="stat-card"><div class="stat-icon">🚶</div><div class="stat-value" th:text="${totalRoutes}">0</div><div class="stat-label">Маршрутов</div></div>
+    <div class="stat-card"><div class="stat-icon">🛒</div><div class="stat-value" th:text="${totalProducts}">0</div><div class="stat-label">Товаров</div></div>
+    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value" th:text="${totalOrders}">0</div><div class="stat-label">Заказов</div></div>
+    <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value" th:text="${newFeedback}">0</div><div class="stat-label">Новых обращений</div></div>
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" th:text="${#numbers.formatDecimal(revenue, 0, 0)} + ' ₽'">0 ₽</div><div class="stat-label">Выручка</div></div>
+</div>
+<div class="grid-2">
+    <div class="card"><div class="card-header"><h3>🔥 Популярные точки</h3></div>
+        <table><thead><tr><th>Название</th><th>Просмотры</th></tr></thead><tbody>
+        <tr th:each="item : ${topPois}"><td th:text="${item[0]}"></td><td th:text="${item[1]}"></td></tr>
+        <tr th:if="${#lists.isEmpty(topPois)}"><td colspan="2" style="text-align:center;color:#999">Нет данных</td></tr></tbody></table></div>
+    <div class="card"><div class="card-header"><h3>🚶 Популярные маршруты</h3></div>
+        <table><thead><tr><th>Название</th><th>Просмотры</th></tr></thead><tbody>
+        <tr th:each="item : ${topRoutes}"><td th:text="${item[0]}"></td><td th:text="${item[1]}"></td></tr>
+        <tr th:if="${#lists.isEmpty(topRoutes)}"><td colspan="2" style="text-align:center;color:#999">Нет данных</td></tr></tbody></table></div>
+</div>
+</main></div></body></html>
