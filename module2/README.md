@@ -132,7 +132,3 @@ Vite proxy в `vite.config.js` настроен перенаправлять `/j
 | Сервер | Node.js + Express |
 | HTTP-клиент | Fetch API (native) |
 | Сборка | Vite 5 |
-
-## API-ключи (встроены в код)
-- **2GIS**: `acc639af-54cb-4b8e-bd72-23d0af937d50`
-- **Groq**: задаётся через env `GROQ_API_KEY` или хардкод в `server/index.js`
