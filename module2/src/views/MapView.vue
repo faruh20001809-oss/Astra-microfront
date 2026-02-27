@@ -1,100 +1,85 @@
 <template>
   <div class="map-page">
-
-    <!-- 👇 Backdrop для мобильного (должен быть sibling, не child sidebar) -->
-    <Transition name="fade">
-      <div
-          v-if="sidebarOpen && isMobile"
-          class="sidebar-backdrop"
-          @click="sidebarOpen = false"
-          aria-hidden="true"
-      ></div>
-    </Transition>
-
-    <!-- Sidebar -->
-    <aside class="map-sidebar" :class="{ collapsed: !sidebarOpen }">
+    <!-- Sidebar — всегда виден, без сворачивания -->
+    <aside class="map-sidebar">
       <div class="sidebar-header">
         <h2 class="sidebar-title">Исторические<br />объекты</h2>
-        <button
-            class="btn btn-ghost btn-sm"
-            @click="sidebarOpen = !sidebarOpen"
-            :aria-label="sidebarOpen ? 'Свернуть панель' : 'Развернуть панель'"
-        >
-          {{ sidebarOpen ? '◁' : '▷' }}
-        </button>
       </div>
 
-      <template v-if="sidebarOpen">
-        <!-- Filters -->
-        <div class="filter-section">
-          <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Категории</p>
-          <div class="filter-chips">
-            <button
-                v-for="cat in mapStore.categories"
-                :key="cat"
-                :class="['filter-chip', { active: mapStore.activeFilters.includes(cat) }]"
-                @click="mapStore.toggleFilter(cat)"
-            >
-              {{ categoryIcon(cat) }} {{ cat }}
-            </button>
-          </div>
-        </div>
-
-        <div class="divider" />
-
-        <!-- GPS toggle -->
-        <div class="gps-section">
-          <div class="gps-header">
-            <span class="text-mono">GPS-трекинг</span>
-            <div v-if="gpsActive" class="pulse-dot" />
-          </div>
+      <!-- Filters -->
+      <div class="filter-section">
+        <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Категории</p>
+        <div class="filter-chips">
           <button
-              :class="['btn btn-sm', gpsActive ? 'btn-danger' : 'btn-ghost']"
-              @click="toggleGPS"
+            v-for="cat in mapStore.categories"
+            :key="cat"
+            :class="['filter-chip', { active: mapStore.activeFilters.includes(cat) }]"
+            @click="mapStore.toggleFilter(cat)"
           >
-            {{ gpsActive ? '⬡ Остановить' : '◉ Включить GPS' }}
+            {{ categoryIcon(cat) }} {{ cat }}
           </button>
-          <p v-if="gpsStatus" class="gps-status">{{ gpsStatus }}</p>
         </div>
+      </div>
 
-        <!-- Geo-trigger notification -->
-        <transition name="slide-up">
-          <div v-if="mapStore.nearbyPoi" class="geo-trigger-card">
-            <p class="text-mono" style="color:var(--accent);margin-bottom:0.375rem">⚡ Рядом с вами</p>
-            <p class="geo-trigger-name">{{ mapStore.nearbyPoi.name }}</p>
-            <button class="btn btn-accent btn-sm" @click="openPoi(mapStore.nearbyPoi)">
-              Подробнее
-            </button>
-          </div>
-        </transition>
+      <div class="divider" />
 
-        <div class="divider" />
+      <!-- GPS toggle -->
+      <div class="gps-section">
+        <div class="gps-header">
+          <span class="text-mono">GPS-трекинг</span>
+          <div v-if="gpsActive" class="pulse-dot" />
+        </div>
+        <button
+          :class="['btn btn-sm', gpsActive ? 'btn-danger' : 'btn-ghost']"
+          @click="toggleGPS"
+        >
+          {{ gpsActive ? '⬡ Остановить' : '◉ Включить GPS' }}
+        </button>
+        <p v-if="gpsStatus" class="gps-status">{{ gpsStatus }}</p>
+      </div>
 
-        <!-- POI list -->
-        <div class="poi-list">
-          <div
-              v-for="poi in mapStore.filteredPois"
-              :key="poi.id"
-              class="poi-list-item"
-              :class="{ active: mapStore.selectedPoi?.id === poi.id }"
-              @click="selectAndFlyTo(poi)"
-              role="button"
-              tabindex="0"
-              @keydown.enter="selectAndFlyTo(poi)"
-          >
-            <span class="poi-icon">{{ categoryIcon(poi.category) }}</span>
-            <div>
-              <p class="poi-list-name">{{ poi.name }}</p>
-              <p class="poi-list-meta">{{ poi.year || '—' }} · {{ poi.category }}</p>
-            </div>
+      <!-- Geo-trigger notification -->
+      <transition name="slide-up">
+        <div v-if="mapStore.nearbyPoi" class="geo-trigger-card">
+          <p class="text-mono" style="color:var(--accent);margin-bottom:0.375rem">⚡ Рядом с вами</p>
+          <p class="geo-trigger-name">{{ mapStore.nearbyPoi.name }}</p>
+          <button class="btn btn-accent btn-sm" @click="openPoi(mapStore.nearbyPoi)">
+            Подробнее
+          </button>
+        </div>
+      </transition>
+
+      <div class="divider" />
+
+      <!-- POI list -->
+      <div class="poi-list">
+        <div
+          v-for="poi in mapStore.filteredPois"
+          :key="poi.id"
+          class="poi-list-item"
+          :class="{ active: mapStore.selectedPoi?.id === poi.id }"
+          @click="selectAndFlyTo(poi)"
+          role="button"
+          tabindex="0"
+          @keydown.enter="selectAndFlyTo(poi)"
+        >
+          <span class="poi-icon">{{ categoryIcon(poi.category) }}</span>
+          <div>
+            <p class="poi-list-name">{{ poi.name }}</p>
+            <p class="poi-list-meta">{{ poi.year || '—' }} · {{ poi.category }}</p>
           </div>
         </div>
-      </template>
+      </div>
     </aside>
 
     <!-- Map container -->
     <div class="map-wrapper">
-      <div ref="mapEl" class="map-container" role="application" aria-label="Интерактивная карта Астрахани" />
+      <div
+        ref="mapEl"
+        class="map-container"
+        role="application"
+        aria-label="Интерактивная карта Астрахани"
+      />
 
       <!-- Loading overlay -->
       <transition name="fade">
@@ -106,138 +91,180 @@
 
       <!-- Map controls -->
       <div class="map-controls">
-        <button class="map-ctrl-btn" @click="flyToAstrakhan" title="Вернуться к Астрахани">⌂</button>
+        <button class="map-ctrl-btn" @click="flyToAstrakhan" title="Вернуться к Астрахани">
+          ⌂
+        </button>
         <button class="map-ctrl-btn" @click="zoomIn" title="Приблизить">+</button>
         <button class="map-ctrl-btn" @click="zoomOut" title="Отдалить">−</button>
       </div>
-    </div>
+      <!-- Floating POI detail card near marker -->
+      <transition name="fade">
+        <div
+          v-if="mapStore.selectedPoi"
+          class="poi-modal floating"
+          :style="modalStyle"
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            class="modal-close"
+            @click="mapStore.clearSelected()"
+            aria-label="Закрыть"
+          >
+            ✕
+          </button>
 
-    <!-- POI Detail Modal -->
-    <transition name="fade">
-      <div v-if="mapStore.selectedPoi" class="modal-backdrop" @click.self="mapStore.clearSelected()">
-        <div class="modal-box poi-modal" role="dialog" aria-modal="true">
-          <button class="modal-close" @click="mapStore.clearSelected()" aria-label="Закрыть">✕</button>
-
-          <!-- Header -->
-          <div class="poi-modal-header">
-            <span :class="['tag', 'tag-accent']">{{ mapStore.selectedPoi.category }}</span>
-            <h3 class="poi-modal-title">{{ mapStore.selectedPoi.name }}</h3>
-            <p class="poi-modal-meta">
-              <span v-if="mapStore.selectedPoi.year">Год: {{ mapStore.selectedPoi.year }}</span>
-              <span v-if="mapStore.selectedPoi.architect"> · Архитектор: {{ mapStore.selectedPoi.architect }}</span>
-            </p>
-          </div>
-
-          <!-- Content tabs -->
-          <div class="poi-tabs" role="tablist">
-            <button
-                v-for="tab in tabs"
-                :key="tab.key"
-                :class="['poi-tab-btn', { active: activeTab === tab.key }]"
-                @click="activeTab = tab.key"
-                role="tab"
-                :aria-selected="activeTab === tab.key"
-            >
-              {{ tab.label }}
-            </button>
-          </div>
-
-          <!-- Tab: Description -->
-          <div v-if="activeTab === 'desc'" class="poi-tab-content" role="tabpanel">
-            <p class="poi-description">{{ mapStore.selectedPoi.description }}</p>
-
-            <!-- Audience selector -->
-            <div class="audience-row">
-              <span class="text-mono">Стиль текста:</span>
-              <div class="audience-btns">
-                <button
-                    v-for="a in audiences"
-                    :key="a.key"
-                    :class="['btn btn-sm', selectedAudience === a.key ? 'btn-primary' : 'btn-ghost']"
-                    @click="selectedAudience = a.key"
-                >{{ a.label }}</button>
+          <div class="poi-modal-body">
+            <!-- Left column: photo from Java API -->
+            <div class="poi-photo-col">
+              <img
+                v-if="mapStore.selectedPoi.image"
+                :src="mapStore.selectedPoi.image"
+                :alt="mapStore.selectedPoi.name"
+                class="poi-photo"
+              />
+              <div v-else class="poi-photo-placeholder">
+                Нет фото
               </div>
             </div>
 
-            <!-- AI content -->
-            <div v-if="aiContent || aiLoading" class="ai-content-box">
-              <div class="ai-content-header">
-                <span class="text-mono" style="color:var(--accent)">✦ AI-описание</span>
-                <div v-if="aiLoading" class="spinner" style="width:16px;height:16px" />
-              </div>
-              <p v-if="aiContent && !aiLoading" class="ai-content-text">{{ aiContent }}</p>
-
-              <!-- TTS Player -->
-              <div v-if="aiContent && !aiLoading" class="tts-row">
-                <button
-                    :class="['btn btn-sm', isPlaying ? 'btn-danger' : 'btn-ghost']"
-                    :disabled="ttsLoading"
-                    @click="toggleTTS"
-                    :aria-label="isPlaying ? 'Остановить озвучку' : 'Озвучить текст'"
-                >
-                  <span v-if="ttsLoading">
-                    <span class="spinner" style="width:12px;height:12px;display:inline-block" />
-                    Генерация…
+            <!-- Right column: content -->
+            <div class="poi-content-col">
+              <!-- Header -->
+              <div class="poi-modal-header">
+                <span :class="['tag', 'tag-accent']">{{ mapStore.selectedPoi.category }}</span>
+                <h3 class="poi-modal-title">{{ mapStore.selectedPoi.name }}</h3>
+                <p class="poi-modal-meta">
+                  <span v-if="mapStore.selectedPoi.year">Год: {{ mapStore.selectedPoi.year }}</span>
+                  <span v-if="mapStore.selectedPoi.architect">
+                    · Архитектор: {{ mapStore.selectedPoi.architect }}
                   </span>
-                  <span v-else-if="isPlaying">⏹ Стоп</span>
-                  <span v-else>▶ Озвучить</span>
+                </p>
+              </div>
+
+              <!-- Content tabs -->
+              <div class="poi-tabs" role="tablist">
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.key"
+                  :class="['poi-tab-btn', { active: activeTab === tab.key }]"
+                  @click="activeTab = tab.key"
+                  role="tab"
+                  :aria-selected="activeTab === tab.key"
+                >
+                  {{ tab.label }}
                 </button>
-                <span v-if="isPlaying" class="pulse-dot" />
               </div>
-            </div>
 
-            <button
-                class="btn btn-ghost btn-sm ai-gen-btn"
-                :disabled="aiLoading"
-                @click="generateAiContent"
-            >
-              {{ aiContent ? '↻ Обновить' : '✦ Сгенерировать AI-описание' }}
-            </button>
-          </div>
+              <!-- Tab: Description -->
+              <div v-if="activeTab === 'desc'" class="poi-tab-content" role="tabpanel">
+                <p class="poi-description">{{ mapStore.selectedPoi.description }}</p>
 
-          <!-- Tab: Photos -->
-          <div v-if="activeTab === 'photos'" class="poi-tab-content" role="tabpanel">
-            <div v-if="!mapStore.selectedPoi.photos?.length" class="empty-state">
-              <p>Фотографии не добавлены</p>
-            </div>
-            <div v-else class="photo-grid">
-              <div
-                  v-for="(ph, i) in mapStore.selectedPoi.photos"
-                  :key="i"
-                  class="photo-card"
-              >
-                <img :src="ph.url" :alt="ph.caption" loading="lazy" />
-                <p class="photo-caption">{{ ph.caption }} <span v-if="ph.year">({{ ph.year }})</span></p>
+                <!-- Audience selector -->
+                <div class="audience-row">
+                  <span class="text-mono">Стиль текста:</span>
+                  <div class="audience-btns">
+                    <button
+                      v-for="a in audiences"
+                      :key="a.key"
+                      :class="['btn btn-sm', selectedAudience === a.key ? 'btn-primary' : 'btn-ghost']"
+                      @click="selectedAudience = a.key"
+                    >
+                      {{ a.label }}
+                    </button>
+                  </div>
+                </div>
+
+                <!-- AI content -->
+                <div v-if="aiContent || aiLoading" class="ai-content-box">
+                  <div class="ai-content-header">
+                    <span class="text-mono" style="color:var(--accent)">✦ AI-описание</span>
+                    <div v-if="aiLoading" class="spinner" style="width:16px;height:16px" />
+                  </div>
+                  <p v-if="aiContent && !aiLoading" class="ai-content-text">
+                    {{ aiContent }}
+                  </p>
+
+                  <!-- TTS Player -->
+                  <div v-if="aiContent && !aiLoading" class="tts-row">
+                    <button
+                      :class="['btn btn-sm', isPlaying ? 'btn-danger' : 'btn-ghost']"
+                      :disabled="ttsLoading"
+                      @click="toggleTTS"
+                      :aria-label="isPlaying ? 'Остановить озвучку' : 'Озвучить текст'"
+                    >
+                      <span v-if="ttsLoading">
+                        <span
+                          class="spinner"
+                          style="width:12px;height:12px;display:inline-block"
+                        />
+                        Генерация…
+                      </span>
+                      <span v-else-if="isPlaying">⏹ Стоп</span>
+                      <span v-else>▶ Озвучить</span>
+                    </button>
+                    <span v-if="isPlaying" class="pulse-dot" />
+                  </div>
+                </div>
+
+                <button
+                  class="btn btn-ghost btn-sm ai-gen-btn"
+                  :disabled="aiLoading"
+                  @click="generateAiContent"
+                >
+                  {{ aiContent ? '↻ Обновить' : '✦ Сгенерировать AI-описание' }}
+                </button>
               </div>
-            </div>
-          </div>
 
-          <!-- Tab: StreetView -->
-          <div v-if="activeTab === 'street'" class="poi-tab-content" role="tabpanel">
-            <div class="street-view-placeholder">
-              <p class="text-mono" style="color:var(--gray-400)">Яндекс Панорамы / 2GIS Street View</p>
-              <p>Для интеграции укажите API-ключ Яндекс.Карт</p>
-              <a
-                  :href="`https://yandex.ru/maps/?ll=${mapStore.selectedPoi.lng},${mapStore.selectedPoi.lat}&z=17&l=stv,sta`"
-                  target="_blank"
-                  rel="noopener"
-                  class="btn btn-ghost btn-sm"
-                  style="margin-top:0.75rem"
-              >
-                ↗ Открыть в Яндекс.Картах
-              </a>
+              <!-- Tab: Photos -->
+              <div v-if="activeTab === 'photos'" class="poi-tab-content" role="tabpanel">
+                <div v-if="!mapStore.selectedPoi.photos?.length" class="empty-state">
+                  <p>Фотографии не добавлены</p>
+                </div>
+                <div v-else class="photo-grid">
+                  <div
+                    v-for="(ph, i) in mapStore.selectedPoi.photos"
+                    :key="i"
+                    class="photo-card"
+                  >
+                    <img :src="ph.url" :alt="ph.caption" loading="lazy" />
+                    <p class="photo-caption">
+                      {{ ph.caption }} <span v-if="ph.year">({{ ph.year }})</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Tab: StreetView -->
+              <div v-if="activeTab === 'street'" class="poi-tab-content" role="tabpanel">
+                <div class="street-view-placeholder">
+                  <p class="text-mono" style="color:var(--gray-400)">
+                    Яндекс Панорамы / 2GIS Street View
+                  </p>
+                  <p>Для интеграции укажите API-ключ Яндекс.Карт</p>
+                  <a
+                    :href="`https://yandex.ru/maps/?ll=${mapStore.selectedPoi.lng},${mapStore.selectedPoi.lat}&z=17&l=stv,sta`"
+                    target="_blank"
+                    rel="noopener"
+                    class="btn btn-ghost btn-sm"
+                    style="margin-top:0.75rem"
+                  >
+                    ↗ Открыть в Яндекс.Картах
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </transition>
+      </transition>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useMapStore, useToastStore } from '@/store/index.js'
-import { generatePoiContent, synthesizeSpeech, playAudioBlob } from '@/api/groq.js'
+import { usePoiAiTts } from '@/composables/usePoiAiTts.js'
 
 const mapStore = useMapStore()
 const toastStore = useToastStore()
@@ -245,54 +272,46 @@ const toastStore = useToastStore()
 // DOM refs
 const mapEl = ref(null)
 
-// UI state
-const sidebarOpen = ref(true)
-const isMobile = ref(window.innerWidth < 768)
-const activeTab = ref('desc')
-
 // GPS state
 const gpsActive = ref(false)
 const gpsStatus = ref('')
 let watchId = null
-
-// AI/TTS state
-const selectedAudience = ref('default')
-const aiContent = ref('')
-const aiLoading = ref(false)
-const ttsLoading = ref(false)
-const isPlaying = ref(false)
-let currentAudio = null
 
 // 2GIS state
 let map = null
 let markers = {}
 let mapglCheckInterval = null
 
+// Floating modal position (near selected marker)
+const modalPosition = ref({ top: 0, left: 0 })
+
+const modalStyle = computed(() => ({
+  top: modalPosition.value.top + 'px',
+  left: modalPosition.value.left + 'px',
+}))
+
+// AI/TTS (из composable)
+const {
+  activeTab,
+  tabs,
+  selectedAudience,
+  audiences,
+  aiContent,
+  aiLoading,
+  ttsLoading,
+  isPlaying,
+  resetForPoi,
+  generateAiContent,
+  toggleTTS,
+} = usePoiAiTts()
+
 // Constants
 const ASTRAKHAN_CENTER = [48.0408, 46.3497] // [lng, lat]
-const tabs = [
-  { key: 'desc', label: 'Описание' },
-  { key: 'photos', label: 'Фото' },
-  { key: 'street', label: 'Street View' }
-]
-const audiences = [
-  { key: 'default', label: 'Обычный' },
-  { key: 'children', label: 'Детский' },
-  { key: 'academic', label: 'Научный' }
-]
 
-/* ── Lifecycle ── */
+// ── Lifecycle ──
 onMounted(async () => {
-  // 1. Resize listener for isMobile
-  const handleResize = () => {
-    isMobile.value = window.innerWidth < 768
-  }
-  window.addEventListener('resize', handleResize)
-
-  // 2. Load POIs from store
   await mapStore.fetchPois()
 
-  // 3. Initialize map with safety checks
   const tryInitMap = () => {
     if (!window.mapgl) return false
     if (!mapEl.value) return false
@@ -309,35 +328,28 @@ onMounted(async () => {
       }
     }, 200)
   }
-
-  // Cleanup function
-  return () => {
-    window.removeEventListener('resize', handleResize)
-    if (mapglCheckInterval) {
-      clearInterval(mapglCheckInterval)
-      mapglCheckInterval = null
-    }
-    stopGPS()
-    if (map) {
-      map.destroy()
-      map = null
-    }
-    // Clear markers
-    Object.values(markers).forEach(m => m.destroy())
-    markers = {}
-    // Stop audio if playing
-    if (currentAudio) {
-      currentAudio.pause()
-      currentAudio = null
-    }
-  }
 })
 
-/* ── Map functions ── */
+onUnmounted(() => {
+  if (mapglCheckInterval) {
+    clearInterval(mapglCheckInterval)
+    mapglCheckInterval = null
+  }
+  stopGPS()
+  if (map) {
+    map.destroy()
+    map = null
+  }
+  Object.values(markers).forEach((m) => {
+    if (m && typeof m.destroy === 'function') m.destroy()
+  })
+  markers = {}
+})
+
+// ── Map functions ──
 function initMap() {
   if (!mapEl.value || !window.mapgl) return
 
-  // Double-check dimensions
   if (mapEl.value.clientWidth === 0 || mapEl.value.clientHeight === 0) {
     setTimeout(initMap, 100)
     return
@@ -348,11 +360,23 @@ function initMap() {
       center: ASTRAKHAN_CENTER,
       zoom: 14,
       key: 'acc639af-54cb-4b8e-bd72-23d0af937d50',
-      style: 'c080bb6a-8134-4993-93d1-1b8ee55d40be'
+      style: 'c080bb6a-8134-4993-93d1-1b8ee55d40be',
     })
 
     map.on('load', () => {
       renderMarkers()
+    })
+
+    // keep modal attached to marker when map moves/zooms
+    map.on('move', () => {
+      if (mapStore.selectedPoi) {
+        updateModalPosition(mapStore.selectedPoi)
+      }
+    })
+    map.on('zoom', () => {
+      if (mapStore.selectedPoi) {
+        updateModalPosition(mapStore.selectedPoi)
+      }
     })
   } catch (e) {
     console.error('Failed to init 2GIS map:', e)
@@ -360,27 +384,39 @@ function initMap() {
   }
 }
 
+function updateModalPosition(poi) {
+  if (!map || !mapEl.value || !poi) return
+  // 2GIS MapGL даёт пиксели через project([lng, lat])
+  const [x, y] = map.project([poi.lng, poi.lat])
+
+  const offsetX = 24   // немного вправо от маркера
+  const offsetY = -140 // и чуть выше, чтобы “висела” над точкой
+
+  modalPosition.value = {
+    left: x + offsetX,
+    top: y + offsetY,
+  }
+}
 function renderMarkers() {
   if (!map) return
 
-  // Remove old markers
-  Object.values(markers).forEach(m => {
+  Object.values(markers).forEach((m) => {
     if (m && typeof m.destroy === 'function') {
       m.destroy()
     }
   })
   markers = {}
 
-  // Create new markers from filtered POIs
   for (const poi of mapStore.filteredPois) {
     const el = document.createElement('div')
     el.className = 'custom-marker'
-    el.innerHTML = `<span class="marker-icon" aria-hidden="true">${categoryIcon(poi.category)}</span>`
+    el.innerHTML = `<span class="marker-icon" aria-hidden="true">${categoryIcon(
+      poi.category,
+    )}</span>`
     el.title = poi.name
     el.setAttribute('role', 'button')
     el.setAttribute('tabindex', '0')
 
-    // 👇 Attach click handler to the HTML ELEMENT, not the marker
     const clickHandler = () => openPoi(poi)
     el.addEventListener('click', clickHandler)
     el.addEventListener('keydown', (e) => {
@@ -392,21 +428,19 @@ function renderMarkers() {
 
     const marker = new window.mapgl.HtmlMarker(map, {
       coordinates: [poi.lng, poi.lat],
-      html: el,  // 👈 DOM element
-      anchor: 'center'
+      html: el,
+      anchor: 'center',
     })
 
     markers[poi.id] = marker
   }
 }
 
-/* ── POI interaction ── */
+// ── POI interaction ──
 function openPoi(poi) {
   mapStore.setSelected(poi)
-  aiContent.value = ''
-  activeTab.value = 'desc'
-  // On mobile, close sidebar when POI is selected
-  if (isMobile.value) sidebarOpen.value = false
+  resetForPoi()
+  if (map) updateModalPosition(poi)
 }
 
 function selectAndFlyTo(poi) {
@@ -414,12 +448,12 @@ function selectAndFlyTo(poi) {
   if (map) {
     map.setCenter([poi.lng, poi.lat], { animate: true, duration: 600 })
     map.setZoom(16, { animate: true })
+    setTimeout(() => updateModalPosition(poi), 650)
+  } else {
+    updateModalPosition(poi)
   }
-  aiContent.value = ''
-  activeTab.value = 'desc'
-  if (isMobile.value) sidebarOpen.value = false
+  resetForPoi()
 }
-
 function flyToAstrakhan() {
   if (map) {
     map.setCenter(ASTRAKHAN_CENTER, { animate: true })
@@ -435,18 +469,16 @@ function zoomOut() {
   if (map) map.setZoom(map.getZoom() - 1, { animate: true })
 }
 
-/* ── Watchers ── */
-// Re-render markers when filters change
-watch(() => mapStore.activeFilters, () => {
-  if (map) renderMarkers()
-}, { deep: true })
+// ── Watchers ──
+watch(
+  () => mapStore.activeFilters,
+  () => {
+    if (map) renderMarkers()
+  },
+  { deep: true },
+)
 
-// Regenerate AI content when audience changes
-watch(selectedAudience, () => {
-  if (aiContent.value) generateAiContent()
-})
-
-/* ── GPS ── */
+// ── GPS ──
 function toggleGPS() {
   if (gpsActive.value) stopGPS()
   else startGPS()
@@ -461,36 +493,35 @@ function startGPS() {
   gpsStatus.value = 'Определение местоположения…'
 
   watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude: lat, longitude: lng, accuracy } = pos.coords
-        gpsActive.value = true
-        gpsStatus.value = `Точность: ±${Math.round(accuracy)} м`
+    (pos) => {
+      const { latitude: lat, longitude: lng, accuracy } = pos.coords
+      gpsActive.value = true
+      gpsStatus.value = `Точность: ±${Math.round(accuracy)} м`
 
-        mapStore.setUserLocation({ lat, lng })
+      mapStore.setUserLocation({ lat, lng })
 
-        if (map) {
-          // Update or create user marker
-          if (!markers['user']) {
-            const el = document.createElement('div')
-            el.className = 'user-marker'
-            el.innerHTML = '◉'
-            markers['user'] = new window.mapgl.HtmlMarker(map, {
-              coordinates: [lng, lat],
-              html: el,  // 👈 Тоже DOM element
-              anchor: 'center'
-            })
-          } else {
-            markers['user'].setCoordinates([lng, lat])
-          }
+      if (map) {
+        if (!markers['user']) {
+          const el = document.createElement('div')
+          el.className = 'user-marker'
+          el.innerHTML = '◉'
+          markers['user'] = new window.mapgl.HtmlMarker(map, {
+            coordinates: [lng, lat],
+            html: el,
+            anchor: 'center',
+          })
+        } else {
+          markers['user'].setCoordinates([lng, lat])
         }
-      },
-      (err) => {
-        console.error('GPS error:', err)
-        gpsStatus.value = 'Ошибка: ' + (err.message || 'Неизвестная ошибка')
-        gpsActive.value = false
-        toastStore.push('Не удалось определить местоположение', 'error')
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      }
+    },
+    (err) => {
+      console.error('GPS error:', err)
+      gpsStatus.value = 'Ошибка: ' + (err.message || 'Неизвестная ошибка')
+      gpsActive.value = false
+      toastStore.push('Не удалось определить местоположение', 'error')
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
   )
 }
 
@@ -509,87 +540,19 @@ function stopGPS() {
   }
 }
 
-/* ── AI Content ── */
-async function generateAiContent() {
-  if (!mapStore.selectedPoi) return
-
-  aiLoading.value = true
-  aiContent.value = ''
-
-  try {
-    aiContent.value = await generatePoiContent(
-        mapStore.selectedPoi,
-        selectedAudience.value
-    )
-  } catch (e) {
-    console.error('AI generation error:', e)
-    toastStore.push('Ошибка генерации AI-контента: ' + e.message, 'error')
-    // Fallback to original description
-    aiContent.value = mapStore.selectedPoi.description
-  } finally {
-    aiLoading.value = false
-  }
-}
-
-/* ── TTS ── */
-async function toggleTTS() {
-  if (isPlaying.value) {
-    if (currentAudio) {
-      currentAudio.pause()
-      currentAudio = null
-    }
-    isPlaying.value = false
-    return
-  }
-
-  if (!aiContent.value) return
-
-  ttsLoading.value = true
-
-  try {
-    const blob = await synthesizeSpeech(aiContent.value, 'autumn')
-
-    // 🔹 Создаём новый audio элемент
-    const url = URL.createObjectURL(blob)
-    currentAudio = new Audio(url)
-
-    isPlaying.value = true
-
-    // 🔹 Используем { once: true } — слушатель удалится автоматически
-    currentAudio.addEventListener('ended', () => {
-      isPlaying.value = false
-      currentAudio = null
-      URL.revokeObjectURL(url)  // 🔹 Очистка памяти
-    }, { once: true })
-
-    currentAudio.addEventListener('error', () => {
-      isPlaying.value = false
-      ttsLoading.value = false
-      URL.revokeObjectURL(url)
-      toastStore.push('Ошибка воспроизведения аудио', 'error')
-    }, { once: true })
-
-    currentAudio.play()
-
-  } catch (e) {
-    console.error('TTS error:', e)
-    toastStore.push('Ошибка озвучки: ' + e.message, 'error')
-  } finally {
-    ttsLoading.value = false
-  }
-}
-
-/* ── Utils ── */
+// ── Utils ──
 function categoryIcon(cat) {
+  const normalized = (cat || '').toLowerCase()
   const icons = {
     'архитектура': '⬡',
+    'история': '◈',
     'музеи': '◫',
+    'музей': '◫',
     'парки': '⊹',
+    'парки и скверы': '⊹',
     'памятники': '◈',
-    'религия': '✦',
-    'культура': '◇'
   }
-  return icons[cat] || '◎'
+  return icons[normalized] || '◎'
 }
 </script>
 
@@ -597,50 +560,27 @@ function categoryIcon(cat) {
 /* ===== Page layout ===== */
 .map-page {
   display: flex;
-  height: calc(100vh - var(--nav-h));
+  flex-direction: row;
+  height: calc(100dvh - var(--nav-h, 64px));
+  margin-top: var(--nav-h, 64px); /* 👈 отступ под фиксированный хедер */
+  width: 100%;
+  max-width: 100vw;
   position: relative;
   overflow: hidden;
 }
 
-/* ===== Sidebar backdrop (mobile) ===== */
-.sidebar-backdrop {
-  position: fixed;
-  top: var(--nav-h, 64px);
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 400;
-  cursor: pointer;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* ===== Sidebar ===== */
+/* ===== Sidebar — всегда виден, без анимаций ===== */
 .map-sidebar {
-  width: var(--sidebar-w);
+  width: var(--sidebar-w, 320px);
   flex-shrink: 0;
   background: rgba(15, 15, 15, 0.96);
   border-right: 1px solid var(--gray-800);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  transition: width var(--transition-slow);
   padding: var(--spacing-lg);
   gap: var(--spacing-md);
-  z-index: 500;
-}
-
-.map-sidebar.collapsed {
-  width: 52px;
-  padding: var(--spacing-md) var(--spacing-sm);
+  z-index: 100;
 }
 
 .sidebar-header {
@@ -648,6 +588,8 @@ function categoryIcon(cat) {
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-sm);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-800);
 }
 
 .sidebar-title {
@@ -675,11 +617,15 @@ function categoryIcon(cat) {
   transition: all var(--transition);
 }
 
-.filter-chip:hover { border-color: var(--gray-400); color: var(--paper); }
+.filter-chip:hover {
+  border-color: var(--gray-400);
+  color: var(--paper);
+}
+
 .filter-chip.active {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(200,169,110,0.08);
+  background: rgba(200, 169, 110, 0.08);
 }
 
 /* ===== GPS section ===== */
@@ -731,8 +677,13 @@ function categoryIcon(cat) {
   transition: background var(--transition);
 }
 
-.poi-list-item:hover { background: var(--gray-800); }
-.poi-list-item.active { background: rgba(200,169,110,0.12); }
+.poi-list-item:hover {
+  background: var(--gray-800);
+}
+
+.poi-list-item.active {
+  background: rgba(200, 169, 110, 0.12);
+}
 
 .poi-icon {
   font-size: 0.875rem;
@@ -755,13 +706,33 @@ function categoryIcon(cat) {
 
 /* ===== Map wrapper ===== */
 .map-wrapper {
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .map-container {
+  flex: 1;
   width: 100%;
   height: 100%;
+  min-height: 200px;
+  overflow: hidden;
+}
+
+/* 2GIS Canvas fix */
+.map-container :deep(canvas),
+.map-container :deep(.mapgl-canvas-container),
+.map-container :deep(.mapgl-map) {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* ===== Loading overlay ===== */
@@ -773,7 +744,7 @@ function categoryIcon(cat) {
   align-items: center;
   justify-content: center;
   gap: var(--spacing-md);
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   font-size: 0.875rem;
   color: var(--gray-400);
   z-index: 200;
@@ -810,13 +781,63 @@ function categoryIcon(cat) {
   color: var(--accent);
 }
 
-/* ===== Modal ===== */
-.poi-modal {
-  max-width: 680px;
+/* ===== Floating modal near marker ===== */
+.poi-modal.floating {
+  position: absolute;
+  max-width: 480px;
   width: 100%;
-  position: relative;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: rgba(10, 10, 10, 0.92);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+  pointer-events: auto;
 }
 
+.poi-modal-body {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.poi-photo-col {
+  flex: 0 0 160px;
+}
+
+.poi-photo {
+  width: 100%;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-700);
+}
+
+.poi-photo-placeholder {
+  width: 100%;
+  aspect-ratio: 4/5;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--gray-600);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--gray-400);
+}
+
+.poi-content-col {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.poi-modal.floating::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 40px;
+  border-width: 10px 10px 0 10px;
+  border-style: solid;
+  border-color: rgba(10, 10, 10, 0.92) transparent transparent transparent;
+}
 .modal-close {
   position: absolute;
   top: var(--spacing-md);
@@ -836,9 +857,13 @@ function categoryIcon(cat) {
   z-index: 10;
 }
 
-.modal-close:hover { border-color: var(--paper); }
+.modal-close:hover {
+  border-color: var(--paper);
+}
 
-.poi-modal-header { margin-bottom: var(--spacing-lg); }
+.poi-modal-header {
+  margin-bottom: var(--spacing-lg);
+}
 
 .poi-modal-title {
   font-family: var(--font-display);
@@ -874,7 +899,10 @@ function categoryIcon(cat) {
   margin-bottom: -1px;
 }
 
-.poi-tab-btn:hover { color: var(--paper); }
+.poi-tab-btn:hover {
+  color: var(--paper);
+}
+
 .poi-tab-btn.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
@@ -885,8 +913,12 @@ function categoryIcon(cat) {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .poi-description {
@@ -909,12 +941,14 @@ function categoryIcon(cat) {
   gap: var(--spacing-xs);
 }
 
-.ai-gen-btn { margin-top: var(--spacing-md); }
+.ai-gen-btn {
+  margin-top: var(--spacing-md);
+}
 
 /* ===== AI content box ===== */
 .ai-content-box {
-  background: rgba(200,169,110,0.05);
-  border: 1px solid rgba(200,169,110,0.2);
+  background: rgba(200, 169, 110, 0.05);
+  border: 1px solid rgba(200, 169, 110, 0.2);
   border-radius: var(--radius-sm);
   padding: var(--spacing-md);
   margin-top: var(--spacing-md);
@@ -989,7 +1023,7 @@ function categoryIcon(cat) {
 }
 
 /* ===== Custom markers (2GIS) ===== */
-:global(.custom-marker) {
+::global(.custom-marker) {
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -1004,13 +1038,13 @@ function categoryIcon(cat) {
   outline: none;
 }
 
-:global(.custom-marker:hover),
-:global(.custom-marker:focus) {
+::global(.custom-marker:hover),
+::global(.custom-marker:focus) {
   transform: scale(1.2);
   border-color: var(--accent);
 }
 
-:global(.user-marker) {
+::global(.user-marker) {
   width: 16px;
   height: 16px;
   background: #c8a96e;
@@ -1025,54 +1059,74 @@ function categoryIcon(cat) {
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(200, 169, 110, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(200, 169, 110, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(200, 169, 110, 0); }
+  0% {
+    box-shadow: 0 0 0 0 rgba(200, 169, 110, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(200, 169, 110, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(200, 169, 110, 0);
+  }
+}
+
+/* ===== Transitions ===== */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-up-enter-active,
+.slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-up-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 /* ===== Responsive ===== */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-w: 280px;
+  }
+}
+
 @media (max-width: 768px) {
   .map-page {
     flex-direction: column;
-    height: 100vh;
-    padding-top: 0;
+    height: 100dvh;
+    margin-top: 0; /* На мобильных хедер может быть скрыт или иначе позиционирован */
   }
 
   .map-sidebar {
     width: 100%;
-    height: 220px;
+    height: auto;
+    max-height: 30vh;
     border-right: none;
     border-bottom: 1px solid var(--gray-800);
     overflow-y: auto;
   }
 
-  .map-sidebar.collapsed {
-    height: 52px;
-  }
-
   .map-wrapper {
     flex: 1;
+    min-height: 70vh;
   }
 
-  /* On mobile, sidebar can overlay map */
-  .map-sidebar {
-    position: fixed;
-    top: var(--nav-h, 64px);
-    left: 0;
-    z-index: 600;
-    transform: translateY(0);
-    transition: transform 0.3s ease;
-  }
-
-  .map-sidebar.collapsed {
-    transform: translateY(calc(-100% + 52px));
-  }
-}
-
-@media (max-width: 480px) {
   .poi-modal {
     margin: var(--spacing-md);
-    max-height: calc(100vh - 100px);
+    max-height: calc(100dvh - 100px);
   }
 
   .photo-grid {
@@ -1080,17 +1134,14 @@ function categoryIcon(cat) {
   }
 }
 
-/* ===== Slide-up transition for geo-trigger ===== */
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.3s ease;
-}
-.slide-up-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
-}
-.slide-up-leave-to {
-  opacity: 0;
-  transform: translateY(-10px);
+@media (max-width: 480px) {
+  .poi-modal {
+    margin: var(--spacing-md);
+    max-height: calc(100dvh - 100px);
+  }
+
+  .photo-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
