@@ -46,6 +46,11 @@
 
   --nav-h: 64px;
   --sidebar-w: 380px;
+  --z-header: 1000;      /* 👆 Хедер — всегда сверху */
+  --z-sidebar: 500;      /* Сайдбар — ниже хедера */
+  --z-backdrop: 400;     /* Бэкдроп модалок */
+  --z-modal: 1000;       /* Модалки — на уровне хедера или выше */
+  --z-map-controls: 150; /* Кнопки карты */
 }
 
 *, *::before, *::after {
@@ -54,6 +59,20 @@
   padding: 0;
 }
 
+header, .app-header, .navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-header);
+  background: var(--ink, #0a0a0a);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+body, #app {
+  margin: 0;
+  height: 100dvh;
+  overflow: hidden;
+}
 html {
   font-size: 16px;
   scroll-behavior: smooth;

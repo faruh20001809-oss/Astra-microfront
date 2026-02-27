@@ -97,6 +97,13 @@
         <button class="map-ctrl-btn" @click="zoomIn" title="Приблизить">+</button>
         <button class="map-ctrl-btn" @click="zoomOut" title="Отдалить">−</button>
       </div>
+      <!-- Connector line from marker to card -->
+      <div
+        v-if="mapStore.selectedPoi"
+        class="poi-connector"
+        :style="connectorStyle"
+      />
+
       <!-- Floating POI detail card near marker -->
       <transition name="fade">
         <div
@@ -158,11 +165,9 @@
 
               <!-- Tab: Description -->
               <div v-if="activeTab === 'desc'" class="poi-tab-content" role="tabpanel">
-                <p class="poi-description">{{ mapStore.selectedPoi.description }}</p>
-
-                <!-- Audience selector -->
+                <!-- Audience selector (выбор типа озвучки) -->
                 <div class="audience-row">
-                  <span class="text-mono">Стиль текста:</span>
+                  <span class="text-mono">Стиль озвучки:</span>
                   <div class="audience-btns">
                     <button
                       v-for="a in audiences"
@@ -174,6 +179,22 @@
                     </button>
                   </div>
                 </div>
+
+                <!-- Toggle for full text description -->
+                <button
+                  class="btn btn-ghost btn-xs desc-toggle"
+                  type="button"
+                  @click="isDescExpanded = !isDescExpanded"
+                  style="margin-top:0.75rem"
+                >
+                  {{ isDescExpanded ? 'Скрыть текстовое описание' : 'Показать текстовое описание' }}
+                </button>
+
+                <transition name="fade">
+                  <p v-if="isDescExpanded" class="poi-description">
+                    {{ mapStore.selectedPoi.description }}
+                  </p>
+                </transition>
 
                 <!-- AI content -->
                 <div v-if="aiContent || aiLoading" class="ai-content-box">
@@ -285,10 +306,46 @@ let mapglCheckInterval = null
 // Floating modal position (near selected marker)
 const modalPosition = ref({ top: 0, left: 0 })
 
+// Current map zoom for responsive modal sizing
+const zoomLevel = ref(14)
+
+const modalScale = computed(() => {
+  const baseZoom = 14
+  const z = zoomLevel.value
+  const diff = z - baseZoom
+  // при приближении (zoom > baseZoom) уменьшаем окно, при отдалении — слегка увеличиваем
+  const scale = 1 - diff * 0.06
+  // не даём окну стать слишком маленьким или огромным
+  return Math.min(1.05, Math.max(0.7, scale))
+})
+
 const modalStyle = computed(() => ({
   top: modalPosition.value.top + 'px',
   left: modalPosition.value.left + 'px',
+  transform: `scale(${modalScale.value})`,
+  transformOrigin: 'top left',
 }))
+
+// Collapsed/expanded state for text description
+const isDescExpanded = ref(false)
+
+// Screen position of marker (for connector line)
+const markerScreen = ref({ x: 0, y: 0 })
+
+const connectorStyle = computed(() => {
+  const cardX = modalPosition.value.left
+  const cardY = modalPosition.value.top + 80 // примерно середина карточки
+
+  const dx = cardX - markerScreen.value.x
+  const dy = cardY - markerScreen.value.y
+  const length = Math.sqrt(dx * dx + dy * dy)
+  const angle = (Math.atan2(dy, dx) * 180) / Math.PI
+
+  return {
+    width: length + 'px',
+    transform: `translate(${markerScreen.value.x}px, ${markerScreen.value.y}px) rotate(${angle}deg)`,
+  }
+})
 
 // AI/TTS (из composable)
 const {
@@ -363,6 +420,8 @@ function initMap() {
       style: 'c080bb6a-8134-4993-93d1-1b8ee55d40be',
     })
 
+    zoomLevel.value = map.getZoom()
+
     map.on('load', () => {
       renderMarkers()
     })
@@ -374,6 +433,7 @@ function initMap() {
       }
     })
     map.on('zoom', () => {
+      zoomLevel.value = map.getZoom()
       if (mapStore.selectedPoi) {
         updateModalPosition(mapStore.selectedPoi)
       }
@@ -392,6 +452,7 @@ function updateModalPosition(poi) {
   const offsetX = 24   // немного вправо от маркера
   const offsetY = -140 // и чуть выше, чтобы “висела” над точкой
 
+  markerScreen.value = { x, y }
   modalPosition.value = {
     left: x + offsetX,
     top: y + offsetY,
@@ -440,6 +501,7 @@ function renderMarkers() {
 function openPoi(poi) {
   mapStore.setSelected(poi)
   resetForPoi()
+  isDescExpanded.value = false
   if (map) updateModalPosition(poi)
 }
 
@@ -453,6 +515,7 @@ function selectAndFlyTo(poi) {
     updateModalPosition(poi)
   }
   resetForPoi()
+  isDescExpanded.value = false
 }
 function flyToAstrakhan() {
   if (map) {
@@ -779,6 +842,16 @@ function categoryIcon(cat) {
 .map-ctrl-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* ===== Connector line from marker to card ===== */
+.poi-connector {
+  position: absolute;
+  height: 2px;
+  background: rgba(200, 169, 110, 0.7);
+  transform-origin: 0 50%;
+  pointer-events: none;
+  z-index: 140;
 }
 
 /* ===== Floating modal near marker ===== */

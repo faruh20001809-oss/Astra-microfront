@@ -1,33 +1,45 @@
-import { defineConfig } from 'vite'
+// vite.config.js
+import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
-export default defineConfig({
-  plugins: [vue()],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      '/java-api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/java-api/, ''),
-        // 👇 Добавьте для отладки:
-        configure: (proxy, options) => {
-          proxy.on('proxyReq', (proxyReq, req, res) => {
-            console.log('🔄 Proxying:', req.method, req.url, '→', options.target + proxyReq.path)
-          })
-          proxy.on('proxyRes', (proxyRes, req, res) => {
-            console.log('✅ Proxy response:', proxyRes.statusCode, req.url)
-          })
-          proxy.on('error', (err, req, res) => {
-            console.error('❌ Proxy error:', err.message, req.url)
-          })
-        }
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [vue()],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
+      }
+    },
+    server: {
+      port: 5173,
+      proxy: {
+        // 🟡 Java API
+        '/java-api': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/java-api/, ''),
+        },
+
+        '/api/ai/chat': {
+          target: 'https://openrouter.ai/api',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api\/ai\/chat/, '/v1/chat'),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              const apiKey = env.VITE_AI_API_KEY
+              if (apiKey) {
+                proxyReq.setHeader('Authorization', `Bearer ${apiKey}`)
+                console.log('🔑 VITE_AI_API_KEY key attached (first 10 chars):', apiKey.slice(0, 10) + '...')
+              } else {
+                console.error('❌ VITE_AI_API_KEY not found in .env')
+              }
+            })
+          }
+        },
       }
     }
   }

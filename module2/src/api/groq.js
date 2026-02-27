@@ -1,69 +1,95 @@
-// Groq API — все запросы проксируются через Node.js сервер
-const GROQ_PROXY = '/api/groq'
+// src/api/groq.js
+
+// ✅ Модели Gemini (OpenAI-совместимый формат)
+export const CHAT_MODELS = {
+  FAST: 'openrouter/free',
+  SMART: 'openrouter/free',
+  CODE: 'openrouter/free',
+}
 
 /**
- * Генерирует контекстный текст о точке интереса через Groq LLM
- * @param {Object} poi - данные точки
- * @param {'default'|'children'|'academic'} audience - целевая аудитория
- * @returns {Promise<string>} сгенерированный текст
+ * Генерация текста через Gemini API (через Vite proxy)
  */
-export async function generatePoiContent(poi, audience = 'default') {
+export async function generatePoiContent(poi, audience = 'default', model = CHAT_MODELS.SMART) {
   const prompts = {
-    default: `Ты опытный экскурсовод Астрахани. Напиши увлекательное описание (2–3 абзаца) для объекта "${poi.name}". 
+    default: `Ты опытный экскурсовод Астрахани. Напиши маленькое увлекательное описание для объекта "${poi.name}". 
 Факты: год постройки — ${poi.year || 'неизвестен'}, категория — ${poi.category}.
-Базовое описание: ${poi.description}
+Базовое описание: ${poi.description || 'нет данных'}
 Расскажи об архитектурных особенностях, исторических событиях и интересных фактах. Пиши живо и эмоционально.`,
-
     children: `Ты добрый гид для детей. Объясни простыми словами, что такое "${poi.name}" в Астрахани.
 Год: ${poi.year || 'давным-давно'}. Категория: ${poi.category}.
-Используй простые слова, интересные сравнения и 1–2 забавных факта. Длина — 3–4 предложения.`,
-
+Используй простые слова, интересные сравнения`,
     academic: `Напиши академическое описание объекта культурного наследия "${poi.name}" (г. Астрахань).
 Год: ${poi.year}. Архитектор: ${poi.architect || 'неизвестен'}. Категория: ${poi.category}.
-Опиши историко-архитектурную ценность, стиль, культурное значение. Формат: 3 абзаца, нейтральный научный стиль.`
+Опиши историко-архитектурную ценность, стиль, культурное значение.`
   }
 
-  const res = await fetch(`${GROQ_PROXY}/generate`, {
+  const response = await fetch('/api/ai/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
+      model,
       messages: [
         { role: 'system', content: 'Ты помощник-историк, специалист по архитектуре и истории Астрахани. Отвечай на русском языке.' },
         { role: 'user', content: prompts[audience] }
-      ]
+      ],
+      temperature: 0.3,
+      max_tokens: 600
     })
   })
 
-  if (!res.ok) throw new Error('Groq API error')
-  const data = await res.json()
-  return data.content
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    console.error('AI chat error response:', errorData)
+    throw new Error(errorData.error?.message || `HTTP ${response.status}`)
+  }
+
+  const data = await response.json()
+  return data.choices?.[0]?.message?.content?.trim() || 'Не удалось сгенерировать описание'
 }
 
 /**
- * Озвучивает текст через Groq TTS
- * @param {string} text
- * @returns {Promise<Blob>} WAV аудио-блоб
+ * 🛑 Остановить всё воспроизведение
  */
-export async function synthesizeSpeech(text) {
-  const res = await fetch(`${GROQ_PROXY}/tts`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text })
+export function stopAllAudio() {
+  document.querySelectorAll('audio').forEach(audio => {
+    audio.pause()
+    audio.src = ''
   })
-
-  if (!res.ok) throw new Error('TTS error')
-  return res.blob()
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel()
+  }
 }
 
 /**
- * Утилита: воспроизводит аудио-блоб
- * @param {Blob} blob
- * @returns {HTMLAudioElement}
+ * 🔄 Проверка поддержки Web Speech API
  */
-export function playAudioBlob(blob) {
-  const url = URL.createObjectURL(blob)
-  const audio = new Audio(url)
-  audio.addEventListener('ended', () => URL.revokeObjectURL(url))
-  audio.play()
-  return audio
+export function isSpeechSupported() {
+  return 'speechSynthesis' in window
+}
+
+/**
+ * 🗣️ TTS через Web Speech API
+ */
+export function speakWithWebSpeech(text, lang = 'ru-RU') {
+  return new Promise((resolve, reject) => {
+    if (!isSpeechSupported()) {
+      reject(new Error('Web Speech API not supported'))
+      return
+    }
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = lang
+    utterance.rate = 0.95
+    const voices = window.speechSynthesis.getVoices()
+    const ruVoice = voices.find(v => v.lang.startsWith('ru'))
+    if (ruVoice) utterance.voice = ruVoice
+    utterance.onend = () => resolve()
+    utterance.onerror = (e) => reject(new Error(e.error))
+    if (voices.length === 0) {
+      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.speak(utterance)
+    } else {
+      window.speechSynthesis.speak(utterance)
+    }
+  })
 }

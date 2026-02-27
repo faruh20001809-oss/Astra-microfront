@@ -72,27 +72,40 @@ export const useMapStore = defineStore('map', {
       this.isLoadingPois = true
       try {
         const res = await fetch('/java-api/api/v1/pois?status=PUBLISHED')
-
-        // 🔹 Проверка: не вернули ли HTML вместо JSON
+    
         const contentType = res.headers.get('content-type')
         if (!contentType || !contentType.includes('application/json')) {
           throw new Error('API returned non-JSON response')
         }
-
+    
         const json = await res.json()
-
-        // 🔹 Java API возвращает { status, data }
-        if (json?.status === 'success' && Array.isArray(json.data)) {
-          this.pois = json.data
-        } else if (Array.isArray(json)) {
-          this.pois = json
-        } else {
-          console.warn('Unexpected API response format:', json)
-          this.pois = getMockPois()
-        }
+    
+        const raw = json?.status === 'success' && Array.isArray(json.data)
+          ? json.data
+          : Array.isArray(json)
+            ? json
+            : []
+    
+        // 🔹 Нормализуем под фронт (lat/lng и дополнительные поля)
+        this.pois = raw.map(p => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          category: p.category,
+          // 2ГИС ожидает lon/lat — мы даём lat/lng в объекте POI
+          lat: p.latitude ?? p.coordinates?.latitude ?? 0,
+          lng: p.longitude ?? p.coordinates?.longitude ?? 0,
+          address: p.address,
+          rating: p.rating,
+          reviewsCount: p.reviewsCount,
+          year: p.extendedInfo?.foundedYear ?? null,
+          architect: p.extendedInfo?.architect ?? null,
+          image: p.image || null,
+          tags: p.tags || [],
+        }))
       } catch (err) {
         console.error('Failed to fetch POIs:', err)
-        this.pois = getMockPois() // Fallback на mock-данные
+        this.pois = getMockPois()
       } finally {
         this.isLoadingPois = false
       }
