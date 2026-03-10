@@ -75,6 +75,27 @@ public class ApiController {
             .orElse(ResponseEntity.notFound().build());
     }
 
+    /** Картинка маршрута (из imageData). */
+    @GetMapping(value = "/routes/{id}/image", produces = "image/*")
+    public ResponseEntity<byte[]> getRouteImage(@PathVariable Long id) {
+        return routeService.findById(id)
+                .filter(r -> r.getImageData() != null && r.getImageData().length > 0)
+                .map(r -> {
+                    String contentType = "image/jpeg";
+                    if (r.getImageFilename() != null) {
+                        String fn = r.getImageFilename().toLowerCase();
+                        if (fn.endsWith(".png")) contentType = "image/png";
+                        else if (fn.endsWith(".gif")) contentType = "image/gif";
+                        else if (fn.endsWith(".webp")) contentType = "image/webp";
+                    }
+                    return ResponseEntity.ok()
+                            .header("Cache-Control", "public, max-age=86400")
+                            .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                            .body(r.getImageData());
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     // ===== Products =====
     @GetMapping("/products")
     public ResponseEntity<Map<String, Object>> getProducts(@RequestParam(required = false) String category) {
@@ -343,14 +364,51 @@ public class ApiController {
     }
     private Map<String, Object> routeMap(Route r) {
         Map<String, Object> m = new LinkedHashMap<>();
-        m.put("id", r.getId()); m.put("name", r.getName()); m.put("description", r.getDescription());
-        m.put("category", r.getCategory()); m.put("distance", r.getDistance()); m.put("duration", r.getDuration());
-        m.put("difficulty", r.getDifficulty()); m.put("rating", r.getRating()); m.put("published", r.getPublished());
-        m.put("paid", r.getPaid()); m.put("price", r.getPrice());
-        if (r.getPoiIds() != null && !r.getPoiIds().isEmpty())
-            m.put("pois", Arrays.stream(r.getPoiIds().split(",")).map(s -> Long.parseLong(s.trim())).collect(Collectors.toList()));
-        else m.put("pois", List.of());
+        m.put("id", r.getId());
+        m.put("name", r.getName());
+        m.put("title", r.getName());
+        m.put("description", r.getDescription());
+        m.put("category", r.getCategory());
+        m.put("distance", formatDistance(r.getDistance()));
+        m.put("duration", formatDuration(r.getDuration()));
+        m.put("difficulty", r.getDifficulty());
+        m.put("rating", r.getRating() != null ? r.getRating() : 0.0);
+        m.put("published", r.getPublished());
+        m.put("paid", r.getPaid() != null && r.getPaid());
+        m.put("isPaid", r.getPaid() != null && r.getPaid());
+        m.put("price", r.getPrice() != null ? r.getPrice() : 0.0);
+        if (r.getPoiIds() != null && !r.getPoiIds().isEmpty()) {
+            List<Long> poiIdList = Arrays.stream(r.getPoiIds().split(",")).map(s -> Long.parseLong(s.trim())).collect(Collectors.toList());
+            m.put("pois", poiIdList);
+            List<Map<String, Object>> stops = new ArrayList<>();
+            for (Long poiId : poiIdList) {
+                poiService.findById(poiId).ifPresent(poi -> stops.add(Map.of("name", poi.getName(), "description", poi.getDescription() != null ? poi.getDescription() : "")));
+            }
+            m.put("stops", stops);
+        } else {
+            m.put("pois", List.of());
+            m.put("stops", List.of());
+        }
+        String coverImage = (r.getImageUrl() != null && !r.getImageUrl().isEmpty())
+                ? r.getImageUrl()
+                : (r.getImageData() != null && r.getImageData().length > 0 ? "/java-api/api/v1/routes/" + r.getId() + "/image" : null);
+        m.put("image", coverImage);
+        m.put("coverImage", coverImage);
         return m;
+    }
+
+    private static String formatDistance(Double km) {
+        if (km == null) return "—";
+        return km + " км";
+    }
+
+    private static String formatDuration(Integer minutes) {
+        if (minutes == null) return "—";
+        if (minutes < 60) return minutes + " мин";
+        int h = minutes / 60;
+        int m = minutes % 60;
+        if (m == 0) return h + " ч";
+        return h + " ч " + m + " мин";
     }
     private Map<String, Object> productMap(Product p) {
         Map<String, Object> m = new LinkedHashMap<>();

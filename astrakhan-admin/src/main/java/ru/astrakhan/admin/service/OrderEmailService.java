@@ -26,10 +26,17 @@ public class OrderEmailService {
     @Value("${app.mail.from:noreply@astrakhan-history.local}")
     private String fromAddress;
 
+    @Value("${app.mail.enabled:true}")
+    private boolean mailEnabled;
+
     /**
      * Sends "Order accepted for processing" email right after order is placed (e.g. after payment).
      */
     public void sendOrderAcceptedForProcessing(Order order) {
+        if (!mailEnabled) {
+            log.debug("Mail disabled, skipping order accepted email for {}", order.getOrderId());
+            return;
+        }
         String email = order.getEmail();
         if (email == null || email.isBlank()) {
             log.debug("Order {} has no email, skipping accepted email", order.getOrderId());
@@ -49,6 +56,10 @@ public class OrderEmailService {
      * Sends order confirmation email with full order details to the customer.
      */
     public void sendOrderConfirmation(Order order) {
+        if (!mailEnabled) {
+            log.debug("Mail disabled, skipping confirmation for {}", order.getOrderId());
+            return;
+        }
         String email = order.getEmail();
         if (email == null || email.isBlank()) {
             log.debug("Order {} has no email, skipping confirmation", order.getOrderId());
@@ -68,6 +79,10 @@ public class OrderEmailService {
      * Sends tracking number email when order is shipped.
      */
     public void sendTrackingUpdate(Order order) {
+        if (!mailEnabled) {
+            log.debug("Mail disabled, skipping tracking email for {}", order.getOrderId());
+            return;
+        }
         String email = order.getEmail();
         if (email == null || email.isBlank()) {
             log.debug("Order {} has no email, skipping tracking email", order.getOrderId());

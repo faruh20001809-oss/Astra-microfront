@@ -104,6 +104,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   height: var(--nav-h);
+  padding-top: env(safe-area-inset-top, 0);
   z-index: 500;
   background: rgba(73, 62, 62, 0.92);
   backdrop-filter: blur(12px);
@@ -253,7 +254,14 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .header-inner { padding: 0 var(--spacing-md); gap: var(--spacing-md); }
-  .burger { display: flex; }
+  .burger {
+    display: flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
 
   .main-nav {
     position: fixed;
@@ -274,7 +282,18 @@ onUnmounted(() => {
 
   .nav-link {
     font-size: 1rem;
-    padding: 0.75rem 1.5rem;
+    padding: 0.875rem 1.5rem;
+    min-height: 48px;
+    min-width: 200px;
+    justify-content: center;
   }
+
+  .cart-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem;
+    justify-content: center;
+  }
+  .cart-btn span:first-child { display: none; }
 }
 </style>

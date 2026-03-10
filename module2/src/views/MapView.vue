@@ -1205,6 +1205,15 @@ function categoryIcon(cat) {
   .photo-grid {
     grid-template-columns: 1fr;
   }
+
+  .map-ctrl-btn {
+    width: 44px;
+    height: 44px;
+  }
+  .map-controls {
+    right: var(--spacing-sm);
+    bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0));
+  }
 }
 
 @media (max-width: 480px) {
@@ -1212,7 +1221,6 @@ function categoryIcon(cat) {
     margin: var(--spacing-md);
     max-height: calc(100dvh - 100px);
   }
-
   .photo-grid {
     grid-template-columns: 1fr;
   }

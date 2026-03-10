@@ -375,13 +375,47 @@ a {
   50% { opacity: 0.5; transform: scale(0.85); }
 }
 
-/* ---- Responsive ---- */
+/* ---- Responsive: mobile-first ---- */
+/* Touch targets минимум 44px по рекомендациям Apple/Google */
 @media (max-width: 768px) {
   :root {
     --sidebar-w: 100%;
     --spacing-xl: 1.25rem;
+    --nav-h: 56px;
   }
+  html { font-size: 15px; }
   .container { padding: 0 var(--spacing-md); }
+  .page-wrapper { padding-top: var(--nav-h); min-height: 100dvh; }
+  .btn {
+    min-height: 44px;
+    padding: 0.75rem 1.25rem;
+  }
+  .btn-sm { min-height: 40px; padding: 0.5rem 0.875rem; }
+  .btn-lg { min-height: 48px; padding: 1rem 1.5rem; }
+  .form-input, .form-select, .form-textarea {
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    font-size: 16px; /* убирает зум iOS при фокусе */
+  }
+  .form-textarea { min-height: 120px; }
+  .modal-backdrop { padding: var(--spacing-md); align-items: flex-end; }
+  .modal-box {
+    max-height: 85vh;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+  .toast-container {
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    bottom: var(--spacing-md);
+  }
+  .toast { max-width: none; }
+}
+
+@media (max-width: 480px) {
+  :root { --nav-h: 52px; }
+  .container { padding: 0 var(--spacing-sm); }
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.375rem; }
 }
 
 /* ---- Vue transitions ---- */
@@ -460,5 +494,12 @@ a {
 
   .cart-drawer {
     width: 100vw;
+    max-width: 100vw;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }
