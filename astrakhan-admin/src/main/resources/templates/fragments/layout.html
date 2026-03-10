@@ -1,12 +1,38 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="">
 <head th:fragment="head(title)">
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title th:text="${title} + ' — Астрахань. Живая История'">Admin</title>
     <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <script th:inline="javascript">
+      document.addEventListener('DOMContentLoaded', function() {
+        var layout = document.querySelector('.layout');
+        if (!layout) return;
+        var sidebar = document.querySelector('.sidebar');
+        var overlay = document.getElementById('sidebar-overlay');
+        var closeBtn = document.getElementById('sidebar-close-btn');
+        function openMenu() { document.body.classList.add('sidebar-open'); }
+        function closeMenu() { document.body.classList.remove('sidebar-open'); }
+        if (overlay) overlay.addEventListener('click', closeMenu);
+        if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+        var topbar = document.querySelector('.mobile-topbar');
+        if (!topbar) {
+          topbar = document.createElement('div');
+          topbar.className = 'mobile-topbar';
+          topbar.innerHTML = '<button type="button" class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Меню">&#9776;</button><span class="mobile-topbar-title">Админ</span>';
+          var main = document.querySelector('.main-content');
+          if (main) main.insertBefore(topbar, main.firstChild);
+          topbar.querySelector('#mobile-menu-btn').addEventListener('click', openMenu);
+        }
+      });
+    </script>
 </head>
 <body>
-<nav th:fragment="sidebar" class="sidebar">
+<div th:fragment="sidebar" class="sidebar-wrapper">
+    <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+    <nav class="sidebar" id="admin-sidebar">
+        <button type="button" class="sidebar-close-btn" id="sidebar-close-btn" aria-label="Закрыть меню">&#10005;</button>
     <div class="sidebar-header"><h2>Живая История</h2><small>Панель администратора</small></div>
     <ul class="sidebar-nav">
         <!-- 👇 Все #request и #httpServletRequest заменены на request -->
@@ -37,5 +63,6 @@
         </form>
     </div>
 </nav>
+</div>
 </body>
 </html>

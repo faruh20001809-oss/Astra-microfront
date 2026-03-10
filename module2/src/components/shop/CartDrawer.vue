@@ -1,27 +1,26 @@
 <template>
-  <transition name="slide-drawer">
-    <div v-if="cartStore.isOpen" class="cart-backdrop" @click.self="cartStore.isOpen = false">
-      <aside class="cart-drawer">
+  <Drawer
+      v-model:visible="cartStore.isOpen"
+      position="right"
+      :modal="true"
+      :dismissable="true"
+      :showCloseIcon="true"
+      class="cart-drawer-pv"
+  >
+    <template #header>
+      <span class="cart-title">Корзина</span>
+    </template>
 
-        <!-- Header -->
-        <div class="cart-header">
-          <h3 class="cart-title">Корзина</h3>
-          <button class="cart-close" @click="cartStore.isOpen = false">✕</button>
-        </div>
+    <!-- Empty state -->
+    <div v-if="!cartStore.items.length" class="cart-empty">
+      <span class="cart-empty-icon">◻</span>
+      <p>Корзина пуста</p>
+      <Button label="Перейти в магазин" class="p-button-text p-button-secondary" @click="cartStore.isOpen = false; $router.push('/shop')" />
+    </div>
 
-        <!-- Empty state -->
-        <div v-if="!cartStore.items.length" class="cart-empty">
-          <span class="cart-empty-icon">◻</span>
-          <p>Корзина пуста</p>
-          <button class="btn btn-ghost btn-sm" @click="cartStore.isOpen = false; $router.push('/shop')">
-            Перейти в магазин
-          </button>
-        </div>
-
-        <!-- Cart with items: scrollable body + sticky pay button -->
-        <template v-else>
-          <div class="cart-body">
-            <div class="cart-items">
+    <!-- Cart with items: scrollable body -->
+    <div v-else class="cart-body">
+        <div class="cart-items">
               <div
                   v-for="item in cartStore.items"
                   :key="item.id"
@@ -174,36 +173,27 @@
             </div>
           </div>
 
-              <button class="btn btn-ghost btn-sm" @click="cartStore.clearCart()">
-                Очистить корзину
-              </button>
+              <Button label="Очистить корзину" class="p-button-text p-button-secondary p-button-sm" @click="cartStore.clearCart()" />
 
               <p class="consent-text">
                 Нажимая кнопку ниже, вы соглашаетесь с
                 <a href="/privacy" target="_blank">политикой конфиденциальности</a>
               </p>
             </div>
-          </div>
+      </div>
 
-          <!-- Sticky bottom: кнопка оплаты всегда видна -->
-          <div class="cart-actions">
-            <button
-                class="btn btn-primary btn-lg w-full cart-checkout-btn"
-                @click="checkout"
-                :disabled="checkoutLoading || !isFormValid"
-            >
-              <span v-if="checkoutLoading">
-                <span class="spinner" style="width:14px;height:14px;display:inline-block" />
-                Обработка…
-              </span>
-              <span v-else>Оформить заказ — {{ cartStore.totalPrice + deliveryPrice }} ₽</span>
-            </button>
-          </div>
-        </template>
-
-      </aside>
-    </div>
-  </transition>
+    <!-- Кнопка оплаты в футере Drawer — всегда видна -->
+    <template #footer>
+      <Button
+          v-if="cartStore.items.length"
+          :label="checkoutLoading ? 'Обработка…' : `Оформить заказ — ${cartStore.totalPrice + deliveryPrice} ₽`"
+          :loading="checkoutLoading"
+          :disabled="!isFormValid"
+          class="w-full cart-checkout-btn"
+          @click="checkout"
+      />
+    </template>
+  </Drawer>
 </template>
 
 <script setup>
@@ -383,37 +373,12 @@ async function checkout() {
 </script>
 
 <style scoped>
-/* ===== Existing cart styles (unchanged) ===== */
-.cart-backdrop {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(4px);
-  z-index: 900;
-  display: flex; justify-content: flex-end;
-}
+.cart-drawer-pv .p-drawer-content { display: flex; flex-direction: column; overflow: hidden; }
+.cart-drawer-pv .cart-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
+.cart-drawer-pv .cart-checkout-btn { width: 100%; }
+.cart-drawer-pv .p-drawer-footer { padding: var(--spacing-md); padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0)); border-top: 1px solid var(--gray-600); }
 
-.cart-drawer {
-  width: 400px; max-width: 100vw; height: 100vh;
-  background: var(--gray-800);
-  border-left: 1px solid var(--gray-600);
-  display: flex; flex-direction: column; overflow: hidden;
-}
-
-.cart-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-bottom: 1px solid var(--gray-600); flex-shrink: 0;
-}
 .cart-title { font-family: var(--font-display); font-size: 1.25rem; }
-.cart-close {
-  background: transparent; border: 1px solid var(--gray-600);
-  color: var(--paper); width: 30px; height: 30px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; border-radius: var(--radius-sm);
-  transition: all var(--transition);
-}
-.cart-close:hover { border-color: var(--paper); }
-
 .cart-empty {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -475,14 +440,6 @@ async function checkout() {
   display: flex; flex-direction: column; gap: var(--spacing-md);
   flex-shrink: 0;
 }
-
-.cart-actions {
-  flex-shrink: 0;
-  padding: var(--spacing-md) var(--spacing-xl);
-  padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
-  border-top: 1px solid var(--gray-600);
-  background: var(--gray-800);
-}
 .cart-checkout-btn { width: 100%; justify-content: center; }
 .delivery-info {
   display: flex; justify-content: space-between;
@@ -495,15 +452,7 @@ async function checkout() {
 .cart-total-price { font-family: var(--font-mono); font-size: 1.5rem; color: var(--paper); }
 .w-full { width: 100%; justify-content: center; }
 
-/* Slide transition */
-.slide-drawer-enter-active, .slide-drawer-leave-active { transition: opacity var(--transition-slow); }
-.slide-drawer-enter-active .cart-drawer, .slide-drawer-leave-active .cart-drawer { transition: transform var(--transition-slow); }
-.slide-drawer-enter-from { opacity: 0; }
-.slide-drawer-leave-to { opacity: 0; }
-.slide-drawer-enter-from .cart-drawer { transform: translateX(100%); }
-.slide-drawer-leave-to .cart-drawer { transform: translateX(100%); }
-
-/* ===== NEW: Customer form styles ===== */
+/* ===== Customer form styles ===== */
 .customer-form {
   padding: var(--spacing-md) 0;
   border-top: 1px solid var(--gray-700);
@@ -563,25 +512,7 @@ async function checkout() {
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-  .cart-drawer {
-    width: 100%;
-    max-width: 100vw;
-    height: 100dvh;
-    height: 100vh;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-  .cart-header {
-    padding: var(--spacing-md) var(--spacing-lg);
-    padding-left: env(safe-area-inset-left, var(--spacing-lg));
-    padding-right: env(safe-area-inset-right, var(--spacing-lg));
-  }
-  .cart-close {
-    min-width: 44px;
-    min-height: 44px;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-  }
+  .cart-drawer-pv .p-drawer { width: 100%; max-width: 100vw; }
   .cart-body { min-height: 0; }
   .cart-items {
     padding: var(--spacing-md) var(--spacing-lg);
@@ -593,9 +524,7 @@ async function checkout() {
     padding-left: env(safe-area-inset-left, var(--spacing-lg));
     padding-right: env(safe-area-inset-right, var(--spacing-lg));
   }
-  .cart-actions {
-    padding: var(--spacing-md) var(--spacing-lg);
-    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
+  .cart-drawer-pv .p-drawer-footer {
     padding-left: env(safe-area-inset-left, var(--spacing-lg));
     padding-right: env(safe-area-inset-right, var(--spacing-lg));
   }
@@ -617,79 +546,6 @@ async function checkout() {
 
 @media (max-width: 480px) {
   .form-row { grid-template-columns: 1fr; }
-  .cart-drawer { width: 100%; max-width: 100vw; }
-  .cart-footer { padding: var(--spacing-md); padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0)); }
-}
-
-.form-group input,
-.form-select {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  background: var(--gray-900);  /* 👈 было: var(--gray-800) */
-  border: 1px solid var(--gray-700);  /* 👈 было: var(--gray-600) */
-  border-radius: var(--radius-sm);
-  color: var(--paper);
-  font-size: 0.85rem;
-  transition: border-color 0.2s;
-}
-
-.form-group input:focus,
-.form-select:focus {
-  outline: none;
-  border-color: var(--accent);
-  background: var(--gray-900);
-}
-
-/* Ошибки валидации */
-.form-group input.error {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.05);
-}
-
-/* Текст ошибок */
-.error-msg {
-  display: block;
-  font-size: 0.65rem;
-  color: #ef4444;
-  margin-top: 0.2rem;
-  min-height: 1em;
-}
-
-/* Радио-кнопки оплаты */
-.radio-inline label {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.75rem;
-  background: var(--gray-900);  /* 👈 было: var(--gray-800) */
-  border: 1px solid var(--gray-700);  /* 👈 было: var(--gray-600) */
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s;
-  color: var(--gray-300);
-}
-
-.radio-inline label.active {
-  border-color: var(--accent);
-  background: rgba(200, 169, 110, 0.08);
-  color: var(--paper);
-}
-
-/* Текст согласия */
-.consent-text {
-  font-size: 0.65rem;
-  color: var(--gray-500);  /* 👈 было: var(--gray-600) */
-  text-align: center;
-  margin-top: var(--spacing-sm);
-}
-
-.consent-text a {
-  color: var(--gray-400);
-  text-decoration: underline;
-}
-
-.consent-text a:hover {
-  color: var(--accent);
+  .cart-footer { padding: var(--spacing-md); }
 }
 </style>

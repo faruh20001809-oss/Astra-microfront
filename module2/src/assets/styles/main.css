@@ -513,3 +513,26 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== PrimeVue: адаптация под наш дизайн ===== */
+.app-dark [data-pc-name="drawer"] {
+  background: var(--gray-800) !important;
+  border-color: var(--gray-600) !important;
+  color: var(--paper) !important;
+}
+.app-dark .p-drawer-mask {
+  background: rgba(0,0,0,0.6) !important;
+}
+.app-dark .p-drawer-header {
+  background: var(--gray-800) !important;
+  border-color: var(--gray-600) !important;
+  color: var(--paper) !important;
+}
+.app-dark .p-button.p-button-secondary.p-button-text {
+  color: var(--paper) !important;
+  border-color: var(--gray-600) !important;
+}
+.app-dark .p-button.p-button-secondary.p-button-text:hover {
+  background: var(--gray-700) !important;
+  border-color: var(--paper) !important;
+}

@@ -2,7 +2,6 @@
 <template>
   <header class="app-header" :class="{ visible: headerVisible, hovered: headerHovered }">
     <div class="header-inner">
-      <!-- Logo -->
       <router-link to="/" class="logo">
         <span class="logo-icon">⬡</span>
         <span class="logo-text">
@@ -11,31 +10,63 @@
         </span>
       </router-link>
 
-      <!-- Nav -->
-      <nav class="main-nav" :class="{ open: menuOpen }">
+      <nav class="main-nav">
         <router-link
             v-for="item in navItems"
             :key="item.to"
             :to="item.to"
             class="nav-link"
-            @click="menuOpen = false"
         >
           <span class="nav-icon">{{ item.icon }}</span>
           {{ item.label }}
         </router-link>
       </nav>
 
-      <!-- Right actions -->
       <div class="header-actions">
-        <button class="cart-btn btn btn-ghost btn-sm" @click="cartStore.toggleCart()">
-          <span>Корзина</span>
-          <span v-if="cartStore.totalCount" class="cart-badge">{{ cartStore.totalCount }}</span>
-        </button>
-        <button class="burger" @click="menuOpen = !menuOpen" :aria-label="menuOpen ? 'Закрыть' : 'Меню'">
-          <span></span><span></span><span></span>
-        </button>
+        <Button
+            class="p-button-text p-button-secondary cart-btn"
+            @click="cartStore.toggleCart()"
+            aria-label="Корзина"
+        >
+          <span class="cart-btn-text">Корзина</span>
+          <Badge v-if="cartStore.totalCount" :value="cartStore.totalCount" class="cart-badge-pv" />
+        </Button>
+        <Button
+            icon="pi pi-bars"
+            class="p-button-text p-button-secondary burger-btn"
+            @click="menuOpen = true"
+            aria-label="Меню"
+        />
       </div>
     </div>
+
+    <!-- Мобильное меню: PrimeVue Drawer -->
+    <Drawer
+        v-model:visible="menuOpen"
+        position="right"
+        :modal="true"
+        :dismissable="true"
+        :showCloseIcon="true"
+        class="nav-drawer"
+        @hide="menuOpen = false"
+    >
+      <template #header>
+        <span class="nav-drawer-title">Меню</span>
+      </template>
+      <nav class="nav-drawer-list">
+        <router-link
+            v-for="item in navItems"
+            :key="item.to"
+            :to="item.to"
+            class="nav-drawer-link"
+            :class="{ 'router-link-active': $route.path === item.to }"
+            @click="menuOpen = false"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          {{ item.label }}
+        </router-link>
+      </nav>
+    </Drawer>
   </header>
 </template>
 
@@ -229,38 +260,27 @@ onUnmounted(() => {
   position: relative;
 }
 
-.cart-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  background: var(--accent);
-  color: var(--ink);
-  font-size: 0.65rem;
-  font-weight: 700;
-  border-radius: 9px;
-  padding: 0 4px;
-}
+.cart-btn-text { margin-right: 0.25rem; }
+.cart-badge-pv { margin-left: 0.25rem; }
 
-/* Burger */
-.burger {
+.burger-btn {
   display: none;
-  flex-direction: column;
-  gap: 5px;
-  padding: 4px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
 }
 
-.burger span {
-  display: block;
-  width: 22px;
-  height: 2px;
-  background: var(--paper);
-  transition: all var(--transition);
+/* Drawer меню */
+.nav-drawer-title { font-family: var(--font-display); font-size: 1.125rem; }
+.nav-drawer-list { display: flex; flex-direction: column; gap: 0; }
+.nav-drawer-link {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  font-family: var(--font-mono); font-size: 1rem;
+  color: var(--gray-400); text-decoration: none;
+  border-bottom: 1px solid var(--gray-800);
+  transition: background var(--transition), color var(--transition);
 }
+.nav-drawer-link:hover { background: var(--gray-800); color: var(--paper); }
+.nav-drawer-link.router-link-active { color: var(--accent); background: rgba(200,169,110,0.08); }
+.nav-drawer-link .nav-icon { font-size: 1.1rem; }
 
 @media (max-width: 768px) {
   .header-inner {
@@ -271,13 +291,11 @@ onUnmounted(() => {
   .logo { min-width: 0; }
   .logo-sub { display: none; }
   .logo-title { font-size: 1rem; }
-  .burger {
-    display: flex;
+  .main-nav { display: none; }
+  .burger-btn {
+    display: inline-flex;
     min-width: 44px;
     min-height: 44px;
-    align-items: center;
-    justify-content: center;
-    padding: 10px;
     flex-shrink: 0;
   }
   .header-actions { margin-left: auto; }
@@ -288,36 +306,7 @@ onUnmounted(() => {
     justify-content: center;
     flex-shrink: 0;
   }
-  .cart-btn span:first-child { display: none; }
-
-  .main-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding-top: calc(var(--nav-h) + env(safe-area-inset-top, 0));
-    background: rgba(10, 10, 10, 0.98);
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: stretch;
-    gap: 0;
-    transform: translateX(100%);
-    transition: transform var(--transition-slow);
-    z-index: 999;
-    overflow-y: auto;
-  }
-  .main-nav.open { transform: translateX(0); }
-  .nav-link {
-    font-size: 1rem;
-    padding: 0.875rem 1.25rem;
-    min-height: 48px;
-    min-width: 0;
-    width: 100%;
-    justify-content: flex-start;
-    border-radius: 0;
-    border-bottom: 1px solid var(--gray-800);
-  }
-  .nav-link:first-child { border-top: 1px solid var(--gray-800); }
+  .cart-btn-text { display: none; }
+  .cart-badge-pv { margin-left: 0; }
 }
 </style>

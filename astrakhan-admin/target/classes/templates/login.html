@@ -2,19 +2,20 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Вход — Астрахань. Живая История</title>
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <style>
-        .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+        .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 16px; padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
         .login-box { width: 100%; max-width: 380px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
         .login-box h1 { font-size: 20px; margin-bottom: 8px; }
         .login-box .subtitle { color: var(--text-light); font-size: 14px; margin-bottom: 24px; }
         .login-box .form-group { margin-bottom: 16px; }
-        .login-box .form-control { width: 100%; }
-        .login-box button[type="submit"] { width: 100%; padding: 12px; margin-top: 8px; }
+        .login-box .form-control { width: 100%; min-height: 48px; font-size: 16px; }
+        .login-box button[type="submit"] { width: 100%; padding: 12px; margin-top: 8px; min-height: 48px; }
         .login-error { background: #f8d7da; color: #721c24; padding: 12px; border-radius: var(--radius); margin-bottom: 16px; font-size: 14px; }
         .login-logout { background: #d4edda; color: #155724; padding: 12px; border-radius: var(--radius); margin-bottom: 16px; font-size: 14px; }
+        @media (max-width: 480px) { .login-box { padding: 24px 20px; } }
     </style>
 </head>
 <body>
