@@ -113,6 +113,15 @@ rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 echo "  Nginx: конфиг применён."
 
+# Опционально: cron для автообновления при новых коммитах (каждые 5 мин)
+if [ -z "$NO_CRON" ]; then
+  CRON_LINE="*/5 * * * * root $APP_DIR/deploy/auto-update.sh >> /var/log/astramicro-auto-update.log 2>&1"
+  if ! grep -q "astramicro/auto-update.sh" /etc/crontab 2>/dev/null; then
+    echo "$CRON_LINE" >> /etc/crontab
+    echo "  Cron: автообновление каждые 5 мин (проверка Git). Лог: /var/log/astramicro-auto-update.log"
+  fi
+fi
+
 echo ""
 echo "=== Готово. ==="
 echo "  Фронт: http://$(curl -s ifconfig.me 2>/dev/null || echo 'IP')/"
