@@ -70,7 +70,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$APP_DIR/astrakhan-admin
-ExecStart=/usr/bin/java -Xmx1024m -jar $JAR_PATH
+ExecStart=/usr/bin/java -Xmx1024m -Dspring.profiles.active=prod -jar $JAR_PATH
 Restart=on-failure
 RestartSec=10
 
@@ -98,7 +98,7 @@ server {
     }
 
     location /java-api/ {
-        proxy_pass http://127.0.0.1:8080/;
+        proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
