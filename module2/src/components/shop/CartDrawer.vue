@@ -18,35 +18,35 @@
           </button>
         </div>
 
-        <!-- Cart items -->
-        <div v-else class="cart-items">
-          <div
-              v-for="item in cartStore.items"
-              :key="item.id"
-              class="cart-item"
-          >
-            <div class="cart-item-img">
-              <span>{{ item.emoji || '◻' }}</span>
+        <!-- Cart with items: scrollable body + sticky pay button -->
+        <template v-else>
+          <div class="cart-body">
+            <div class="cart-items">
+              <div
+                  v-for="item in cartStore.items"
+                  :key="item.id"
+                  class="cart-item"
+              >
+                <div class="cart-item-img">
+                  <span>{{ item.emoji || '◻' }}</span>
+                </div>
+                <div class="cart-item-info">
+                  <p class="cart-item-name">{{ item.name }}</p>
+                  <p v-if="item.variant" class="cart-item-variant">{{ item.variant }}</p>
+                  <p class="cart-item-price">{{ item.price }} ₽</p>
+                </div>
+                <div class="cart-item-controls">
+                  <button class="qty-btn" @click="cartStore.updateQty(item.id, item.qty - 1)">−</button>
+                  <span class="qty-val">{{ item.qty }}</span>
+                  <button class="qty-btn" @click="cartStore.updateQty(item.id, item.qty + 1)">+</button>
+                </div>
+                <button class="cart-item-remove" @click="cartStore.removeItem(item.id)">✕</button>
+              </div>
             </div>
-            <div class="cart-item-info">
-              <p class="cart-item-name">{{ item.name }}</p>
-              <p v-if="item.variant" class="cart-item-variant">{{ item.variant }}</p>
-              <p class="cart-item-price">{{ item.price }} ₽</p>
-            </div>
-            <div class="cart-item-controls">
-              <button class="qty-btn" @click="cartStore.updateQty(item.id, item.qty - 1)">−</button>
-              <span class="qty-val">{{ item.qty }}</span>
-              <button class="qty-btn" @click="cartStore.updateQty(item.id, item.qty + 1)">+</button>
-            </div>
-            <button class="cart-item-remove" @click="cartStore.removeItem(item.id)">✕</button>
-          </div>
-        </div>
 
-        <!-- Footer with form and checkout -->
-        <div v-if="cartStore.items.length" class="cart-footer">
-
-          <!-- 👇 ФОРМА КЛИЕНТА (добавлено) -->
-          <div class="customer-form">
+            <div class="cart-footer">
+              <!-- 👇 ФОРМА КЛИЕНТА -->
+              <div class="customer-form">
             <div class="form-row">
               <div class="form-group">
                 <label for="firstName" class="form-label">Имя *</label>
@@ -174,28 +174,32 @@
             </div>
           </div>
 
-          <!-- Checkout button -->
-          <button
-              class="btn btn-primary btn-lg w-full"
-              @click="checkout"
-              :disabled="checkoutLoading || !isFormValid"
-          >
-            <span v-if="checkoutLoading">
-              <span class="spinner" style="width:14px;height:14px;display:inline-block" />
-              Обработка…
-            </span>
-            <span v-else>Оформить заказ — {{ cartStore.totalPrice + deliveryPrice }} ₽</span>
-          </button>
+              <button class="btn btn-ghost btn-sm" @click="cartStore.clearCart()">
+                Очистить корзину
+              </button>
 
-          <button class="btn btn-ghost btn-sm" @click="cartStore.clearCart()">
-            Очистить корзину
-          </button>
+              <p class="consent-text">
+                Нажимая кнопку ниже, вы соглашаетесь с
+                <a href="/privacy" target="_blank">политикой конфиденциальности</a>
+              </p>
+            </div>
+          </div>
 
-          <p class="consent-text">
-            Нажимая кнопку, вы соглашаетесь с
-            <a href="/privacy" target="_blank">политикой конфиденциальности</a>
-          </p>
-        </div>
+          <!-- Sticky bottom: кнопка оплаты всегда видна -->
+          <div class="cart-actions">
+            <button
+                class="btn btn-primary btn-lg w-full cart-checkout-btn"
+                @click="checkout"
+                :disabled="checkoutLoading || !isFormValid"
+            >
+              <span v-if="checkoutLoading">
+                <span class="spinner" style="width:14px;height:14px;display:inline-block" />
+                Обработка…
+              </span>
+              <span v-else>Оформить заказ — {{ cartStore.totalPrice + deliveryPrice }} ₽</span>
+            </button>
+          </div>
+        </template>
 
       </aside>
     </div>
@@ -417,10 +421,19 @@ async function checkout() {
 }
 .cart-empty-icon { font-size: 3rem; opacity: 0.3; }
 
+.cart-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+}
+
 .cart-items {
-  flex: 1; overflow-y: auto;
   padding: var(--spacing-md) var(--spacing-xl);
   display: flex; flex-direction: column; gap: var(--spacing-md);
+  flex-shrink: 0;
 }
 
 .cart-item {
@@ -462,6 +475,15 @@ async function checkout() {
   display: flex; flex-direction: column; gap: var(--spacing-md);
   flex-shrink: 0;
 }
+
+.cart-actions {
+  flex-shrink: 0;
+  padding: var(--spacing-md) var(--spacing-xl);
+  padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
+  border-top: 1px solid var(--gray-600);
+  background: var(--gray-800);
+}
+.cart-checkout-btn { width: 100%; justify-content: center; }
 .delivery-info {
   display: flex; justify-content: space-between;
   font-size: 0.75rem; color: var(--gray-400);
@@ -560,15 +582,20 @@ async function checkout() {
     height: 44px;
     padding: 0;
   }
+  .cart-body { min-height: 0; }
   .cart-items {
     padding: var(--spacing-md) var(--spacing-lg);
     padding-left: env(safe-area-inset-left, var(--spacing-lg));
     padding-right: env(safe-area-inset-right, var(--spacing-lg));
-    -webkit-overflow-scrolling: touch;
   }
   .cart-footer {
     padding: var(--spacing-lg);
-    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0));
+    padding-left: env(safe-area-inset-left, var(--spacing-lg));
+    padding-right: env(safe-area-inset-right, var(--spacing-lg));
+  }
+  .cart-actions {
+    padding: var(--spacing-md) var(--spacing-lg);
+    padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0));
     padding-left: env(safe-area-inset-left, var(--spacing-lg));
     padding-right: env(safe-area-inset-right, var(--spacing-lg));
   }

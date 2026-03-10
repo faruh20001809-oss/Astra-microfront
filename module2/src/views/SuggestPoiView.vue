@@ -1,10 +1,9 @@
 <template>
   <div class="page-wrapper suggest-poi-page">
-    <div class="container">
-
-      <section class="suggest-hero">
-        <p class="text-mono" style="color:var(--accent)">◇ Предложить объект</p>
-        <h1>Предложить точку на карту</h1>
+    <div class="container suggest-container">
+      <section class="suggest-hero" aria-label="О разделе">
+        <p class="suggest-hero-label text-mono">◇ Предложить объект</p>
+        <h1 class="suggest-hero-title">Предложить точку на карту</h1>
         <p class="suggest-desc">Знаете интересное место в Астрахани? Расскажите о нём — мы рассмотрим заявку и добавим точку на карту.</p>
       </section>
 
@@ -85,28 +84,49 @@ async function submitForm() {
 </script>
 
 <style scoped>
-.suggest-poi-page { padding-bottom: var(--spacing-2xl); }
+.suggest-poi-page {
+  padding-bottom: var(--spacing-2xl);
+  padding-top: 0;
+}
+
+.suggest-container {
+  position: relative;
+  z-index: 0;
+}
 
 .suggest-hero {
-  padding: var(--spacing-2xl) 0 var(--spacing-xl);
+  padding: var(--spacing-xl) 0 var(--spacing-lg);
+  margin-top: 0;
 }
 
-@media (max-width: 768px) {
-  .suggest-hero { padding: var(--spacing-xl) 0 var(--spacing-lg); }
-  .suggest-desc, .suggest-form-wrap { max-width: 100%; }
+.suggest-hero-label {
+  color: var(--accent);
+  margin-bottom: var(--spacing-xs);
 }
 
-@media (max-width: 480px) {
-  .suggest-hero { padding: var(--spacing-lg) 0; }
-  .form-input, .form-textarea { min-height: 44px; font-size: 16px; }
+.suggest-hero-title {
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  line-height: 1.2;
+  margin-bottom: var(--spacing-sm);
 }
 
 .suggest-desc {
   color: var(--gray-400);
   font-size: 0.95rem;
   line-height: 1.7;
-  margin-top: var(--spacing-sm);
+  margin-top: 0;
   max-width: 560px;
+}
+
+@media (max-width: 768px) {
+  .suggest-hero { padding: var(--spacing-lg) 0; }
+  .suggest-desc, .suggest-form-wrap { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .suggest-hero { padding: var(--spacing-md) 0; }
+  .suggest-hero-title { font-size: 1.35rem; }
+  .form-input, .form-textarea { min-height: 44px; font-size: 16px; }
 }
 
 .suggest-form-wrap {

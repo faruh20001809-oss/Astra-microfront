@@ -3,7 +3,7 @@
     <!-- Sidebar — всегда виден, без сворачивания -->
     <aside class="map-sidebar">
       <div class="sidebar-header">
-        <h2 class="sidebar-title">Исторические<br />объекты</h2>
+        <h2 class="sidebar-title">Исторические объекты</h2>
       </div>
 
       <!-- Filters -->
@@ -653,11 +653,13 @@ function categoryIcon(cat) {
   gap: var(--spacing-sm);
   padding-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--gray-800);
+  flex-shrink: 0;
 }
 
 .sidebar-title {
   font-size: 1.25rem;
   line-height: 1.2;
+  word-break: break-word;
 }
 
 /* ===== Filters ===== */
@@ -1179,17 +1181,19 @@ function categoryIcon(cat) {
 @media (max-width: 768px) {
   .map-page {
     flex-direction: column;
-    height: 100dvh;
-    margin-top: 0; /* На мобильных хедер может быть скрыт или иначе позиционирован */
+    height: calc(100dvh - var(--nav-h, 64px));
+    margin-top: var(--nav-h, 64px);
   }
 
   .map-sidebar {
     width: 100%;
     height: auto;
-    max-height: 30vh;
+    max-height: 32vh;
+    min-height: 120px;
     border-right: none;
     border-bottom: 1px solid var(--gray-800);
     overflow-y: auto;
+    flex-shrink: 0;
   }
 
   .map-wrapper {
