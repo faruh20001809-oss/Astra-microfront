@@ -335,6 +335,27 @@ async function checkout() {
 
     const result = await javaApi.orders.create(orderPayload)
 
+    // Оплата картой: редирект на страницу оплаты (онлайн-касса)
+    if (paymentMethod.value === 'card') {
+      try {
+        const base = window.location.origin + (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
+        const paymentData = await javaApi.orders.createPaymentLink(result.orderId, {
+          returnUrl: `${base}/payment/success`,
+          cancelUrl: `${base}/shop`
+        })
+        cartStore.clearCart()
+        cartStore.isOpen = false
+        customerForm.value = { firstName: '', lastName: '', phone: '', email: '', city: 'Астрахань', address: '', zip: '' }
+        delivery.value = 'pickup'
+        paymentMethod.value = 'card'
+        window.location.href = paymentData.redirectUrl
+        return
+      } catch (payErr) {
+        console.warn('Payment link failed, order created:', payErr)
+        toastStore.push(`Заказ #${result.orderId} создан. Оплата временно недоступна — с вами свяжутся.`, 'warning', 6000)
+      }
+    }
+
     toastStore.push(`✅ Заказ #${result.orderId} оформлен!`, 'success', 6000)
     cartStore.clearCart()
     cartStore.isOpen = false

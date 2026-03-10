@@ -25,6 +25,8 @@ public class ApiController {
     private final AnalyticsService analyticsService;
     private final ReviewRepository reviewRepository;
     private final ObjectMapper objectMapper;
+    private final OrderEmailService orderEmailService;
+    private final PoiSuggestionService poiSuggestionService;
 
     // ===== POIs =====
     @GetMapping("/pois")
@@ -91,9 +93,13 @@ public class ApiController {
     public ResponseEntity<Map<String, Object>> createOrder(@RequestBody CreateOrderRequest request) {
         try {
             // 🔹 1. Валидация
-            if (request.getItems() == null || request.getItems().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("status", "error", "message", "Заказ должен содержать хотя бы один товар"));
+            Map<String, String> errors = validateOrderRequest(request);
+            if (!errors.isEmpty()) {
+                Map<String, Object> body = new LinkedHashMap<>();
+                body.put("status", "error");
+                body.put("message", "Ошибка валидации");
+                body.put("errors", errors);
+                return ResponseEntity.badRequest().body(body);
             }
 
             // 🔹 2. Создаём заказ
@@ -121,9 +127,11 @@ public class ApiController {
                 String firstName = (String) request.getShippingAddress().getOrDefault("firstName", "");
                 String lastName = (String) request.getShippingAddress().getOrDefault("lastName", "");
                 String phone = (String) request.getShippingAddress().get("phone");
+                String email = (String) request.getShippingAddress().get("email");
 
                 order.setCustomerName((firstName + " " + lastName).trim());
                 order.setPhone(phone);
+                order.setEmail(email);
             }
 
             // 🔹 4. Сериализуем товары в JSON
@@ -143,10 +151,13 @@ public class ApiController {
             // 🔹 6. Сохраняем заказ
             Order savedOrder = orderService.create(order);
 
-            // 🔹 7. Трекаем событие аналитики
+            // 🔹 7. Отправляем клиенту письмо «Заказ принят в обработку»
+            orderEmailService.sendOrderAcceptedForProcessing(savedOrder);
+
+            // 🔹 8. Трекаем событие аналитики
             analyticsService.trackEvent("order_created", savedOrder.getId(), savedOrder.getOrderId());
 
-            // 🔹 8. Формируем ответ для фронта
+            // 🔹 9. Формируем ответ для фронта
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("status", "success");
             response.put("data", Map.of(
@@ -166,10 +177,87 @@ public class ApiController {
         }
     }
 
+    private static final java.util.regex.Pattern EMAIL_PATTERN = java.util.regex.Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+
+    private Map<String, String> validateOrderRequest(CreateOrderRequest request) {
+        Map<String, String> errors = new LinkedHashMap<>();
+        if (request.getItems() == null || request.getItems().isEmpty()) {
+            errors.put("items", "Заказ должен содержать хотя бы один товар");
+        } else {
+            for (int i = 0; i < request.getItems().size(); i++) {
+                OrderItemRequest item = request.getItems().get(i);
+                if (item.getName() == null || item.getName().isBlank()) {
+                    errors.put("items[" + i + "].name", "Укажите название товара");
+                }
+                if (item.getPrice() == null || item.getPrice() < 0) {
+                    errors.put("items[" + i + "].price", "Укажите корректную цену");
+                }
+                if (item.getQty() != null && item.getQty() < 1) {
+                    errors.put("items[" + i + "].qty", "Количество должно быть не менее 1");
+                }
+            }
+        }
+        if (request.getShippingAddress() == null || request.getShippingAddress().isEmpty()) {
+            errors.put("shippingAddress", "Укажите адрес доставки");
+        } else {
+            Map<String, Object> addr = request.getShippingAddress();
+            String firstName = (String) addr.get("firstName");
+            String lastName = (String) addr.get("lastName");
+            String phone = (String) addr.get("phone");
+            String city = (String) addr.get("city");
+            String address = (String) addr.get("address");
+            String customerName = ((firstName != null ? firstName : "").trim() + " " + (lastName != null ? lastName : "").trim()).trim();
+            if (customerName.isBlank()) {
+                errors.put("shippingAddress.firstName", "Укажите имя");
+            }
+            if (phone == null || phone.isBlank()) {
+                errors.put("shippingAddress.phone", "Укажите телефон");
+            }
+            if ((address == null || address.isBlank()) && (city == null || city.isBlank())) {
+                errors.put("shippingAddress.address", "Укажите адрес доставки");
+            }
+            String email = (String) addr.get("email");
+            if (email != null && !email.isBlank() && !EMAIL_PATTERN.matcher(email).matches()) {
+                errors.put("shippingAddress.email", "Некорректный формат email");
+            }
+        }
+        if (request.getShippingMethod() == null || request.getShippingMethod().isBlank()) {
+            errors.put("shippingMethod", "Укажите способ доставки");
+        }
+        return errors;
+    }
+
     @GetMapping("/orders/{orderId}")
     public ResponseEntity<Map<String, Object>> getOrder(@PathVariable String orderId) {
         return orderService.findByOrderId(orderId).map(o -> okSingle(Map.of("orderId", o.getOrderId(), "status", o.getStatus().name().toLowerCase())))
             .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ===== POI Suggestions (предложения точек) =====
+    @PostMapping("/poi-suggestions")
+    public ResponseEntity<Map<String, Object>> submitPoiSuggestion(@RequestBody Map<String, Object> body) {
+        String name = (String) body.get("name");
+        String place = (String) body.get("place");
+        String description = (String) body.get("description");
+        String whyAdd = (String) body.get("whyAdd");
+        if (name == null || name.isBlank() || place == null || place.isBlank() || whyAdd == null || whyAdd.isBlank()) {
+            Map<String, Object> err = new LinkedHashMap<>();
+            err.put("status", "error");
+            err.put("message", "Заполните обязательные поля: название, место, почему добавить");
+            return ResponseEntity.badRequest().body(err);
+        }
+        PoiSuggestion s = PoiSuggestion.builder()
+                .name(name.trim())
+                .place(place.trim())
+                .description(description != null ? description.trim() : null)
+                .whyAdd(whyAdd.trim())
+                .build();
+        PoiSuggestion saved = poiSuggestionService.save(s);
+        Map<String, Object> res = new LinkedHashMap<>();
+        res.put("status", "success");
+        res.put("message", "Предложение отправлено. Спасибо!");
+        res.put("data", Map.of("id", saved.getId(), "createdDate", saved.getCreatedAt() != null ? saved.getCreatedAt().toString() : null));
+        return ResponseEntity.ok(res);
     }
 
     // ===== Feedback =====

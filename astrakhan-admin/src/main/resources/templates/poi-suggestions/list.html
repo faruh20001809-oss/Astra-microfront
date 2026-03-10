@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Предложения точек')}"></head>
+<body>
+<div class="layout">
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+<main class="main-content">
+<div class="page-header"><h1>📍 Предложения точек</h1><span th:if="${newCount > 0}" class="status-badge status-new" th:text="'Новых: '+${newCount}"></span></div>
+<div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+<div class="filter-bar">
+  <a th:href="@{/admin/poi-suggestions}" class="btn" th:classappend="${currentStatus==null?'active':''}">Все</a>
+  <a th:href="@{/admin/poi-suggestions(status='NEW')}" class="btn" th:classappend="${currentStatus=='NEW'?'active':''}">Новые</a>
+  <a th:href="@{/admin/poi-suggestions(status='APPROVED')}" class="btn" th:classappend="${currentStatus=='APPROVED'?'active':''}">Одобренные</a>
+  <a th:href="@{/admin/poi-suggestions(status='REJECTED')}" class="btn" th:classappend="${currentStatus=='REJECTED'?'active':''}">Отклонённые</a>
+</div>
+<div class="card">
+<table>
+<thead><tr><th>ID</th><th>Название</th><th>Место</th><th>Почему добавить</th><th>Статус</th><th>Дата</th><th>Действия</th></tr></thead>
+<tbody>
+<tr th:each="s : ${suggestions}">
+  <td th:text="${s.id}"></td>
+  <td><strong th:text="${s.name}"></strong></td>
+  <td th:text="${#strings.abbreviate(s.place,40)}"></td>
+  <td th:text="${#strings.abbreviate(s.whyAdd,50)}"></td>
+  <td><span class="status-badge" th:classappend="'status-'+${s.status.name().toLowerCase()}" th:text="${s.status.name() == 'NEW' ? 'Новое' : (s.status.name() == 'APPROVED' ? 'Одобрено' : 'Отклонено')}"></span></td>
+  <td th:text="${#temporals.format(s.createdAt,'dd.MM.yyyy HH:mm')}"></td>
+  <td><a th:href="@{'/admin/poi-suggestions/view/'+${s.id}}" class="btn btn-sm">👁️ Просмотр</a></td>
+</tr>
+<tr th:if="${#lists.isEmpty(suggestions)}"><td colspan="7" style="text-align:center;padding:40px;color:#999">Нет предложений</td></tr>
+</tbody>
+</table>
+</div>
+</main></div></body></html>

@@ -12,7 +12,8 @@
         <!-- 👇 Все #request и #httpServletRequest заменены на request -->
         <li><a th:href="@{/admin}" th:classappend="${request.requestURI == '/admin' ? 'active' : ''}"><span class="icon">📊</span><span>Дашборд</span></a></li>
 
-        <li><a th:href="@{/admin/poi}" th:classappend="${#strings.startsWith(request.requestURI, '/admin/poi') and request.requestURI != '/admin/poi/reviews' ? 'active' : ''}"><span class="icon">📍</span><span>Точки интереса</span></a></li>
+        <li><a th:href="@{/admin/poi}" th:classappend="${#strings.startsWith(request.requestURI, '/admin/poi') and request.requestURI != '/admin/poi/reviews' and !#strings.startsWith(request.requestURI, '/admin/poi-suggestions') ? 'active' : ''}"><span class="icon">📍</span><span>Точки интереса</span></a></li>
+        <li><a th:href="@{/admin/poi-suggestions}" th:classappend="${#strings.startsWith(request.requestURI, '/admin/poi-suggestions') ? 'active' : ''}"><span class="icon">💡</span><span>Предложения точек</span></a></li>
 
         <li><a th:href="@{/admin/routes}" th:classappend="${#strings.startsWith(request.requestURI, '/admin/routes') ? 'active' : ''}"><span class="icon">🚶</span><span>Маршруты</span></a></li>
 
@@ -25,7 +26,16 @@
         <li><a th:href="@{/admin/poi/reviews}" th:classappend="${request.requestURI == '/admin/poi/reviews' ? 'active' : ''}"><span class="icon">⭐</span><span>Отзывы</span></a></li>
 
         <li><a th:href="@{/admin/analytics}" th:classappend="${#strings.startsWith(request.requestURI, '/admin/analytics') ? 'active' : ''}"><span class="icon">📈</span><span>Аналитика</span></a></li>
+
+        <li><a th:href="@{/admin/users}" th:classappend="${#strings.startsWith(request.requestURI, '/admin/users') ? 'active' : ''}"><span class="icon">👤</span><span>Пользователи</span></a></li>
     </ul>
+    <div style="padding: 12px 20px; border-top: 1px solid #333;">
+        <a th:href="@{/admin/profile}" class="btn btn-sm btn-ghost" style="width:100%; margin-bottom:8px; color:var(--sidebar-text); border-color:#555;">Профиль</a>
+        <form th:action="@{/logout}" method="post" style="margin:0;">
+            <button type="submit" class="btn btn-sm" style="width:100%; background:transparent; color:var(--sidebar-text); border-color:#555;">Выйти</button>
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        </form>
+    </div>
 </nav>
 </body>
 </html>

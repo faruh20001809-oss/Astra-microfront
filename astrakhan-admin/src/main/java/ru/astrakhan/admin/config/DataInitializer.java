@@ -2,7 +2,9 @@ package ru.astrakhan.admin.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 import ru.astrakhan.admin.entity.*;
 import ru.astrakhan.admin.repository.*;
 
@@ -15,8 +17,22 @@ public class DataInitializer implements CommandLineRunner {
     private final OrderRepository orderRepo;
     private final AnalyticsEventRepository analyticsRepo;
     private final ReviewRepository reviewRepo;
+    private final AdminUserRepository adminUserRepo;
+    private final PasswordEncoder passwordEncoder;
 
-    @Override public void run(String... args) {
+    @Override
+    @Transactional
+    public void run(String... args) {
+        if (adminUserRepo.count() == 0) {
+            adminUserRepo.save(AdminUser.builder()
+                    .username("admin")
+                    .passwordHash(passwordEncoder.encode("admin"))
+                    .role("ADMIN")
+                    .build());
+        }
+
+        orderRepo.setDeletedFalseWhereNull();
+
         if (poiRepo.count() > 0) return;
 
         PointOfInterest kreml = poiRepo.save(PointOfInterest.builder()

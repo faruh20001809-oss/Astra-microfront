@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Предложение #'+${suggestion.id})}"></head>
+<body>
+<div class="layout">
+<nav th:replace="~{fragments/layout :: sidebar}"></nav>
+<main class="main-content">
+<div class="page-header"><h1 th:text="'📍 Предложение #'+${suggestion.id}"></h1><a th:href="@{/admin/poi-suggestions}" class="btn">← Назад</a></div>
+<div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header"><h3>Данные предложения</h3></div>
+    <div class="detail-row"><div class="detail-label">Название</div><div class="detail-value" th:text="${suggestion.name}"></div></div>
+    <div class="detail-row"><div class="detail-label">Место</div><div class="detail-value" th:text="${suggestion.place}"></div></div>
+    <div class="detail-row"><div class="detail-label">Описание</div><div class="detail-value" th:text="${suggestion.description != null ? suggestion.description : '—'}"></div></div>
+    <div class="detail-row"><div class="detail-label">Почему мы должны добавить</div><div class="detail-value" style="white-space:pre-wrap;" th:text="${suggestion.whyAdd}"></div></div>
+    <div class="detail-row"><div class="detail-label">Статус</div><div class="detail-value"><span class="status-badge" th:classappend="'status-'+${suggestion.status.name().toLowerCase()}" th:text="${suggestion.status.name() == 'NEW' ? 'Новое' : (suggestion.status.name() == 'APPROVED' ? 'Одобрено' : 'Отклонено')}"></span></div></div>
+    <div class="detail-row" th:if="${suggestion.createdAt}"><div class="detail-label">Дата создания</div><div class="detail-value" th:text="${#temporals.format(suggestion.createdAt,'dd.MM.yyyy HH:mm')}"></div></div>
+    <div class="detail-row" th:if="${suggestion.reviewedAt}"><div class="detail-label">Рассмотрено</div><div class="detail-value" th:text="${#temporals.format(suggestion.reviewedAt,'dd.MM.yyyy HH:mm')}"></div></div>
+    <div class="detail-row" th:if="${suggestion.adminNotes}"><div class="detail-label">Заметка администратора</div><div class="detail-value" style="white-space:pre-wrap;" th:text="${suggestion.adminNotes}"></div></div>
+  </div>
+  <div class="card" th:if="${suggestion.status.name() == 'NEW'}">
+    <div class="card-header"><h3>Решение</h3></div>
+    <form th:action="@{'/admin/poi-suggestions/approve/'+${suggestion.id}}" method="post" style="margin-bottom:1rem;">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <div class="form-group"><label>Заметка (необязательно)</label><textarea name="adminNotes" class="form-control" rows="2" placeholder="Комментарий при одобрении"></textarea></div>
+      <button type="submit" class="btn btn-primary">✓ Одобрить</button>
+    </form>
+    <form th:action="@{'/admin/poi-suggestions/reject/'+${suggestion.id}}" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <div class="form-group"><label>Причина отклонения (необязательно)</label><textarea name="adminNotes" class="form-control" rows="2" placeholder="Комментарий при отклонении"></textarea></div>
+      <button type="submit" class="btn btn-danger">✕ Отклонить</button>
+    </form>
+  </div>
+</div>
+</main></div></body></html>

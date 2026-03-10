@@ -180,6 +180,32 @@ export const javaApi = {
     getById: async (orderId) => {
       const res = await baseFetch(`${JAVA_API_BASE}/orders/${orderId}`)
       return handleJavaResponse(res)
+    },
+
+    /**
+     * Создать платёж и получить ссылку на оплату (онлайн-касса).
+     * @param {string} orderId
+     * @param {{ returnUrl: string, cancelUrl?: string }} urls
+     * @returns {Promise<{ paymentId: string, redirectUrl: string, orderId: string, amount: number, currency: string }>}
+     */
+    createPaymentLink: async (orderId, urls) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/orders/${orderId}/payment`, {
+        method: 'POST',
+        body: JSON.stringify(urls || {})
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || json.status === 'error') {
+        throw new Error(json.message || 'Не удалось создать платёж')
+      }
+      return json.data
+    },
+
+    /** Статус оплаты заказа: { paid: boolean, paidAt?: string } */
+    getPaymentStatus: async (orderId) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/orders/${orderId}/payment-status`)
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(json.message || 'Ошибка запроса')
+      return json.data
     }
   },
 
@@ -192,6 +218,22 @@ export const javaApi = {
         body: JSON.stringify(feedbackData)
       })
       return handleJavaResponse(res)
+    }
+  },
+
+  /** POI Suggestions (предложения точек на карту) */
+  poiSuggestions: {
+    /** @param {Object} data - { name, place, description?, whyAdd } */
+    submit: async (data) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/poi-suggestions`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || json.status === 'error') {
+        throw new Error(json.message || 'Не удалось отправить предложение')
+      }
+      return json
     }
   },
 

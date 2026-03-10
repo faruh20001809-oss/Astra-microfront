@@ -69,11 +69,24 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted", nullable = true)
+    @Builder.Default
+    private Boolean deleted = false;
+
+    /** Внешний ID платежа (платёжный провайдер) */
+    @Column(name = "payment_id", length = 100)
+    private String paymentId;
+
+    /** Дата и время успешной оплаты */
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if(status == null) status = OrderStatus.CONFIRMED;
+        if (status == null) status = OrderStatus.CONFIRMED;
+        if (deleted == null) deleted = false;
     }
 
     @PreUpdate

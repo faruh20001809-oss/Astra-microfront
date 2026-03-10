@@ -3,6 +3,8 @@ import MapView from '@/views/MapView.vue'
 import RoutesView from '@/views/RoutesView.vue'
 import ShopView from '@/views/ShopView.vue'
 import ContactView from '@/views/ContactView.vue'
+import SuggestPoiView from '@/views/SuggestPoiView.vue'
+import PaymentSuccessView from '@/views/PaymentSuccessView.vue'
 
 const routes = [
   {
@@ -28,6 +30,18 @@ const routes = [
     name: 'contact',
     component: ContactView,
     meta: { title: 'Контакты' }
+  },
+  {
+    path: '/suggest-poi',
+    name: 'suggest-poi',
+    component: SuggestPoiView,
+    meta: { title: 'Предложить точку' }
+  },
+  {
+    path: '/payment/success',
+    name: 'payment-success',
+    component: PaymentSuccessView,
+    meta: { title: 'Оплата' }
   },
   // 👇 Catch-all для неизвестных путей (опционально)
   {
