@@ -1214,6 +1214,10 @@ function categoryIcon(cat) {
     right: var(--spacing-sm);
     bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0));
   }
+  .filter-chip {
+    min-height: 44px;
+    padding: 0.5rem 0.875rem;
+  }
 }
 
 @media (max-width: 480px) {

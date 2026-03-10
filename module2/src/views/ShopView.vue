@@ -355,12 +355,19 @@ function getMockProducts() {
 .qty-val { font-family: var(--font-mono); min-width: 24px; text-align: center; }
 
 @media (max-width: 768px) {
-  .product-grid { grid-template-columns: repeat(2, 1fr); }
+  .product-grid { grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md); }
   .product-modal-body { grid-template-columns: 1fr; }
-  .shop-toolbar { flex-direction: column; align-items: flex-start; }
+  .shop-toolbar { flex-direction: column; align-items: flex-start; gap: var(--spacing-sm); }
+  .product-modal { max-width: 100%; margin: var(--spacing-md); }
+  .filter-group .filter-chip { min-height: 44px; padding: 0.5rem 1rem; }
+  .product-card { padding: var(--spacing-md); }
 }
 
 @media (max-width: 480px) {
   .product-grid { grid-template-columns: 1fr; }
+  .shop-hero { padding: var(--spacing-lg) 0 var(--spacing-md); }
+  .product-modal { margin: var(--spacing-sm); padding: var(--spacing-md); }
+  .product-modal-image { min-height: 200px; }
+  .qty-control button { min-width: 44px; min-height: 44px; }
 }
 </style>

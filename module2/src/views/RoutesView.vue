@@ -433,5 +433,14 @@ function getMockRoutes() {
 @media (max-width: 768px) {
   .routes-grid { grid-template-columns: 1fr; }
   .routes-filter-bar { gap: var(--spacing-md); }
+  .route-modal { max-width: 100%; margin: var(--spacing-md); padding: var(--spacing-lg); }
+  .filter-group .filter-chip { min-height: 44px; padding: 0.5rem 1rem; }
+}
+
+@media (max-width: 480px) {
+  .routes-hero { padding: var(--spacing-lg) 0 var(--spacing-md); }
+  .route-card { padding: var(--spacing-lg); }
+  .route-modal { margin: var(--spacing-sm); padding: var(--spacing-md); }
+  .stops-timeline .stop-item { padding: var(--spacing-sm) 0; }
 }
 </style>

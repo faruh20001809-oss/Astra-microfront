@@ -1,0 +1,24 @@
+# Build outputs
+astrakhan-admin/target/
+**/target/
+module2/node_modules/
+module2/dist/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Env / secrets
+.env
+.env.local
+*.env.example
+!application-mail.example.properties
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

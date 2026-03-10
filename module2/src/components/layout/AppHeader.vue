@@ -105,6 +105,8 @@ onUnmounted(() => {
   right: 0;
   height: var(--nav-h);
   padding-top: env(safe-area-inset-top, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
   z-index: 500;
   background: rgba(73, 62, 62, 0.92);
   backdrop-filter: blur(12px);
@@ -119,6 +121,13 @@ onUnmounted(() => {
 
 .app-header:not(.visible):not(.hovered) {
   transform: translateY(-100%);
+}
+
+/* На мобильных хедер всегда виден — удобнее навигация */
+@media (max-width: 768px) {
+  .app-header:not(.visible):not(.hovered) {
+    transform: translateY(0);
+  }
 }
 
 .app-header.hovered {

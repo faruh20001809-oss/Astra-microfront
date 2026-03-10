@@ -352,4 +352,20 @@ function donate() {
 @media (max-width: 900px) {
   .contact-layout { grid-template-columns: 1fr; }
 }
+
+@media (max-width: 768px) {
+  .contact-hero { padding: var(--spacing-xl) 0 var(--spacing-lg); }
+  .section-heading { font-size: 1.25rem; }
+  .contact-form { gap: var(--spacing-md); }
+  .info-card { padding: var(--spacing-lg); }
+  .donation-amounts { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 480px) {
+  .contact-hero { padding: var(--spacing-lg) 0; }
+  .section-heading { font-size: 1.125rem; }
+  .donation-amounts { grid-template-columns: 1fr; }
+  .donation-btn { min-height: 44px; padding: 0.75rem; }
+  .contact-link { padding: var(--spacing-sm); min-height: 48px; }
+}
 </style>

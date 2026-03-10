@@ -91,6 +91,16 @@ async function submitForm() {
   padding: var(--spacing-2xl) 0 var(--spacing-xl);
 }
 
+@media (max-width: 768px) {
+  .suggest-hero { padding: var(--spacing-xl) 0 var(--spacing-lg); }
+  .suggest-desc, .suggest-form-wrap { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .suggest-hero { padding: var(--spacing-lg) 0; }
+  .form-input, .form-textarea { min-height: 44px; font-size: 16px; }
+}
+
 .suggest-desc {
   color: var(--gray-400);
   font-size: 0.95rem;

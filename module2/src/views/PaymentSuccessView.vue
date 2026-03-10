@@ -286,4 +286,14 @@ onMounted(async () => {
   border-color: var(--ink);
   color: var(--ink);
 }
+
+@media (max-width: 480px) {
+  .payment-success-page { padding: var(--spacing-lg) var(--spacing-md); padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0)); }
+  .success-container { width: 100%; padding: 0; }
+  .success-icon-wrap { width: 72px; height: 72px; margin-bottom: var(--spacing-lg); }
+  .success-title { font-size: 1.5rem; }
+  .actions { width: 100%; }
+  .actions .btn { width: 100%; max-width: 100%; min-width: 0; }
+  .copy-btn { min-height: 44px; padding: 0.5rem 0; display: inline-flex; align-items: center; justify-content: center; }
+}
 </style>
