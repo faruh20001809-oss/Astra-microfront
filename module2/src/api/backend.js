@@ -9,7 +9,8 @@
  */
 
 // ===== КОНФИГУРАЦИЯ =====
-const JAVA_API_BASE = '/java-api/api/v1'  // Прокси на Spring Boot:8080
+// В dev с Vite прокси: /java-api → localhost:8080. Если заказы не доходят — задайте VITE_JAVA_API_BASE=http://localhost:8080/api/v1
+const JAVA_API_BASE = import.meta.env.VITE_JAVA_API_BASE || '/java-api/api/v1'
 const NODE_API_BASE = '/api/node'          // Прокси на Node.js:3001
 
 // ===== УТИЛИТЫ =====
@@ -173,7 +174,11 @@ export const javaApi = {
         method: 'POST',
         body: JSON.stringify(orderData)
       })
-      return handleJavaResponse(res)
+      const data = await handleJavaResponse(res)
+      if (Array.isArray(data) || !data || !data.orderId) {
+        throw new Error('Заказ не создан: бэкенд не ответил. Запустите Java-приложение (astrakhan-admin) на порту 8080 и перезагрузите страницу.')
+      }
+      return data
     },
 
     /** @param {string} orderId */

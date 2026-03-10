@@ -41,7 +41,7 @@ const routes = [
     path: '/payment/success',
     name: 'payment-success',
     component: PaymentSuccessView,
-    meta: { title: 'Оплата' }
+    meta: { title: 'Оплата успешна' }
   },
   // 👇 Catch-all для неизвестных путей (опционально)
   {

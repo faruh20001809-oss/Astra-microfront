@@ -88,6 +88,27 @@ public class ApiController {
         return productService.findById(id).map(p -> okSingle(productMap(p))).orElse(ResponseEntity.notFound().build());
     }
 
+    /** Картинка товара (из imageData). Фронт кэширует при первой загрузке. */
+    @GetMapping(value = "/products/{id}/image", produces = "image/*")
+    public ResponseEntity<byte[]> getProductImage(@PathVariable Long id) {
+        return productService.findById(id)
+                .filter(p -> p.getImageData() != null && p.getImageData().length > 0)
+                .map(p -> {
+                    String contentType = "image/jpeg";
+                    if (p.getImageFilename() != null) {
+                        String fn = p.getImageFilename().toLowerCase();
+                        if (fn.endsWith(".png")) contentType = "image/png";
+                        else if (fn.endsWith(".gif")) contentType = "image/gif";
+                        else if (fn.endsWith(".webp")) contentType = "image/webp";
+                    }
+                    return ResponseEntity.ok()
+                            .header("Cache-Control", "public, max-age=86400")
+                            .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                            .body(p.getImageData());
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     // ===== Orders =====
     @PostMapping("/orders")
     public ResponseEntity<Map<String, Object>> createOrder(@RequestBody CreateOrderRequest request) {
@@ -148,32 +169,35 @@ public class ApiController {
                     .sum();
             order.setTotal(total);
 
-            // 🔹 6. Сохраняем заказ
+            // 🔹 6. Сохраняем заказ (до любой пост-обработки, чтобы заказ всегда создавался)
             Order savedOrder = orderService.create(order);
 
-            // 🔹 7. Отправляем клиенту письмо «Заказ принят в обработку»
-            orderEmailService.sendOrderAcceptedForProcessing(savedOrder);
-
-            // 🔹 8. Трекаем событие аналитики
-            analyticsService.trackEvent("order_created", savedOrder.getId(), savedOrder.getOrderId());
-
-            // 🔹 9. Формируем ответ для фронта
+            // 🔹 9. Формируем ответ для фронта сразу (без null в Map — Map.of не допускает null)
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("orderId", savedOrder.getOrderId());
+            data.put("total", savedOrder.getTotal() != null ? savedOrder.getTotal() : 0.0);
+            data.put("status", savedOrder.getStatus() != null ? savedOrder.getStatus().name().toLowerCase() : "processing");
+            data.put("createdDate", savedOrder.getCreatedAt() != null ? savedOrder.getCreatedAt().toString() : "");
             Map<String, Object> response = new LinkedHashMap<>();
             response.put("status", "success");
-            response.put("data", Map.of(
-                    "orderId", savedOrder.getOrderId(),
-                    "total", savedOrder.getTotal(),
-                    "status", savedOrder.getStatus().name().toLowerCase(),
-                    "createdDate", savedOrder.getCreatedAt() != null
-                            ? savedOrder.getCreatedAt().toString()
-                            : null
-            ));
+            response.put("data", data);
+
+            // 🔹 7–8. Пост-обработка не должна ломать ответ — заказ уже создан
+            try {
+                orderEmailService.sendOrderAcceptedForProcessing(savedOrder);
+                analyticsService.trackEvent("order_created", savedOrder.getId(), savedOrder.getOrderId());
+            } catch (Exception ex) {
+                log.warn("Post-order processing failed (order {} created): {}", savedOrder.getOrderId(), ex.getMessage());
+            }
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error creating order", e);
-            return ResponseEntity.status(500)
-                    .body(Map.of("status", "error", "message", "Ошибка сервера: " + e.getMessage()));
+            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            Map<String, Object> errBody = new LinkedHashMap<>();
+            errBody.put("status", "error");
+            errBody.put("message", "Ошибка сервера: " + msg);
+            return ResponseEntity.status(500).body(errBody);
         }
     }
 
@@ -225,6 +249,15 @@ public class ApiController {
             errors.put("shippingMethod", "Укажите способ доставки");
         }
         return errors;
+    }
+
+    /** Список заказов (GET для просмотра в браузере или API). POST — только для создания. */
+    @GetMapping("/orders")
+    public ResponseEntity<Map<String, Object>> listOrders(@RequestParam(required = false) String status) {
+        List<Order> orders = (status != null && !status.isEmpty())
+                ? orderService.findByStatus(Order.OrderStatus.valueOf(status))
+                : orderService.findAll();
+        return ok(orders.stream().map(this::orderMap).collect(Collectors.toList()));
     }
 
     @GetMapping("/orders/{orderId}")
@@ -323,7 +356,7 @@ public class ApiController {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", p.getId()); m.put("name", p.getName()); m.put("description", p.getDescription());
         m.put("category", p.getCategory()); m.put("price", p.getPrice()); m.put("currency", p.getCurrency());
-        m.put("image", p.getImageUrl()); m.put("rating", p.getRating()); m.put("inStock", p.getInStock());
+        m.put("image", (p.getImageUrl() != null && !p.getImageUrl().isEmpty()) ? p.getImageUrl() : "/java-api/api/v1/products/" + p.getId() + "/image"); m.put("rating", p.getRating()); m.put("inStock", p.getInStock());
         m.put("quantity", p.getQuantity()); m.put("material", p.getMaterial());
         if (p.getSizes() != null) m.put("sizes", Arrays.asList(p.getSizes().split(",")));
         if (p.getColors() != null) m.put("colors", Arrays.asList(p.getColors().split(",")));
@@ -335,6 +368,22 @@ public class ApiController {
         m.put("rating", r.getRating()); m.put("text", r.getText()); m.put("visitDate", r.getVisitDate());
         m.put("createdDate", r.getCreatedAt() != null ? r.getCreatedAt().toString() : null);
         m.put("helpfulCount", r.getHelpfulCount());
+        return m;
+    }
+    private Map<String, Object> orderMap(Order o) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", o.getId());
+        m.put("orderId", o.getOrderId());
+        m.put("customerName", o.getCustomerName());
+        m.put("phone", o.getPhone());
+        m.put("email", o.getEmail());
+        m.put("total", o.getTotal() != null ? o.getTotal() : 0);
+        m.put("currency", o.getCurrency() != null ? o.getCurrency() : "RUB");
+        m.put("status", o.getStatus() != null ? o.getStatus().name().toLowerCase() : "processing");
+        m.put("shippingMethod", o.getShippingMethod());
+        m.put("paymentMethod", o.getPaymentMethod());
+        m.put("createdAt", o.getCreatedAt() != null ? o.getCreatedAt().toString() : "");
+        m.put("paidAt", o.getPaidAt() != null ? o.getPaidAt().toString() : null);
         return m;
     }
 }

@@ -42,8 +42,8 @@ public class SecurityConfig {
                 )
                 .userDetailsService(adminUserDetailsService);
 
-        // H2 console uses frames
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**"));
+        // API вызывается с фронта без CSRF-токена; админка — формами с токеном
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**"));
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();

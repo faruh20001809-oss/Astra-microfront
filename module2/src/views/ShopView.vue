@@ -68,7 +68,7 @@
 
           <div class="product-modal-body">
             <div class="product-modal-image">
-              <img v-if="selectedProduct.image" :src="selectedProduct.image" :alt="selectedProduct.name" />
+              <img v-if="modalImageUrl" :src="modalImageUrl" :alt="selectedProduct.name" />
               <div v-else class="product-img-placeholder">{{ selectedProduct.emoji || '◻' }}</div>
             </div>
             <div class="product-modal-info">
@@ -114,6 +114,7 @@ import { ref, computed, onMounted } from 'vue'
 import ProductCard from '@/components/shop/ProductCard.vue'
 import { useCartStore, useToastStore } from '@/store/index.js'
 import { javaApi, apiService } from '@/api/backend'
+import { useProductImage } from '@/composables/useProductImageCache.js'
 
 const cartStore = useCartStore()
 const toastStore = useToastStore()
@@ -126,6 +127,7 @@ const selectedProduct = ref(null)
 const selectedVariant = ref(null)
 const qty = ref(1)
 const error = ref(null)
+const modalImageUrl = useProductImage(selectedProduct)
 
 const allCategories = computed(() => {
   if (!Array.isArray(products.value)) return []

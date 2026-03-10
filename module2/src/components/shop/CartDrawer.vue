@@ -334,12 +334,13 @@ async function checkout() {
     }
 
     const result = await javaApi.orders.create(orderPayload)
+    const orderId = result?.orderId ?? result?.data?.orderId ?? ''
 
     // Оплата картой: редирект на страницу оплаты (онлайн-касса)
-    if (paymentMethod.value === 'card') {
+    if (paymentMethod.value === 'card' && orderId) {
       try {
         const base = window.location.origin + (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
-        const paymentData = await javaApi.orders.createPaymentLink(result.orderId, {
+        const paymentData = await javaApi.orders.createPaymentLink(orderId, {
           returnUrl: `${base}/payment/success`,
           cancelUrl: `${base}/shop`
         })
@@ -352,11 +353,11 @@ async function checkout() {
         return
       } catch (payErr) {
         console.warn('Payment link failed, order created:', payErr)
-        toastStore.push(`Заказ #${result.orderId} создан. Оплата временно недоступна — с вами свяжутся.`, 'warning', 6000)
+        toastStore.push(`Заказ #${orderId} создан. Оплата временно недоступна — с вами свяжутся.`, 'warning', 6000)
       }
     }
 
-    toastStore.push(`✅ Заказ #${result.orderId} оформлен!`, 'success', 6000)
+    toastStore.push(orderId ? `✅ Заказ #${orderId} оформлен!` : '✅ Заказ оформлен!', 'success', 6000)
     cartStore.clearCart()
     cartStore.isOpen = false
 

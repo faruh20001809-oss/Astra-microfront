@@ -1,7 +1,7 @@
 <template>
   <div class="product-card card" @click="$emit('open', product)">
     <div class="product-image">
-      <img v-if="product.image" :src="product.image" :alt="product.name" />
+      <img v-if="displayImageUrl" :src="displayImageUrl" :alt="product.name" loading="lazy" />
       <div v-else class="product-image-placeholder">{{ product.emoji || '◻' }}</div>
     </div>
     <div class="product-info">
@@ -20,8 +20,13 @@
 </template>
 
 <script setup>
-defineProps({ product: Object })
+import { toRef } from 'vue'
+import { useProductImage } from '@/composables/useProductImageCache.js'
+
+const props = defineProps({ product: Object })
 defineEmits(['add-to-cart', 'open'])
+
+const displayImageUrl = useProductImage(toRef(props, 'product'))
 </script>
 
 <style scoped>
