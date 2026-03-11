@@ -65,6 +65,18 @@ echo '*/5 * * * * root /opt/astramicro/deploy/auto-update.sh >> /var/log/astrami
 
 После запуска приложения на порту 5000 страницы `/admin/`, `/admin/users` и т.д. начнут открываться. Если админка на Flask не нужна, пункт меню «Пользователи» в Java-админке можно скрыть или изменить (редирект ведёт на /admin/users).
 
+**Если сервис не стартует:** проверьте логи `journalctl -xeu astramicro-admin.service`. Частые причины: неверный путь к `venv/bin/gunicorn` (должен быть `/opt/astramicro/module3/venv/bin/gunicorn`), в unit указан `Type=notify` (нужен `Type=simple`). Готовый unit: `deploy/astramicro-admin.service` — скопируйте в `/etc/systemd/system/` и выполните `systemctl daemon-reload && systemctl start astramicro-admin`.
+
+## Автообновление (cron)
+
+Чтобы cron каждые 5 минут проверял новые коммиты и запускал `update.sh`, добавьте в crontab (на сервере от root):
+
+```bash
+echo '*/5 * * * * root /opt/astramicro/deploy/auto-update.sh >> /var/log/astramicro-auto-update.log 2>&1' >> /etc/crontab
+```
+
+Проверка: `grep astramicro /etc/crontab` — должна появиться строка. Лог: `tail -f /var/log/astramicro-auto-update.log`.
+
 ## Файлы в deploy/
 
 | Файл | Назначение |

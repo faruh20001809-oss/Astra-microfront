@@ -1,0 +1,17 @@
+[Unit]
+Description=Astra-microfront admin (Flask module3)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/astramicro/module3
+Environment=PYTHONUNBUFFERED=1
+StandardOutput=journal
+StandardError=journal
+ExecStart=/opt/astramicro/module3/venv/bin/gunicorn -w 1 -b 127.0.0.1:5000 app:app
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
