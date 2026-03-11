@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang=en>
+  <head>
+    <title>fpdf.errors.FPDFUnicodeEncodingException: Character &#34;🏛&#34; at index 0 in text is outside the range of characters supported by the font used: &#34;helveticaB&#34;. Please consider using a Unicode font.
+ // Werkzeug Debugger</title>
+    <link rel="stylesheet" href="?__debugger__=yes&amp;cmd=resource&amp;f=style.css">
+    <link rel="shortcut icon"
+        href="?__debugger__=yes&amp;cmd=resource&amp;f=console.png">
+    <script src="?__debugger__=yes&amp;cmd=resource&amp;f=debugger.js"></script>
+    <script>
+      var CONSOLE_MODE = false,
+          EVALEX = true,
+          EVALEX_TRUSTED = false,
+          SECRET = "FWjtb54Hl7kXP4nxdvQi";
+    </script>
+  </head>
+  <body style="background-color: #fff">
+    <div class="debugger">
+<h1>fpdf.errors.FPDFUnicodeEncodingException</h1>
+<div class="detail">
+  <p class="errormsg">fpdf.errors.FPDFUnicodeEncodingException: Character &#34;🏛&#34; at index 0 in text is outside the range of characters supported by the font used: &#34;helveticaB&#34;. Please consider using a Unicode font.
+</p>
+</div>
+<h2 class="traceback">Traceback <em>(most recent call last)</em></h2>
+<div class="traceback">
+  <h3></h3>
+  <ul><li><div class="frame" id="frame-1441306130560">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py"</cite>,
+      line <em class="line">5681</em>,
+      in <code class="function">normalize_text</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;Check that text input is in the correct format/encoding&#34;&#34;&#34;</pre>
+<pre class="line before"><span class="ws">        </span># - for TTF unicode fonts: unicode object (utf8 encoding)</pre>
+<pre class="line before"><span class="ws">        </span># - for built-in fonts: string instances (encoding: latin-1, cp1252)</pre>
+<pre class="line before"><span class="ws">        </span>if not self.is_ttf_font and self.core_fonts_encoding:</pre>
+<pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line current"><span class="ws">                </span>return text.encode(self.core_fonts_encoding).decode(&#34;latin-1&#34;)
+<span class="ws">                </span>       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">            </span>except UnicodeEncodeError as error:</pre>
+<pre class="line after"><span class="ws">                </span>raise FPDFUnicodeEncodingException(</pre>
+<pre class="line after"><span class="ws">                    </span>text_index=error.start,</pre>
+<pre class="line after"><span class="ws">                    </span>character=text[error.start],</pre>
+<pre class="line after"><span class="ws">                    </span>font_name=self.font_family + self.font_style,</pre></div>
+</div>
+
+<li><div class="exc-divider">The above exception was the direct cause of the following exception:</div>
+<li><div class="frame" id="frame-1443019787936">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">1536</em>,
+      in <code class="function">__call__</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">    </span>) -&gt; cabc.Iterable[bytes]:</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;The WSGI server calls the Flask application object as the</pre>
+<pre class="line before"><span class="ws">        </span>WSGI application. This calls :meth:`wsgi_app`, which can be</pre>
+<pre class="line before"><span class="ws">        </span>wrapped to apply middleware.</pre>
+<pre class="line before"><span class="ws">        </span>&#34;&#34;&#34;</pre>
+<pre class="line current"><span class="ws">        </span>return self.wsgi_app(environ, start_response)
+<span class="ws">        </span>       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441305669888">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">1514</em>,
+      in <code class="function">wsgi_app</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>ctx.push()</pre>
+<pre class="line before"><span class="ws">                </span>response = self.full_dispatch_request()</pre>
+<pre class="line before"><span class="ws">            </span>except Exception as e:</pre>
+<pre class="line before"><span class="ws">                </span>error = e</pre>
+<pre class="line current"><span class="ws">                </span>response = self.handle_exception(e)
+<span class="ws">                </span>           ^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">            </span>except:</pre>
+<pre class="line after"><span class="ws">                </span>error = sys.exc_info()[1]</pre>
+<pre class="line after"><span class="ws">                </span>raise</pre>
+<pre class="line after"><span class="ws">            </span>return response(environ, start_response)</pre>
+<pre class="line after"><span class="ws">        </span>finally:</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441305670048">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">1511</em>,
+      in <code class="function">wsgi_app</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>ctx = self.request_context(environ)</pre>
+<pre class="line before"><span class="ws">        </span>error: BaseException | None = None</pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>ctx.push()</pre>
+<pre class="line current"><span class="ws">                </span>response = self.full_dispatch_request()
+<span class="ws">                </span>           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">            </span>except Exception as e:</pre>
+<pre class="line after"><span class="ws">                </span>error = e</pre>
+<pre class="line after"><span class="ws">                </span>response = self.handle_exception(e)</pre>
+<pre class="line after"><span class="ws">            </span>except:</pre>
+<pre class="line after"><span class="ws">                </span>error = sys.exc_info()[1]</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441305670208">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">919</em>,
+      in <code class="function">full_dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
+<pre class="line before"><span class="ws">            </span>rv = self.preprocess_request()</pre>
+<pre class="line before"><span class="ws">            </span>if rv is None:</pre>
+<pre class="line before"><span class="ws">                </span>rv = self.dispatch_request()</pre>
+<pre class="line before"><span class="ws">        </span>except Exception as e:</pre>
+<pre class="line current"><span class="ws">            </span>rv = self.handle_user_exception(e)
+<span class="ws">            </span>     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">        </span>return self.finalize_request(rv)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def finalize_request(</pre>
+<pre class="line after"><span class="ws">        </span>self,</pre>
+<pre class="line after"><span class="ws">        </span>rv: ft.ResponseReturnValue | HTTPException,</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441305670368">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">917</em>,
+      in <code class="function">full_dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">        </span>try:</pre>
+<pre class="line before"><span class="ws">            </span>request_started.send(self, _async_wrapper=self.ensure_sync)</pre>
+<pre class="line before"><span class="ws">            </span>rv = self.preprocess_request()</pre>
+<pre class="line before"><span class="ws">            </span>if rv is None:</pre>
+<pre class="line current"><span class="ws">                </span>rv = self.dispatch_request()
+<span class="ws">                </span>     ^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">        </span>except Exception as e:</pre>
+<pre class="line after"><span class="ws">            </span>rv = self.handle_user_exception(e)</pre>
+<pre class="line after"><span class="ws">        </span>return self.finalize_request(rv)</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def finalize_request(</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441305670528">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py"</cite>,
+      line <em class="line">902</em>,
+      in <code class="function">dispatch_request</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>and req.method == &#34;OPTIONS&#34;</pre>
+<pre class="line before"><span class="ws">        </span>):</pre>
+<pre class="line before"><span class="ws">            </span>return self.make_default_options_response()</pre>
+<pre class="line before"><span class="ws">        </span># otherwise dispatch to the handler for that endpoint</pre>
+<pre class="line before"><span class="ws">        </span>view_args: dict[str, t.Any] = req.view_args  # type: ignore[assignment]</pre>
+<pre class="line current"><span class="ws">        </span>return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+<span class="ws">        </span>       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>def full_dispatch_request(self) -&gt; Response:</pre>
+<pre class="line after"><span class="ws">        </span>&#34;&#34;&#34;Dispatches the request and on top of that performs request</pre>
+<pre class="line after"><span class="ws">        </span>pre and postprocessing as well as HTTP exception catching and</pre>
+<pre class="line after"><span class="ws">        </span>error handling.</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441305670688">
+  <h4>File <cite class="filename">"c:\Users\Фар\Desktop\дипом_1\проект\appl\reports\generate_report.py"</cite>,
+      line <em class="line">121</em>,
+      in <code class="function">generate_report</code></h4>
+  <div class="source "><pre class="line before"><span class="ws">    </span>DARK = (31, 41, 55)           # Темно-серый</pre>
+<pre class="line before"><span class="ws"></span> </pre>
+<pre class="line before"><span class="ws">    </span># ===== ЗАГОЛОВОК =====</pre>
+<pre class="line before"><span class="ws">    </span>pdf.set_font(&#39;helvetica&#39;, &#39;B&#39;, 28)</pre>
+<pre class="line before"><span class="ws">    </span>pdf.set_text_color(*PRIMARY)</pre>
+<pre class="line current"><span class="ws">    </span>pdf.cell(0, 20, &#39;🏛️ ВИРТУАЛЬНЫЙ МУЗЕЙ&#39;, ln=True, align=&#39;C&#39;)
+<span class="ws">    </span>^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>pdf.set_font(&#39;helvetica&#39;, &#39;&#39;, 16)</pre>
+<pre class="line after"><span class="ws">    </span>pdf.set_text_color(*DARK)</pre>
+<pre class="line after"><span class="ws">    </span>pdf.cell(0, 10, &#39;📊 АНАЛИТИЧЕСКИЙ ОТЧЁТ&#39;, ln=True, align=&#39;C&#39;)</pre>
+<pre class="line after"><span class="ws"></span> </pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441305672928">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py"</cite>,
+      line <em class="line">281</em>,
+      in <code class="function">wrapper</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span>if (</pre>
+<pre class="line before"><span class="ws">            </span>not hasattr(self, &#34;page&#34;)</pre>
+<pre class="line before"><span class="ws">            </span>or not self.page  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]</pre>
+<pre class="line before"><span class="ws">        </span>) and not (kwargs.get(&#34;dry_run&#34;) or kwargs.get(&#34;split_only&#34;)):</pre>
+<pre class="line before"><span class="ws">            </span>raise FPDFException(&#34;No page open, you need to call add_page() first&#34;)</pre>
+<pre class="line current"><span class="ws">        </span>return fn(*args, **kwargs)
+<span class="ws">        </span>       ^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>return wrapper</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span>class FPDF(GraphicsStateMixin, TextRegionMixin):</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441306129920">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\deprecation.py"</cite>,
+      line <em class="line">36</em>,
+      in <code class="function">wrapper</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">            </span>warnings.warn(</pre>
+<pre class="line before"><span class="ws">                </span>&#39;The parameter &#34;txt&#34; has been renamed to &#34;text&#34; in 2.7.6&#39;,</pre>
+<pre class="line before"><span class="ws">                </span>DeprecationWarning,</pre>
+<pre class="line before"><span class="ws">                </span>stacklevel=get_stack_level(),</pre>
+<pre class="line before"><span class="ws">            </span>)</pre>
+<pre class="line current"><span class="ws">        </span>return fn(*args, **kwargs)
+<span class="ws">        </span>       ^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws">    </span>return wrapper</pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span> </pre>
+<pre class="line after"><span class="ws"></span>def deprecated_parameter(</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441306130240">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py"</cite>,
+      line <em class="line">3910</em>,
+      in <code class="function">cell</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">                </span>),</pre>
+<pre class="line before"><span class="ws">                </span>DeprecationWarning,</pre>
+<pre class="line before"><span class="ws">                </span>stacklevel=get_stack_level(),</pre>
+<pre class="line before"><span class="ws">            </span>)</pre>
+<pre class="line before"><span class="ws">        </span># Font styles preloading must be performed before any call to FPDF.get_string_width:</pre>
+<pre class="line current"><span class="ws">        </span>text = self.normalize_text(text)
+<span class="ws">        </span>       ^^^^^^^^^^^^^^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">        </span>styled_txt_frags = (</pre>
+<pre class="line after"><span class="ws">            </span>self._preload_bidirectional_text(text, markdown)</pre>
+<pre class="line after"><span class="ws">            </span>if self.text_shaping</pre>
+<pre class="line after"><span class="ws">            </span>else self._preload_font_styles(text, markdown)</pre>
+<pre class="line after"><span class="ws">        </span>)</pre></div>
+</div>
+
+<li><div class="frame" id="frame-1441306130400">
+  <h4>File <cite class="filename">"C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py"</cite>,
+      line <em class="line">5683</em>,
+      in <code class="function">normalize_text</code></h4>
+  <div class="source library"><pre class="line before"><span class="ws">        </span># - for built-in fonts: string instances (encoding: latin-1, cp1252)</pre>
+<pre class="line before"><span class="ws">        </span>if not self.is_ttf_font and self.core_fonts_encoding:</pre>
+<pre class="line before"><span class="ws">            </span>try:</pre>
+<pre class="line before"><span class="ws">                </span>return text.encode(self.core_fonts_encoding).decode(&#34;latin-1&#34;)</pre>
+<pre class="line before"><span class="ws">            </span>except UnicodeEncodeError as error:</pre>
+<pre class="line current"><span class="ws">                </span>raise FPDFUnicodeEncodingException(
+<span class="ws">                </span>^^^^^^^^^^^^</pre>
+<pre class="line after"><span class="ws">                    </span>text_index=error.start,</pre>
+<pre class="line after"><span class="ws">                    </span>character=text[error.start],</pre>
+<pre class="line after"><span class="ws">                    </span>font_name=self.font_family + self.font_style,</pre>
+<pre class="line after"><span class="ws">                </span>) from error</pre>
+<pre class="line after"><span class="ws">        </span>return text</pre></div>
+</div>
+</ul>
+  <blockquote>fpdf.errors.FPDFUnicodeEncodingException: Character &#34;🏛&#34; at index 0 in text is outside the range of characters supported by the font used: &#34;helveticaB&#34;. Please consider using a Unicode font.
+</blockquote>
+</div>
+
+<div class="plain">
+    <p>
+      This is the Copy/Paste friendly version of the traceback.
+    </p>
+    <textarea cols="50" rows="10" name="code" readonly>Traceback (most recent call last):
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py&#34;, line 5681, in normalize_text
+    return text.encode(self.core_fonts_encoding).decode(&#34;latin-1&#34;)
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: &#39;latin-1&#39; codec can&#39;t encode characters in position 0-1: ordinal not in range(256)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py&#34;, line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py&#34;, line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py&#34;, line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py&#34;, line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py&#34;, line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py&#34;, line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File &#34;c:\Users\Фар\Desktop\дипом_1\проект\appl\reports\generate_report.py&#34;, line 121, in generate_report
+    pdf.cell(0, 20, &#39;🏛️ ВИРТУАЛЬНЫЙ МУЗЕЙ&#39;, ln=True, align=&#39;C&#39;)
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py&#34;, line 281, in wrapper
+    return fn(*args, **kwargs)
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\deprecation.py&#34;, line 36, in wrapper
+    return fn(*args, **kwargs)
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py&#34;, line 3910, in cell
+    text = self.normalize_text(text)
+  File &#34;C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py&#34;, line 5683, in normalize_text
+    raise FPDFUnicodeEncodingException(
+    ^^^^^^^^^^^^
+fpdf.errors.FPDFUnicodeEncodingException: Character &#34;🏛&#34; at index 0 in text is outside the range of characters supported by the font used: &#34;helveticaB&#34;. Please consider using a Unicode font.
+</textarea>
+</div>
+<div class="explanation">
+  The debugger caught an exception in your WSGI application.  You can now
+  look at the traceback which led to the error.  <span class="nojavascript">
+  If you enable JavaScript you can also use additional features such as code
+  execution (if the evalex feature is enabled), automatic pasting of the
+  exceptions and much more.</span>
+</div>
+      <div class="footer">
+        Brought to you by <strong class="arthur">DON'T PANIC</strong>, your
+        friendly Werkzeug powered traceback interpreter.
+      </div>
+    </div>
+
+    <div class="pin-prompt">
+      <div class="inner">
+        <h3>Console Locked</h3>
+        <p>
+          The console is locked and needs to be unlocked by entering the PIN.
+          You can find the PIN printed out on the standard output of your
+          shell that runs the server.
+        <form>
+          <p>PIN:
+            <input type=text name=pin size=14>
+            <input type=submit name=btn value="Confirm Pin">
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+
+<!--
+
+Traceback (most recent call last):
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py", line 5681, in normalize_text
+    return text.encode(self.core_fonts_encoding).decode("latin-1")
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'latin-1' codec can't encode characters in position 0-1: ordinal not in range(256)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "c:\Users\Фар\Desktop\дипом_1\проект\appl\reports\generate_report.py", line 121, in generate_report
+    pdf.cell(0, 20, '🏛️ ВИРТУАЛЬНЫЙ МУЗЕЙ', ln=True, align='C')
+    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py", line 281, in wrapper
+    return fn(*args, **kwargs)
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\deprecation.py", line 36, in wrapper
+    return fn(*args, **kwargs)
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py", line 3910, in cell
+    text = self.normalize_text(text)
+  File "C:\Users\Фар\AppData\Local\Programs\Python\Python314\Lib\site-packages\fpdf\fpdf.py", line 5683, in normalize_text
+    raise FPDFUnicodeEncodingException(
+    ^^^^^^^^^^^^
+fpdf.errors.FPDFUnicodeEncodingException: Character "🏛" at index 0 in text is outside the range of characters supported by the font used: "helveticaB". Please consider using a Unicode font.
+
+
+-->

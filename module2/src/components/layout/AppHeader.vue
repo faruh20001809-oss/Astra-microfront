@@ -11,15 +11,24 @@
       </router-link>
 
       <nav class="main-nav">
-        <router-link
-            v-for="item in navItems"
-            :key="item.to"
+        <template v-for="item in navItems" :key="item.to">
+          <a
+            v-if="item.external"
+            :href="item.to"
+            class="nav-link"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            {{ item.label }}
+          </a>
+          <router-link
+            v-else
             :to="item.to"
             class="nav-link"
-        >
-          <span class="nav-icon">{{ item.icon }}</span>
-          {{ item.label }}
-        </router-link>
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            {{ item.label }}
+          </router-link>
+        </template>
       </nav>
 
       <div class="header-actions">
@@ -54,17 +63,27 @@
         <span class="nav-drawer-title">Меню</span>
       </template>
       <nav class="nav-drawer-list">
-        <router-link
-            v-for="item in navItems"
-            :key="item.to"
+        <template v-for="item in navItems" :key="item.to">
+          <a
+            v-if="item.external"
+            :href="item.to"
+            class="nav-drawer-link"
+            @click="menuOpen = false"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            {{ item.label }}
+          </a>
+          <router-link
+            v-else
             :to="item.to"
             class="nav-drawer-link"
             :class="{ 'router-link-active': $route.path === item.to }"
             @click="menuOpen = false"
-        >
-          <span class="nav-icon">{{ item.icon }}</span>
-          {{ item.label }}
-        </router-link>
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            {{ item.label }}
+          </router-link>
+        </template>
       </nav>
     </Drawer>
   </header>

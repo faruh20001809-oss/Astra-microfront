@@ -8,29 +8,52 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.astrakhan.admin.repository.AdminUserRepository;
+import ru.astrakhan.admin.entity.SharedUser;
+import ru.astrakhan.admin.repository.SharedUserRepository;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
 
+/**
+ * Загружает пользователей из общей таблицы users (БД shared с module3).
+ * Роль из таблицы roles маппится в ROLE_* для Spring Security.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminUserDetailsService implements UserDetailsService {
 
-    private final AdminUserRepository adminUserRepository;
+    private final SharedUserRepository sharedUserRepository;
 
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return adminUserRepository.findByUsername(username)
-                .map(au -> new User(
-                        au.getUsername(),
-                        au.getPasswordHash(),
-                        true,
-                        true,
-                        true,
-                        true,
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + au.getRole()))
-                ))
+        return sharedUserRepository.findByUsernameIgnoreCase(username)
+                .map(this::toUserDetails)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    private UserDetails toUserDetails(SharedUser u) {
+        String authority = roleNameToAuthority(u.getRole() != null ? u.getRole().getName() : null);
+        return new User(
+                u.getUsername(),
+                u.getPassword(),
+                true,
+                true,
+                true,
+                true,
+                List.of(new SimpleGrantedAuthority(authority))
+        );
+    }
+
+    /** Маппинг имён ролей (админка) в Spring Security authority. */
+    private static String roleNameToAuthority(String roleName) {
+        if (roleName == null || roleName.isBlank()) return "ROLE_USER";
+        String r = roleName.trim();
+        if (r.equals("Администратор")) return "ROLE_ADMIN";
+        if (r.equals("Сотрудник")) return "ROLE_USER";
+        if (r.equals("Модератор")) return "ROLE_MODERATOR";
+        if (r.equals("Редактор")) return "ROLE_EDITOR";
+        return "ROLE_" + r.toUpperCase(Locale.ROOT).replace(" ", "_");
     }
 }

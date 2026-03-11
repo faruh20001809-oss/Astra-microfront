@@ -2,6 +2,7 @@ package ru.astrakhan.admin.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import ru.astrakhan.admin.entity.AdminUser;
+import ru.astrakhan.admin.entity.SharedUser;
 import ru.astrakhan.admin.service.AdminProfileService;
 
 @Controller
@@ -22,7 +23,7 @@ public class AdminProfileController {
     @GetMapping
     public String profile(Model model, HttpServletRequest request) {
         model.addAttribute("request", request);
-        AdminUser user = adminProfileService.getCurrentUser();
+        SharedUser user = adminProfileService.getCurrentUser();
         model.addAttribute("user", user);
         return "profile";
     }

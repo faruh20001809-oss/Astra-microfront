@@ -17,17 +17,22 @@ public class DataInitializer implements CommandLineRunner {
     private final OrderRepository orderRepo;
     private final AnalyticsEventRepository analyticsRepo;
     private final ReviewRepository reviewRepo;
-    private final AdminUserRepository adminUserRepo;
+    private final SharedUserRepository sharedUserRepo;
+    private final SharedRoleRepository sharedRoleRepo;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) {
-        if (adminUserRepo.count() == 0) {
-            adminUserRepo.save(AdminUser.builder()
+        // Общая БД с module3: при пустой таблице users (например, H2 dev) создаём роли и админа
+        if (sharedUserRepo.count() == 0 && sharedRoleRepo.count() == 0) {
+            SharedRole adminRole = sharedRoleRepo.save(SharedRole.builder().name("Администратор").build());
+            sharedRoleRepo.save(SharedRole.builder().name("Сотрудник").build());
+            sharedUserRepo.save(SharedUser.builder()
                     .username("admin")
-                    .passwordHash(passwordEncoder.encode("admin"))
-                    .role("ADMIN")
+                    .name("Администратор")
+                    .password(passwordEncoder.encode("admin"))
+                    .roleId(adminRole.getId())
                     .build());
         }
 

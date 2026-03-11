@@ -1,0 +1,12 @@
+# Module3: дашборд (пользователи, роли, метрики, отчёты)
+Flask>=2.3
+flask-sqlalchemy>=3.0
+flask-migrate>=4.0
+flask-login>=0.6
+flask-cors>=4.0
+Flask-Marshmallow>=0.15
+marshmallow-sqlalchemy>=0.29
+structlog>=23.0
+psycopg2-binary>=2.9
+Werkzeug>=2.3
+bcrypt>=4.0

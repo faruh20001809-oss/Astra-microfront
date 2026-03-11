@@ -9,11 +9,14 @@ set -e
 GIT_REPO="${GIT_REPO:-https://github.com/YOUR_USER/Astra-microfront.git}"
 APP_DIR="${APP_DIR:-/opt/astramicro}"
 BRANCH="${BRANCH:-main}"
+# Домен приложения (VMmanager: 152665.ip-ptr.tech, IP 193.233.49.59). Маршруты: / — фронт, /workflow — сотрудники, /admin — админка
+APP_DOMAIN="${APP_DOMAIN:-152665.ip-ptr.tech}"
 
 echo "=== Astra-microfront: установка на сервер ==="
 echo "  Репозиторий: $GIT_REPO"
 echo "  Каталог приложения: $APP_DIR"
 echo "  Ветка: $BRANCH"
+echo "  Домен: $APP_DOMAIN"
 echo ""
 
 # 1. Обновление системы и установка зависимостей
@@ -66,6 +69,8 @@ cd "$APP_DIR"
 # 5. Systemd: автозапуск бэкенда
 echo "[5/6] Настройка systemd..."
 JAR_PATH="$APP_DIR/astrakhan-admin/target/history-admin-1.0.0.jar"
+# Публичный URL фронта для писем и редиректов (бэкенд подставит в ссылки)
+APP_MODULE2_URL_VALUE="${APP_MODULE2_URL:-https://$APP_DOMAIN}"
 cat > /etc/systemd/system/astrakhan-admin.service << EOF
 [Unit]
 Description=Astrakhan Admin (Spring Boot)
@@ -75,6 +80,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$APP_DIR/astrakhan-admin
+Environment="APP_MODULE2_URL=$APP_MODULE2_URL_VALUE"
 ExecStart=/usr/bin/java -Xmx1024m -Dspring.profiles.active=prod -jar $JAR_PATH
 Restart=on-failure
 RestartSec=10
@@ -112,7 +118,7 @@ fi
 cat > /etc/nginx/sites-available/astramicro << EOF
 server {
     listen 80 default_server;
-    server_name _;
+    server_name $APP_DOMAIN _;
     root $FRONTEND_ROOT;
     index index.html;
     $( [ -n "$VITE_AI_API_KEY" ] && echo "include $APP_DIR/deploy/nginx-ai-key.conf;" )
@@ -121,6 +127,27 @@ server {
         try_files \$uri \$uri/ /index.html;
     }
 $AI_LOCATION
+    location /workflow/ {
+        rewrite ^/workflow(.*)\$ /java-api\$1 break;
+        proxy_pass http://127.0.0.1:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_redirect /java-api/admin/ /admin/;
+        proxy_redirect /java-api/ /workflow/;
+    }
+    location /admin/ {
+        rewrite ^/admin(.*)\$ \$1 break;
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Prefix /admin;
+    }
     location /java-api/ {
         proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;
@@ -148,7 +175,13 @@ fi
 
 echo ""
 echo "=== Готово. ==="
-echo "  Фронт: http://$(curl -s ifconfig.me 2>/dev/null || echo 'IP')/"
-echo "  API:   http://127.0.0.1:8080 (прокси /java-api)"
-echo "  Обновление: $APP_DIR/deploy/update.sh"
+echo "  Основной фронт:  http://$APP_DOMAIN/"
+echo "  Сотрудники:      http://$APP_DOMAIN/workflow/  (логин Java-приложения)"
+echo "  Админка:         http://$APP_DOMAIN/admin/"
+echo "  Админка (м3):    http://$APP_DOMAIN/admin/  (Flask; запустите module3 на :5000)"
+echo "  API для фронта:  http://$APP_DOMAIN/java-api/"
+echo "  Обновление:      $APP_DIR/deploy/update.sh"
+echo ""
+echo "  Module3 (админка): cd $APP_DIR/module3 && pip install -r requirements.txt && python app.py"
+echo "  Или systemd-сервис: gunicorn -b 127.0.0.1:5000 app:app"
 echo ""

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ru" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Метрики активности</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Smooth transitions */
+        * {
+            transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 200ms;
+        }
+        
+        /* Focus ring */
+        .focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        /* Button hover lift */
+        .btn-hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-2xl lg:text-3xl font-extrabold text-gray-800 dark:text-white">
+                    <i class="bi bi-graph-up me-2 text-primary-500"></i>Метрики активности
+                </h1>
+                <p class="text-gray-500 dark:text-gray-400 mt-1">Анализ активности пользователей системы</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <!-- Theme Toggle -->
+                <button id="themeToggle" class="p-2 rounded-xl bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 transition-all">
+                    <i class="bi bi-sun-fill dark:hidden text-yellow-500"></i>
+                    <i class="bi bi-moon-fill hidden dark:inline"></i>
+                </button>
+                <a href="{{ root }}/" class="btn-hover-lift px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-all">
+                    <i class="bi bi-arrow-left me-1"></i>Назад
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="bi bi-funnel me-2"></i>Фильтры
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <i class="bi bi-person-badge me-1"></i>Фильтр по роли
+                    </label>
+                    <select id="roleFilter" class="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring">
+                        <option value="">Все</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <i class="bi bi-person me-1"></i>Фильтр по пользователю (ID)
+                    </label>
+                    <input type="number" id="userFilter" 
+                        class="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring"
+                        placeholder="ID пользователя">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <i class="bi bi-file-earmark me-1"></i>Фильтр по странице
+                    </label>
+                    <input type="text" id="pageFilter" 
+                        class="w-full px-4 py-2 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring"
+                        placeholder="Название страницы">
+                </div>
+            </div>
+            <button id="applyFilters" class="btn-hover-lift mt-4 px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition-all">
+                <i class="bi bi-check-lg me-2"></i>Применить фильтры
+            </button>
+        </div>
+
+        <!-- Activity Chart -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="bi bi-graph-up me-2 text-primary-500"></i>Активность пользователей за последние 30 дней
+            </h3>
+            <div class="h-80">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Heatmap -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="bi bi-grid-3x3 me-2 text-primary-500"></i>Тепловая карта посещений
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th class="px-2 py-1 text-left text-gray-600 dark:text-gray-400">День/Час</th>
+                            <script>
+                                for(let h=0; h<24; h++) {
+                                    document.write(`<th class="px-1 py-1 text-center text-gray-600 dark:text-gray-400 text-xs">${h}</th>`);
+                                }
+                            </script>
+                        </tr>
+                    </thead>
+                    <tbody id="heatmapBody" class="divide-y divide-gray-100 dark:divide-gray-700">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Grafana Info -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 animate-fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="bi bi-bar-chart-steps me-2 text-primary-500"></i>Grafana Dashboard
+            </h3>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <h6 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Шаг 1: Установка Grafana</h6>
+                    <ul class="text-gray-600 dark:text-gray-400 text-sm space-y-1">
+                        <li>Скачайте с <a href="https://grafana.com/grafana/download" target="_blank" class="text-primary-500 hover:underline">grafana.com</a></li>
+                        <li>Запустите: <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">grafana-server.exe</code></li>
+                        <li>Откройте: <code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">http://localhost:3000</code></li>
+                        <li>Логин/пароль: admin/admin</li>
+                    </ul>
+                    <h6 class="font-semibold text-gray-700 dark:text-gray-300 mt-4 mb-2">Шаг 2: Настройка Data Source</h6>
+                    <ul class="text-gray-600 dark:text-gray-400 text-sm">
+                        <li>Configuration → Data Sources</li>
+                        <li>Добавьте источник (Prometheus, InfluxDB, PostgreSQL)</li>
+                    </ul>
+                </div>
+                <div>
+                    <h6 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Шаг 3: Создание Dashboard</h6>
+                    <ul class="text-gray-600 dark:text-gray-400 text-sm space-y-1">
+                        <li>Create → Dashboard</li>
+                        <li>Добавьте панели с метриками</li>
+                        <li>Сохраните dashboard</li>
+                    </ul>
+                    <h6 class="font-semibold text-gray-700 dark:text-gray-300 mt-4 mb-2">Шаг 4: Разрешить iframe</h6>
+                    <ul class="text-gray-600 dark:text-gray-400 text-sm">
+                        <li>В grafana.ini добавьте:<br><code class="bg-gray-100 dark:bg-gray-700 px-1 rounded">allow_embedding = true</code></li>
+                    </ul>
+                </div>
+            </div>
+            <h6 class="font-semibold text-gray-700 dark:text-gray-300 mt-4 mb-2">Шаг 5: Добавьте iframe</h6>
+            <pre class="bg-gray-100 dark:bg-gray-700 p-3 rounded-xl text-sm overflow-x-auto"><code><iframe src="http://localhost:3000/d-solo/YOUR_DASHBOARD_ID?panelId=1&theme=dark" width="100%" height="400" frameborder="0"></iframe></code></pre>
+        </div>
+    </div>
+
+    <script>
+        const ROOT = '{{ root }}';
+        // Theme Toggle
+        const html = document.documentElement;
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            html.classList.add('dark');
+        }
+        
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            html.classList.toggle('dark');
+            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+            // Reload charts with new colors
+            loadActivityChart();
+            loadHeatmap();
+        });
+
+        async function loadRoles() {
+            const res = await fetch(ROOT + '/api/roles');
+            const roles = await res.json();
+            const select = document.getElementById('roleFilter');
+            roles.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = r.name;
+                opt.textContent = r.name;
+                select.appendChild(opt);
+            });
+        }
+
+        async function loadActivityChart(role, user_id, page) {
+            let url = ROOT + '/api/metrics/activity';
+            const params = new URLSearchParams();
+            if(role) params.append('role', role);
+            if(user_id) params.append('user_id', user_id);
+            if(page) params.append('page', page);
+            if(params.toString()) url += '?' + params.toString();
+
+            const res = await fetch(url);
+            const data = await res.json();
+
+            const isDark = html.classList.contains('dark');
+            const textColor = isDark ? '#e5e7eb' : '#1f2937';
+            const gridColor = isDark ? '#374151' : '#e5e7eb';
+
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            if(window.activityChart) window.activityChart.destroy();
+            window.activityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Активные пользователи',
+                        data: data.counts,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#10b981',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#10b981'
+                    }]
+                },
+                options: { 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: textColor }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { color: textColor },
+                            grid: { color: gridColor }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadHeatmap() {
+            const res = await fetch(ROOT + '/api/metrics/heatmap');
+            const heatmap = await res.json();
+            const tbody = document.getElementById('heatmapBody');
+            tbody.innerHTML = '';
+            const days = ['Вск', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
+            
+            const isDark = html.classList.contains('dark');
+            
+            heatmap.forEach((hours, i) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="px-2 py-2 font-medium text-gray-700 dark:text-gray-300">${days[i]}</td>` + 
+                    hours.map(c => {
+                        // Calculate color intensity
+                        const maxVal = Math.max(...hours);
+                        const intensity = maxVal > 0 ? c / maxVal : 0;
+                        const bgColor = c > 0 ? `rgba(59, 130, 246, ${0.2 + intensity * 0.8})` : (isDark ? 'rgba(55, 65, 81, 0.3)' : 'rgba(229, 231, 235, 0.5)');
+                        return `<td class="px-1 py-2 text-center text-xs" style="background: ${bgColor}; color: ${intensity > 0.5 ? 'white' : (isDark ? '#d1d5db' : '#374151')}">${c}</td>`;
+                    }).join('');
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById('applyFilters').addEventListener('click', () => {
+            const role = document.getElementById('roleFilter').value;
+            const user_id = document.getElementById('userFilter').value;
+            const page = document.getElementById('pageFilter').value;
+            loadActivityChart(role, user_id, page);
+        });
+
+        // Initialize
+        loadRoles();
+        loadActivityChart();
+        loadHeatmap();
+    </script>
+</body>
+</html>
