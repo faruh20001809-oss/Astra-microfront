@@ -1070,8 +1070,9 @@ function categoryIcon(cat) {
 }
 @media (max-width: 768px) {
   .map-suggest-poi-btn {
+    top: calc(var(--nav-h, 64px) + var(--spacing-md));
     left: var(--spacing-sm);
-    bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0));
+    bottom: auto;
     font-size: 12px;
     padding: 8px 12px;
   }

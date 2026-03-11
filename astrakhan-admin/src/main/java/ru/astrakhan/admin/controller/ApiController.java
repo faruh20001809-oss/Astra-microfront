@@ -218,10 +218,9 @@ public class ApiController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             log.error("Error creating order", e);
-            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
             Map<String, Object> errBody = new LinkedHashMap<>();
             errBody.put("status", "error");
-            errBody.put("message", "Ошибка сервера: " + msg);
+            errBody.put("message", "Сервер не смог обработать заказ. Попробуйте позже или оформите заказ по телефону.");
             return ResponseEntity.status(500).body(errBody);
         }
     }

@@ -88,7 +88,9 @@ onMounted(async () => {
       paid.value = data.paid === true
       orderStatus.value = (data.status || '').toLowerCase()
     }
-  } catch (_) { /* ignore */ }
+  } catch (_) {
+    // getPaymentStatus при ошибке возвращает безопасный объект — статус остаётся «Обрабатывается»
+  }
 })
 </script>
 

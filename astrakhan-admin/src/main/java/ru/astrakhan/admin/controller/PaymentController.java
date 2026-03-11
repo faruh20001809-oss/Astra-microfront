@@ -66,7 +66,11 @@ public class PaymentController {
     public ResponseEntity<Map<String, Object>> paymentStatus(@PathVariable String orderId) {
         Order order = orderService.findByOrderId(orderId).orElse(null);
         if (order == null) {
-            return ResponseEntity.notFound().build();
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", "error");
+            body.put("message", "Заказ не найден");
+            body.put("data", Map.of("orderId", orderId != null ? orderId : "", "paid", false, "status", ""));
+            return ResponseEntity.status(404).body(body);
         }
         boolean paid = paymentService.isOrderPaid(order);
         String statusLower = order.getStatus() != null ? order.getStatus().name().toLowerCase() : "processing";

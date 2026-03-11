@@ -1,4 +1,4 @@
-#!/bin/bash
+ #!/bin/bash
 # Обновление приложения на сервере: синхронизация с origin, пересборка, перезапуск
 # Запуск: sudo bash /opt/astramicro/deploy/update.sh
 # Переменные: BRANCH=main (по умолчанию)
@@ -42,6 +42,9 @@ echo "[3/4] Перезапуск astrakhan-admin (Java)..."
 systemctl restart astrakhan-admin
 
 echo "[4/4] Перезапуск astramicro-admin (Flask)..."
-systemctl restart astramicro-admin
+# Сначала остановка, пауза (чтобы порт 5000 успел освободиться), затем старт — иначе «Address already in use»
+systemctl stop astramicro-admin 2>/dev/null || true
+sleep 2
+systemctl start astramicro-admin
 
 echo "Готово. Статика из module2/dist, Nginx перезагружать не нужно."

@@ -205,12 +205,16 @@ export const javaApi = {
       return json.data
     },
 
-    /** Статус оплаты заказа: { paid: boolean, paidAt?: string, status?: string } */
+    /** Статус оплаты заказа: { paid: boolean, paidAt?: string, status?: string }. При 404/5xx возвращает безопасный объект. */
     getPaymentStatus: async (orderId) => {
-      const res = await baseFetch(`${JAVA_API_BASE}/orders/${orderId}/payment-status`)
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(json.message || 'Ошибка запроса')
-      return json.data
+      try {
+        const res = await baseFetch(`${JAVA_API_BASE}/orders/${orderId}/payment-status`)
+        const json = await res.json().catch(() => ({}))
+        if (!res.ok) return { paid: false, status: '', orderId }
+        return json.data != null ? json.data : { paid: false, status: '', orderId }
+      } catch (_) {
+        return { paid: false, status: '', orderId }
+      }
     }
   },
 

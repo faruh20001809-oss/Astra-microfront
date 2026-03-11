@@ -10,6 +10,7 @@ Environment=PYTHONUNBUFFERED=1
 StandardOutput=journal
 StandardError=journal
 ExecStart=/opt/astramicro/module3/venv/bin/gunicorn -w 1 -b 127.0.0.1:5000 app:app
+TimeoutStopSec=5
 Restart=on-failure
 RestartSec=5
 
