@@ -13,8 +13,9 @@
 
     <!-- Empty state -->
     <div v-if="!cartStore.items.length" class="cart-empty">
-      <span class="cart-empty-icon">◻</span>
-      <p>Корзина пуста</p>
+      <span class="cart-empty-icon" aria-hidden="true">◻</span>
+      <p class="cart-empty-title">Корзина пуста</p>
+      <p class="cart-empty-hint">Добавьте товары из магазина — сувениры и мерч с историческими мотивами Астрахани.</p>
       <Button label="Перейти в магазин" class="p-button-text p-button-secondary" @click="cartStore.isOpen = false; $router.push('/shop')" />
     </div>
 
@@ -44,7 +45,7 @@
             </div>
 
             <div class="cart-footer">
-              <!-- 👇 ФОРМА КЛИЕНТА -->
+              <p class="cart-section-label">Данные для доставки</p>
               <div class="customer-form">
             <div class="form-row">
               <div class="form-group">
@@ -304,6 +305,11 @@ async function checkout() {
 
   checkoutLoading.value = true
 
+  const ORDER_TIMEOUT_MS = 20000
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Сервер не ответил. Проверьте подключение и попробуйте снова.')), ORDER_TIMEOUT_MS)
+  )
+
   try {
     const orderPayload = {
       userId: 'guest-' + Date.now(),
@@ -327,7 +333,10 @@ async function checkout() {
       }))
     }
 
-    const result = await javaApi.orders.create(orderPayload)
+    const result = await Promise.race([
+      javaApi.orders.create(orderPayload),
+      timeoutPromise
+    ])
     const orderId = result?.orderId ?? result?.data?.orderId ?? ''
 
     // Оплата картой: редирект на страницу оплаты или на страницу успеха с номером заказа (если касса не привязана)
@@ -392,7 +401,18 @@ async function checkout() {
   align-items: center; justify-content: center;
   gap: var(--spacing-md); color: var(--gray-400);
 }
-.cart-empty-icon { font-size: 3rem; opacity: 0.3; }
+.cart-empty-icon { font-size: 3rem; opacity: 0.35; }
+.cart-empty-title { font-family: var(--font-display); font-size: 1.1rem; margin: 0; color: var(--paper); }
+.cart-empty-hint { font-size: 0.8rem; color: var(--gray-400); max-width: 260px; margin: 0; line-height: 1.5; }
+.cart-section-label {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: var(--spacing-sm);
+  margin-top: 0;
+}
 
 .cart-body {
   flex: 1;

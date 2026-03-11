@@ -1,0 +1,413 @@
+/* =========================================
+   АСТРАХАНЬ — ЖИВАЯ ИСТОРИЯ
+   Единый стиль для Vue, Java (workflow/admin), Flask (module3)
+   Design System: Monochrome Editorial
+   Fonts: Playfair Display + IBM Plex Mono
+   ========================================= */
+
+:root {
+  --ink: #0a0a0a;
+  --paper: #f5f0e8;
+  --white: #ffffff;
+  --gray-50:  #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+  --gray-950: #030712;
+  --accent: #c8a96e;
+  --accent-dark: #8a6e3a;
+  --danger: #c0392b;
+  --success: #1a6b3a;
+  --warning: #d4a017;
+  --info: #2c7be5;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2.5rem;
+  --spacing-2xl: 4rem;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius: 8px;
+
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  --shadow-subtle: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.12);
+  --shadow-card: 0 4px 16px rgba(0,0,0,0.1);
+  --shadow-modal: 0 20px 60px rgba(0,0,0,0.3);
+
+  --nav-h: 64px;
+  --sidebar-w: 250px;
+  --z-header: 1000;
+  --z-sidebar: 500;
+  --z-backdrop: 400;
+  --z-modal: 1000;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Класс .astra-app на body — единый тёмный стиль для всех приложений */
+.astra-app,
+body.astra-app {
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  background: var(--ink);
+  color: var(--paper);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.astra-app a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.astra-app a:hover {
+  text-decoration: none;
+  color: var(--accent);
+}
+
+/* ---- Typography ---- */
+.astra-app h1, .astra-app h2, .astra-app h3, .astra-app h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.astra-app h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+.astra-app h2 { font-size: clamp(1.5rem, 3vw, 2.25rem); }
+.astra-app h3 { font-size: clamp(1.125rem, 2vw, 1.5rem); }
+.astra-app h4 { font-size: 1.125rem; }
+
+.astra-app p { line-height: 1.7; }
+
+/* ---- Scrollbar ---- */
+.astra-app ::-webkit-scrollbar { width: 6px; height: 6px; }
+.astra-app ::-webkit-scrollbar-track { background: var(--gray-800); }
+.astra-app ::-webkit-scrollbar-thumb { background: var(--gray-600); border-radius: 3px; }
+.astra-app ::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+/* ---- Layout ---- */
+.astra-app .container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-xl);
+}
+
+.astra-app .page-wrapper {
+  min-height: 100vh;
+  padding-top: var(--nav-h);
+}
+
+/* ---- Buttons ---- */
+.astra-app .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: 0.6rem 1.25rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: transparent;
+  border-radius: var(--radius-sm);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+  text-decoration: none;
+  color: inherit;
+}
+
+.astra-app .btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.astra-app .btn:hover::before { opacity: 0.08; }
+.astra-app .btn:active::before { opacity: 0.15; }
+
+.astra-app .btn-primary {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+}
+
+.astra-app .btn-primary:hover {
+  background: var(--white);
+  border-color: var(--white);
+}
+
+.astra-app .btn-ghost {
+  color: var(--paper);
+  border-color: var(--gray-600);
+}
+
+.astra-app .btn-ghost:hover { border-color: var(--paper); }
+
+.astra-app .btn-accent {
+  background: var(--accent);
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+.astra-app .btn-accent:hover {
+  background: var(--accent-dark);
+  color: var(--paper);
+  border-color: var(--accent-dark);
+}
+
+.astra-app .btn-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.astra-app .btn-danger:hover { background: rgba(192, 57, 43, 0.15); }
+
+.astra-app .btn-success {
+  background: var(--success);
+  color: var(--white);
+  border-color: var(--success);
+}
+
+.astra-app .btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.7rem;
+}
+
+.astra-app .btn-lg {
+  padding: 0.875rem 2rem;
+  font-size: 0.875rem;
+}
+
+.astra-app .btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ---- Form elements ---- */
+.astra-app .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+}
+
+.astra-app .form-group label,
+.astra-app .form-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.astra-app .form-control,
+.astra-app .form-input,
+.astra-app .form-select,
+.astra-app .form-textarea {
+  background: var(--gray-800);
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  padding: 0.625rem 0.875rem;
+  transition: border-color var(--transition);
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.astra-app .form-control:focus,
+.astra-app .form-input:focus,
+.astra-app .form-select:focus,
+.astra-app .form-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.astra-app .form-input::placeholder,
+.astra-app .form-textarea::placeholder {
+  color: var(--gray-400);
+}
+
+.astra-app .form-textarea,
+.astra-app textarea.form-control { resize: vertical; min-height: 100px; }
+
+.astra-app .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-md);
+}
+
+.astra-app .form-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--gray-600);
+}
+
+/* ---- Cards ---- */
+.astra-app .card {
+  background: var(--gray-800);
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  overflow: hidden;
+  transition: all var(--transition-slow);
+  margin-bottom: var(--spacing-md);
+}
+
+.astra-app .card:hover {
+  border-color: var(--gray-400);
+  box-shadow: var(--shadow-card);
+}
+
+.astra-app .card-header {
+  padding-bottom: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-600);
+}
+
+.astra-app .card-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* ---- Tables ---- */
+.astra-app .table-responsive { overflow-x: auto; }
+
+.astra-app table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.astra-app table th,
+.astra-app table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--gray-600);
+}
+
+.astra-app table th {
+  font-weight: 600;
+  color: var(--gray-400);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--gray-900);
+}
+
+.astra-app table tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+/* ---- Tag/Badge/Status ---- */
+.astra-app .tag,
+.astra-app .status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm);
+  color: var(--gray-400);
+}
+
+.astra-app .tag-accent {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.astra-app .btn-group { display: flex; gap: var(--spacing-sm); flex-wrap: wrap; }
+
+/* ---- Alerts ---- */
+.astra-app .alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--spacing-md);
+  font-size: 0.875rem;
+  border: 1px solid;
+}
+
+.astra-app .alert-success {
+  background: rgba(26, 107, 58, 0.2);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.astra-app .alert-error,
+.astra-app .alert-danger {
+  background: rgba(192, 57, 43, 0.2);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* ---- Navbar (общий хедер) ---- */
+.astra-app .navbar,
+.astra-app .app-header {
+  background: var(--ink);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--gray-800);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-w: 100%;
+    --spacing-xl: 1.25rem;
+    --nav-h: 56px;
+  }
+  .astra-app .container { padding: 0 var(--spacing-md); max-width: 100%; }
+  .astra-app .form-row { grid-template-columns: 1fr; }
+  .astra-app .btn { min-height: 44px; }
+  .astra-app .btn-sm { min-height: 40px; }
+}
+
+@media (max-width: 480px) {
+  :root { --nav-h: 52px; }
+  .astra-app .container { padding: 0 var(--spacing-sm); }
+}

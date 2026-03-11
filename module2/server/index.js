@@ -59,6 +59,42 @@ app.post('/api/groq/generate', async (req, res) => {
 })
 
 /**
+ * POST /api/node/ai/generate — для фронта (как fallback когда OpenRouter недоступен)
+ * Body: { poi: { name, description, category, year, ... }, audience: 'default'|'children'|'academic' }
+ * Returns: { status: 'success', data: { content: string } }
+ */
+const promptsByAudience = {
+  default: (poi) => `Ты опытный экскурсовод Астрахани. Напиши маленькое увлекательное описание для объекта "${poi.name}". Факты: год — ${poi.year || 'неизвестен'}, категория — ${poi.category}. Базовое описание: ${poi.description || 'нет данных'}. Расскажи об архитектурных особенностях и интересных фактах. Пиши живо и эмоционально.`,
+  children: (poi) => `Ты добрый гид для детей. Объясни простыми словами, что такое "${poi.name}" в Астрахани. Год: ${poi.year || 'давным-давно'}. Категория: ${poi.category}. Используй простые слова и интересные сравнения.`,
+  academic: (poi) => `Напиши академическое описание объекта культурного наследия "${poi.name}" (г. Астрахань). Год: ${poi.year}. Архитектор: ${poi.architect || 'неизвестен'}. Категория: ${poi.category}. Опиши историко-архитектурную ценность и культурное значение.`
+}
+
+app.post('/api/node/ai/generate', async (req, res) => {
+  try {
+    const { poi, audience = 'default' } = req.body
+    if (!poi?.name) {
+      return res.status(400).json({ status: 'error', message: 'poi with name required' })
+    }
+    const promptFn = promptsByAudience[audience] || promptsByAudience.default
+    const userContent = promptFn(poi)
+    const completion = await groq.chat.completions.create({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [
+        { role: 'system', content: 'Ты помощник-историк, специалист по архитектуре и истории Астрахани. Отвечай на русском языке.' },
+        { role: 'user', content: userContent }
+      ],
+      max_tokens: 600,
+      temperature: 0.3
+    })
+    const content = (completion.choices[0]?.message?.content || '').trim()
+    res.json({ status: 'success', data: { content } })
+  } catch (err) {
+    console.error('AI generate error:', err.message)
+    res.status(500).json({ status: 'error', message: err.message })
+  }
+})
+
+/**
  * POST /api/groq/tts
  * Body: { text: string }
  * Returns WAV audio
@@ -83,6 +119,50 @@ app.post('/api/groq/tts', async (req, res) => {
       'Content-Type': 'audio/wav',
       'Content-Length': buffer.length
     })
+    res.send(buffer)
+  } catch (err) {
+    console.error('TTS error:', err.message)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+/**
+ * POST /api/node/ai/tts — для фронта. Пробует Yandex TTS (Python), иначе Groq.
+ * Body: { text: string }
+ * Returns: audio/mpeg (Yandex) или audio/wav (Groq)
+ */
+app.post('/api/node/ai/tts', async (req, res) => {
+  try {
+    const { text } = req.body
+    if (!text) return res.status(400).json({ error: 'text required' })
+    const trimmed = (text || '').slice(0, 5000).trim()
+    if (!trimmed) return res.status(400).json({ error: 'text required' })
+
+    const yandexScript = process.env.YANDEX_TTS_SCRIPT || process.env.YANDEX_TTS_PYTHON
+    if (yandexScript) {
+      const { spawn } = await import('child_process')
+      const py = spawn(process.env.PYTHON_PATH || 'python3', [yandexScript], { stdio: ['pipe', 'pipe', 'pipe'] })
+      const chunks = []
+      py.stdin.write(trimmed, () => py.stdin.end())
+      py.stdout.on('data', (chunk) => chunks.push(chunk))
+      py.stderr.on('data', (d) => console.error('[yandex-tts]', d.toString()))
+      const code = await new Promise((resolve) => py.on('close', resolve))
+      if (code === 0 && chunks.length > 0) {
+        const buffer = Buffer.concat(chunks)
+        res.set({ 'Content-Type': 'audio/mpeg', 'Content-Length': buffer.length })
+        return res.send(buffer)
+      }
+    }
+
+    // Fallback: Groq TTS
+    const wav = await groq.audio.speech.create({
+      model: 'playai-tts',
+      voice: 'Celeste-PlayAI',
+      response_format: 'wav',
+      input: trimmed.slice(0, 2000)
+    })
+    const buffer = Buffer.from(await wav.arrayBuffer())
+    res.set({ 'Content-Type': 'audio/wav', 'Content-Length': buffer.length })
     res.send(buffer)
   } catch (err) {
     console.error('TTS error:', err.message)

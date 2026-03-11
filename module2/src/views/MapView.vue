@@ -31,6 +31,9 @@
           {{ gpsActive ? '⬡ Остановить' : '◉ Включить GPS' }}
         </button>
         <p v-if="gpsStatus" class="gps-status">{{ gpsStatus }}</p>
+        <p v-if="gpsActive && mapStore.nearestPoiWithDistance && !mapStore.nearbyPoi" class="gps-nearest">
+          Ближайшая точка: {{ mapStore.nearestPoiWithDistance.poi.name }} (~{{ mapStore.nearestPoiWithDistance.distanceMetres }} м)
+        </p>
       </div>
       <transition name="slide-up">
         <div v-if="mapStore.nearbyPoi" class="geo-trigger-card">
@@ -89,6 +92,16 @@
         ◎ Точки
       </button>
 
+      <!-- Кнопка «Предложить точку» — открывает всплывающее окно -->
+      <button
+        type="button"
+        class="map-suggest-poi-btn"
+        aria-label="Предложить точку на карту"
+        @click="suggestPoiOpen = true"
+      >
+        💡 Предложить точку
+      </button>
+
       <!-- Map controls -->
       <div class="map-controls">
         <button class="map-ctrl-btn" @click="flyToAstrakhan" title="Вернуться к Астрахани">
@@ -97,6 +110,42 @@
         <button class="map-ctrl-btn" @click="zoomIn" title="Приблизить">+</button>
         <button class="map-ctrl-btn" @click="zoomOut" title="Отдалить">−</button>
       </div>
+
+      <!-- Всплывающее окно: предложить точку на карту -->
+      <Dialog
+        v-model:visible="suggestPoiOpen"
+        modal
+        header="Предложить точку на карту"
+        :style="{ width: 'min(420px, 92vw)' }"
+        class="suggest-poi-dialog"
+        :dismissableMask="true"
+        @hide="suggestFormError = ''"
+      >
+        <form class="suggest-poi-form" @submit.prevent="submitSuggestPoi">
+          <div class="form-group">
+            <label class="form-label">Название *</label>
+            <input v-model="suggestForm.name" type="text" class="form-input" placeholder="Например: Дом-музей Кустодиева" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Место *</label>
+            <input v-model="suggestForm.place" type="text" class="form-input" placeholder="Адрес или описание места" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Описание</label>
+            <textarea v-model="suggestForm.description" class="form-textarea" placeholder="Краткое описание объекта…" rows="3" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Почему добавить *</label>
+            <textarea v-model="suggestForm.whyAdd" class="form-textarea" placeholder="Почему это место важно?" required rows="3" />
+          </div>
+          <p v-if="suggestFormError" class="form-error">{{ suggestFormError }}</p>
+          <p v-if="suggestFormSuccess" class="form-success">Предложение отправлено. Мы рассмотрим его и при одобрении добавим точку на карту.</p>
+          <div class="form-actions">
+            <Button type="submit" label="Отправить" :loading="suggestSubmitting" :disabled="suggestSubmitting" />
+            <Button type="button" label="Отмена" class="p-button-text p-button-secondary" @click="suggestPoiOpen = false" />
+          </div>
+        </form>
+      </Dialog>
 
       <!-- Мобильный сайдбар: выезжает слева, при выборе точки закрывается -->
       <Drawer
@@ -137,6 +186,9 @@
               {{ gpsActive ? '⬡ Остановить' : '◉ Включить GPS' }}
             </button>
             <p v-if="gpsStatus" class="gps-status">{{ gpsStatus }}</p>
+            <p v-if="gpsActive && mapStore.nearestPoiWithDistance && !mapStore.nearbyPoi" class="gps-nearest">
+              Ближайшая: {{ mapStore.nearestPoiWithDistance.poi.name }} (~{{ mapStore.nearestPoiWithDistance.distanceMetres }} м)
+            </p>
           </div>
           <div v-if="mapStore.nearbyPoi" class="geo-trigger-card">
             <p class="text-mono" style="color:var(--accent);margin-bottom:0.375rem">⚡ Рядом с вами</p>
@@ -354,9 +406,38 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import { usePoiAiTts } from '@/composables/usePoiAiTts.js'
+import { javaApi } from '@/api/backend.js'
 
 const mapStore = useMapStore()
 const toastStore = useToastStore()
+
+// Предложить точку: всплывающее окно на карте
+const suggestPoiOpen = ref(false)
+const suggestForm = ref({ name: '', place: '', description: '', whyAdd: '' })
+const suggestFormError = ref('')
+const suggestFormSuccess = ref(false)
+const suggestSubmitting = ref(false)
+async function submitSuggestPoi() {
+  suggestFormError.value = ''
+  suggestFormSuccess.value = false
+  suggestSubmitting.value = true
+  try {
+    await javaApi.poiSuggestions.submit({
+      name: suggestForm.value.name.trim(),
+      place: suggestForm.value.place.trim(),
+      description: suggestForm.value.description?.trim() || undefined,
+      whyAdd: suggestForm.value.whyAdd.trim()
+    })
+    suggestFormSuccess.value = true
+    suggestForm.value = { name: '', place: '', description: '', whyAdd: '' }
+    toastStore.push('Предложение отправлено', 'info')
+    setTimeout(() => { suggestPoiOpen.value = false; suggestFormSuccess.value = false }, 2000)
+  } catch (e) {
+    suggestFormError.value = e.message || 'Не удалось отправить. Попробуйте позже.'
+  } finally {
+    suggestSubmitting.value = false
+  }
+}
 
 // DOM refs
 const mapEl = ref(null)
@@ -788,6 +869,11 @@ function categoryIcon(cat) {
   font-size: 0.7rem;
   color: var(--gray-400);
 }
+.gps-nearest {
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  margin-top: 0.25rem;
+}
 
 /* ===== Geo-trigger card ===== */
 .geo-trigger-card {
@@ -960,6 +1046,47 @@ function categoryIcon(cat) {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+.map-suggest-poi-btn {
+  position: absolute;
+  left: var(--spacing-md);
+  bottom: var(--spacing-xl);
+  padding: 10px 14px;
+  font-size: 13px;
+  background: var(--ink, #0a0a0a);
+  border: 1px solid var(--gray-600);
+  border-radius: 8px;
+  color: var(--paper);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 10;
+  transition: border-color 0.2s, color 0.2s;
+}
+.map-suggest-poi-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+@media (max-width: 768px) {
+  .map-suggest-poi-btn {
+    left: var(--spacing-sm);
+    bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0));
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+}
+
+.suggest-poi-form .form-group { margin-bottom: 1rem; }
+.suggest-poi-form .form-label { display: block; font-size: 0.75rem; color: var(--gray-400); margin-bottom: 0.35rem; }
+.suggest-poi-form .form-input, .suggest-poi-form .form-textarea {
+  width: 100%; padding: 0.5rem 0.75rem; font-size: 0.95rem;
+  background: var(--gray-800); border: 1px solid var(--gray-600); border-radius: 6px; color: var(--paper);
+}
+.suggest-poi-form .form-textarea { min-height: 72px; resize: vertical; }
+.suggest-poi-form .form-error { color: var(--danger, #e57373); font-size: 0.85rem; margin-bottom: 0.5rem; }
+.suggest-poi-form .form-success { color: var(--success, #4caf50); font-size: 0.85rem; margin-bottom: 0.5rem; }
+.suggest-poi-form .form-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
 
 /* ===== Connector line from marker to card ===== */
 .poi-connector {

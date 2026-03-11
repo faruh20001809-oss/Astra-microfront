@@ -1,4 +1,6 @@
 package ru.astrakhan.admin.controller;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -7,15 +9,21 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.astrakhan.admin.entity.PointOfInterest;
+import ru.astrakhan.admin.entity.Route;
 import ru.astrakhan.admin.repository.ReviewRepository;
 import ru.astrakhan.admin.service.PoiService;
+import ru.astrakhan.admin.service.RouteService;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller @RequestMapping("/admin/poi") @RequiredArgsConstructor
 public class PoiAdminController {
     private final PoiService poiService;
+    private final RouteService routeService;
     private final ReviewRepository reviewRepository;
+    private final ObjectMapper objectMapper;
 
     @GetMapping public String list(@RequestParam(required = false) String status, Model model) {
         List<PointOfInterest> pois = (status != null && !status.isEmpty()) ?
@@ -78,5 +86,72 @@ public class PoiAdminController {
         return poiService.findById(id).filter(p -> p.getImageData() != null)
             .map(p -> ResponseEntity.ok().header("Content-Type", "image/jpeg").body(p.getImageData()))
             .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/bulk")
+    public String bulkForm(Model model) {
+        return "poi/bulk";
+    }
+
+    @PostMapping("/bulk")
+    public String bulkUpload(@RequestParam("json") String json, RedirectAttributes ra) {
+        if (json == null || json.isBlank()) {
+            ra.addFlashAttribute("error", "Вставьте JSON");
+            return "redirect:/admin/poi/bulk";
+        }
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode poisNode = root.get("pois");
+            List<Long> createdPoiIds = new ArrayList<>();
+            if (poisNode != null && poisNode.isArray()) {
+                for (JsonNode p : poisNode) {
+                    String name = p.has("name") ? p.get("name").asText().trim() : null;
+                    String category = p.has("category") ? p.get("category").asText().trim() : "Прочее";
+                    if (name == null || name.isEmpty()) continue;
+                    PointOfInterest poi = new PointOfInterest();
+                    poi.setName(name);
+                    poi.setCategory(category);
+                    poi.setDescription(p.has("description") ? p.get("description").asText(null) : null);
+                    poi.setAddress(p.has("address") ? p.get("address").asText(null) : null);
+                    if (p.has("latitude")) poi.setLatitude(p.get("latitude").asDouble());
+                    if (p.has("longitude")) poi.setLongitude(p.get("longitude").asDouble());
+                    if (p.has("foundedYear")) poi.setFoundedYear(p.get("foundedYear").asInt());
+                    if (p.has("architect")) poi.setArchitect(p.get("architect").asText(null));
+                    poi.setStatus(PointOfInterest.PoiStatus.DRAFT);
+                    poi.setImageData(null);
+                    poi.setImageFilename(null);
+                    createdPoiIds.add(poiService.save(poi).getId());
+                }
+            }
+            JsonNode routesNode = root.get("routes");
+            if (routesNode != null && routesNode.isArray() && !createdPoiIds.isEmpty()) {
+                for (JsonNode r : routesNode) {
+                    String name = r.has("name") ? r.get("name").asText().trim() : null;
+                    if (name == null || name.isEmpty()) continue;
+                    Route route = new Route();
+                    route.setName(name);
+                    route.setDescription(r.has("description") ? r.get("description").asText(null) : null);
+                    route.setCategory(r.has("category") ? r.get("category").asText("Маршрут") : "Маршрут");
+                    route.setPublished(false);
+                    route.setPaid(false);
+                    route.setPrice(0.0);
+                    if (r.has("poiOrder") && r.get("poiOrder").isArray()) {
+                        List<String> ids = new ArrayList<>();
+                        for (JsonNode idx : r.get("poiOrder")) {
+                            int i = idx.asInt(-1);
+                            if (i >= 0 && i < createdPoiIds.size()) ids.add(createdPoiIds.get(i).toString());
+                        }
+                        route.setPoiIds(String.join(",", ids));
+                    }
+                    routeService.save(route);
+                }
+            }
+            int routesCount = (routesNode != null && routesNode.isArray()) ? routesNode.size() : 0;
+            ra.addFlashAttribute("success", "Создано точек: " + createdPoiIds.size() + (routesCount > 0 ? ", маршрутов: " + routesCount : "") + ". Добавьте картинки в карточках точек.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Ошибка разбора JSON: " + e.getMessage());
+            return "redirect:/admin/poi/bulk";
+        }
+        return "redirect:/admin/poi";
     }
 }

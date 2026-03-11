@@ -22,9 +22,10 @@
         </button>
       </div>
 
-      <!-- Статус оплаты -->
+      <!-- Статус заказа (обновляется по данным с сервера: подтверждён / оплачено / обрабатывается) -->
       <div v-if="orderId" class="status-row">
-        <span v-if="paid" class="status-badge paid">Оплачено</span>
+        <span v-if="orderStatus === 'confirmed'" class="status-badge confirmed">Подтверждён</span>
+        <span v-else-if="paid" class="status-badge paid">Оплачено</span>
         <span v-else class="status-badge processing">Обрабатывается</span>
       </div>
 
@@ -54,6 +55,7 @@ import { javaApi } from '@/api/backend.js'
 const route = useRoute()
 const orderId = ref(route.query.orderId || '')
 const paid = ref(false)
+const orderStatus = ref('') // processing | confirmed — с сервера
 const iconDone = ref(false)
 const copied = ref(false)
 
@@ -81,8 +83,11 @@ onMounted(async () => {
     } catch (_) { /* ignore */ }
   }
   try {
-    const status = await javaApi.orders.getPaymentStatus(orderId.value)
-    paid.value = status.paid === true
+    const data = await javaApi.orders.getPaymentStatus(orderId.value)
+    if (data) {
+      paid.value = data.paid === true
+      orderStatus.value = (data.status || '').toLowerCase()
+    }
   } catch (_) { /* ignore */ }
 })
 </script>
@@ -223,6 +228,11 @@ onMounted(async () => {
 .status-badge.processing {
   background: rgba(200, 169, 110, 0.15);
   color: var(--accent-dark, #8a6e3a);
+}
+
+.status-badge.confirmed {
+  background: rgba(26, 107, 58, 0.12);
+  color: var(--success, #1a6b3a);
 }
 
 /* Что дальше */

@@ -1,6 +1,6 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head(${isEdit} ? 'Редактирование' : 'Новая точка')}"></head>
-<body><div class="layout"><nav th:replace="~{fragments/layout :: sidebar}"></nav>
+<body class="astra-app"><div class="layout"><nav th:replace="~{fragments/layout :: sidebar}"></nav>
 <main class="main-content">
 <div class="page-header"><h1 th:text="${isEdit} ? '✏️ Редактирование точки' : '📍 Новая точка'"></h1><a th:href="@{/admin/poi}" class="btn">← Назад</a></div>
 <div class="card"><form th:action="@{/admin/poi/save}" method="post" enctype="multipart/form-data" th:object="${poi}">

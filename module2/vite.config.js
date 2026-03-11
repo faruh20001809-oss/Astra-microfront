@@ -40,6 +40,10 @@ export default defineConfig(({ mode }) => {
             })
           }
         },
+        '/api/node': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+        },
       }
     }
   }

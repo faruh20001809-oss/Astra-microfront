@@ -35,16 +35,19 @@
         <div class="spinner" />
         <span>Загрузка товаров…</span>
       </div>
-      <div v-if="error && !isLoading" class="shop-error">
+
+      <!-- Error -->
+      <div v-else-if="error" class="shop-error">
         <p class="text-mono" style="color:var(--accent)">⚠ Внимание</p>
         <p>{{ error }}</p>
-        <button class="btn btn-ghost btn-sm" @click="onMounted">🔄 Попробовать снова</button>
+        <button class="btn btn-ghost btn-sm" @click="loadProducts">🔄 Попробовать снова</button>
       </div>
 
-      <!-- Существующая загрузка -->
-      <div v-if="isLoading" class="shop-loading">
-        <div class="spinner" />
-        <span>Загрузка товаров…</span>
+      <!-- Empty state (фильтр не дал результатов) -->
+      <div v-else-if="!sortedProducts.length" class="shop-empty">
+        <p class="shop-empty-title">В этой категории пока ничего нет</p>
+        <p class="shop-empty-hint">Попробуйте другую категорию или сбросьте фильтр.</p>
+        <button class="btn btn-ghost btn-sm" @click="activeCategory = null">Сбросить фильтр</button>
       </div>
 
       <!-- Product grid -->
@@ -147,12 +150,10 @@ const sortedProducts = computed(() => {
   return list
 })
 
-onMounted(async () => {
+async function loadProducts() {
   isLoading.value = true
   error.value = null
-
   try {
-    // Загружаем товары из Java API
     products.value = await javaApi.products.getList()
   } catch (err) {
     console.warn('Java API недоступен, используем mock-данные:', err)
@@ -161,7 +162,9 @@ onMounted(async () => {
   } finally {
     isLoading.value = false
   }
-})
+}
+
+onMounted(loadProducts)
 
 function openProduct(p) {
   selectedProduct.value = p
@@ -269,6 +272,23 @@ function getMockProducts() {
   color: var(--gray-400);
   padding: var(--spacing-xl) 0;
 }
+
+.shop-error {
+  padding: var(--spacing-xl) 0;
+  text-align: center;
+  color: var(--gray-400);
+}
+.shop-error p { margin: var(--spacing-sm) 0; }
+.shop-error .btn { margin-top: var(--spacing-md); }
+
+.shop-empty {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-lg);
+  color: var(--gray-400);
+}
+.shop-empty-title { font-family: var(--font-display); font-size: 1.1rem; color: var(--paper); margin: 0 0 var(--spacing-sm); }
+.shop-empty-hint { font-size: 0.85rem; margin: 0 0 var(--spacing-md); line-height: 1.5; }
+.shop-empty .btn { margin-top: var(--spacing-sm); }
 
 /* Product modal */
 .product-modal { max-width: 760px; position: relative; }

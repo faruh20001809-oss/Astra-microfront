@@ -89,7 +89,10 @@ public class StubPaymentService implements PaymentService {
 
     @Override
     public boolean isOrderPaid(Order order) {
-        return order != null && order.getPaidAt() != null;
+        if (order == null) return false;
+        // Оплачено по факту оплаты или когда оператор подтвердил заказ (CONFIRMED)
+        return order.getPaidAt() != null
+                || order.getStatus() == Order.OrderStatus.CONFIRMED;
     }
 
     private String buildStubRedirectUrl(String returnUrl, String orderId) {

@@ -112,6 +112,21 @@ a {
   text-decoration: none;
 }
 
+/* Доступность: видимый фокус при навигации с клавиатуры */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Уважаем настройку «уменьшить движение» */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
 /* ---- Scrollbar ---- */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--gray-800); }
@@ -217,6 +232,10 @@ a {
   cursor: not-allowed;
 }
 
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 /* ---- Form elements ---- */
 .form-group {
   display: flex;
@@ -241,8 +260,9 @@ a {
   font-family: var(--font-mono);
   font-size: 0.875rem;
   padding: 0.625rem 0.875rem;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), box-shadow var(--transition);
   width: 100%;
+  min-height: 40px;
   -webkit-appearance: none;
 }
 
@@ -251,11 +271,24 @@ a {
 .form-textarea:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.15);
 }
 
 .form-input::placeholder,
 .form-textarea::placeholder {
   color: var(--gray-400);
+}
+
+.form-input.error,
+.form-select.error,
+.form-textarea.error {
+  border-color: var(--danger);
+}
+
+.form-input.error:focus,
+.form-select.error:focus,
+.form-textarea.error:focus {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.2);
 }
 
 .form-textarea { resize: vertical; min-height: 120px; }
@@ -319,31 +352,55 @@ a {
   position: relative;
 }
 
+.modal-close-btn {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-700);
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm);
+  color: var(--paper);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+.modal-close-btn:hover { background: var(--gray-600); border-color: var(--paper); }
+
 /* ---- Toast ---- */
 .toast-container {
   position: fixed;
-  bottom: var(--spacing-xl);
-  right: var(--spacing-xl);
+  bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0));
+  right: calc(var(--spacing-xl) + env(safe-area-inset-right, 0));
+  left: auto;
   z-index: 9999;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+  pointer-events: none;
 }
 
 .toast {
   background: var(--paper);
   color: var(--ink);
   padding: 0.875rem 1.25rem;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-family: var(--font-mono);
   font-size: 0.8rem;
+  line-height: 1.45;
   max-width: 320px;
   box-shadow: var(--shadow-modal);
+  border: 1px solid rgba(0,0,0,0.06);
   animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto;
 }
 
-.toast.error { background: var(--danger); color: var(--white); }
-.toast.success { background: var(--success); color: var(--white); }
+.toast.error { background: var(--danger); color: var(--white); border-color: rgba(0,0,0,0.1); }
+.toast.success { background: var(--success); color: var(--white); border-color: rgba(0,0,0,0.1); }
+.toast.info { background: var(--gray-800); color: var(--paper); border-color: var(--gray-600); }
 
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(16px); }
@@ -482,18 +539,23 @@ a {
 .form-group input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.15);
 }
 
 .form-group input.error {
-  border-color: #ef4444;
+  border-color: var(--danger);
+}
+
+.form-group input.error:focus {
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.2);
 }
 
 .error-msg {
   display: block;
-  font-size: 0.65rem;
-  color: #ef4444;
-  margin-top: 0.2rem;
-  min-height: 1em;
+  font-size: 0.7rem;
+  color: var(--danger);
+  margin-top: 0.25rem;
+  min-height: 1.2em;
 }
 
 /* Адаптив для мобильных */

@@ -69,14 +69,13 @@ public class PaymentController {
             return ResponseEntity.notFound().build();
         }
         boolean paid = paymentService.isOrderPaid(order);
-        return ResponseEntity.ok(Map.of(
-                "status", "success",
-                "data", Map.of(
-                        "orderId", orderId,
-                        "paid", paid,
-                        "paidAt", order.getPaidAt() != null ? order.getPaidAt().toString() : null
-                )
-        ));
+        String statusLower = order.getStatus() != null ? order.getStatus().name().toLowerCase() : "processing";
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("orderId", orderId);
+        data.put("paid", paid);
+        data.put("paidAt", order.getPaidAt() != null ? order.getPaidAt().toString() : null);
+        data.put("status", statusLower);
+        return ResponseEntity.ok(Map.of("status", "success", "data", data));
     }
 
     /**

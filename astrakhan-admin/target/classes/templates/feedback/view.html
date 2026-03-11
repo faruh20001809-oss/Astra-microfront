@@ -1,4 +1,4 @@
-<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Обращение #'+${feedback.id})}"></head><body><div class="layout"><nav th:replace="~{fragments/layout :: sidebar}"></nav><main class="main-content">
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head('Обращение #'+${feedback.id})}"></head><body class="astra-app"><div class="layout"><nav th:replace="~{fragments/layout :: sidebar}"></nav><main class="main-content">
 <div class="page-header"><h1 th:text="'💬 Обращение #'+${feedback.id}"></h1><a th:href="@{/admin/feedback}" class="btn">← Назад</a></div>
 <div class="grid-2"><div class="card"><div class="card-header"><h3>Обращение</h3></div>
 <div class="detail-row"><div class="detail-label">Имя</div><div class="detail-value" th:text="${feedback.name}"></div></div>

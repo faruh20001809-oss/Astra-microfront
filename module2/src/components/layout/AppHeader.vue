@@ -32,13 +32,15 @@
       </nav>
 
       <div class="header-actions">
+        <!-- Кнопка корзины показывается только когда в корзине есть товары (на мобилках иначе непонятный пустой квадрат) -->
         <Button
+            v-if="cartStore.totalCount > 0"
             class="p-button-text p-button-secondary cart-btn"
             @click="cartStore.toggleCart()"
             aria-label="Корзина"
         >
           <span class="cart-btn-text">Корзина</span>
-          <Badge v-if="cartStore.totalCount" :value="cartStore.totalCount" class="cart-badge-pv" />
+          <Badge :value="cartStore.totalCount" class="cart-badge-pv" />
         </Button>
         <Button
             icon="pi pi-bars"

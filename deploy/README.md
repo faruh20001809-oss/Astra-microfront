@@ -120,3 +120,15 @@ echo 'set $vite_ai_api_key "sk-or-v1-ВАШ_КЛЮЧ_OPENROUTER";' | sudo tee /o
 export VITE_AI_API_KEY="sk-or-v1-ВАШ_КЛЮЧ_OPENROUTER"
 sudo GIT_REPO="" APP_DIR=/opt/astramicro bash deploy/setup.sh
 ```
+
+### Картинки маршрутов и API
+
+В `nginx-astramicro.conf` для `location /java-api/` должен быть **rewrite**: `rewrite ^/java-api(.*)$ $1 break;`, чтобы бэкенд получал путь `/api/v1/...` (без префикса `/java-api`). Иначе запросы к картинкам маршрутов и товаров вернут 404.
+
+### TTS (озвучка POI)
+
+По умолчанию озвучка идёт через Web Speech API в браузере или через Groq (Node). Чтобы использовать **Yandex TTS** (пакет `yandex-tts-free`):
+
+1. На сервере: `pip install yandex-tts-free`, в системе должен быть **ffmpeg**.
+2. В проекте есть скрипт `scripts/yandex_tts.py` (читает текст из stdin, выводит MP3 в stdout).
+3. При запуске Node-сервера задайте переменную: `YANDEX_TTS_SCRIPT=/opt/astramicro/scripts/yandex_tts.py` (или полный путь к скрипту). Тогда запросы к `/api/node/ai/tts` будут использовать Yandex TTS; при ошибке — fallback на Groq/Web Speech.

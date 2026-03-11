@@ -205,7 +205,7 @@ export const javaApi = {
       return json.data
     },
 
-    /** Статус оплаты заказа: { paid: boolean, paidAt?: string } */
+    /** Статус оплаты заказа: { paid: boolean, paidAt?: string, status?: string } */
     getPaymentStatus: async (orderId) => {
       const res = await baseFetch(`${JAVA_API_BASE}/orders/${orderId}/payment-status`)
       const json = await res.json().catch(() => ({}))

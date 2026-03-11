@@ -75,7 +75,7 @@ public class ApiController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Картинка маршрута (из imageData). */
+    /** Картинка маршрута (из imageData). ETag по updatedAt — при обновлении файла на бэкенде кэш инвалидируется. */
     @GetMapping(value = "/routes/{id}/image", produces = "image/*")
     public ResponseEntity<byte[]> getRouteImage(@PathVariable Long id) {
         return routeService.findById(id)
@@ -88,8 +88,10 @@ public class ApiController {
                         else if (fn.endsWith(".gif")) contentType = "image/gif";
                         else if (fn.endsWith(".webp")) contentType = "image/webp";
                     }
+                    String etag = r.getUpdatedAt() != null ? "\"r" + id + "-" + r.getUpdatedAt().toEpochSecond(java.time.ZoneOffset.UTC) + "\"" : "\"r" + id + "\"";
                     return ResponseEntity.ok()
-                            .header("Cache-Control", "public, max-age=86400")
+                            .header("Cache-Control", "private, max-age=3600, must-revalidate")
+                            .header("ETag", etag)
                             .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
                             .body(r.getImageData());
                 })
@@ -109,7 +111,7 @@ public class ApiController {
         return productService.findById(id).map(p -> okSingle(productMap(p))).orElse(ResponseEntity.notFound().build());
     }
 
-    /** Картинка товара (из imageData). Фронт кэширует при первой загрузке. */
+    /** Картинка товара (из imageData). ETag — при изменении на бэкенде кэш инвалидируется. */
     @GetMapping(value = "/products/{id}/image", produces = "image/*")
     public ResponseEntity<byte[]> getProductImage(@PathVariable Long id) {
         return productService.findById(id)
@@ -122,8 +124,10 @@ public class ApiController {
                         else if (fn.endsWith(".gif")) contentType = "image/gif";
                         else if (fn.endsWith(".webp")) contentType = "image/webp";
                     }
+                    String etag = p.getUpdatedAt() != null ? "\"p" + id + "-" + p.getUpdatedAt().toEpochSecond(java.time.ZoneOffset.UTC) + "\"" : "\"p" + id + "\"";
                     return ResponseEntity.ok()
-                            .header("Cache-Control", "public, max-age=86400")
+                            .header("Cache-Control", "private, max-age=3600, must-revalidate")
+                            .header("ETag", etag)
                             .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
                             .body(p.getImageData());
                 })

@@ -4,6 +4,7 @@ import PrimeVue from 'primevue/config'
 import Aura from '@primeuix/themes/aura'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
+import Dialog from 'primevue/dialog'
 import Badge from 'primevue/badge'
 import Ripple from 'primevue/ripple'
 import App from './App.vue'
@@ -28,6 +29,7 @@ app.use(PrimeVue, {
 })
 app.component('Button', Button)
 app.component('Drawer', Drawer)
+app.component('Dialog', Dialog)
 app.component('Badge', Badge)
 app.directive('ripple', Ripple)
 app.mount('#app')

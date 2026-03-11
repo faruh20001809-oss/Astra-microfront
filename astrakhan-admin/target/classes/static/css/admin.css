@@ -1,3 +1,21 @@
+/* После astra.css: переопределения для единого стиля (sidebar, main, cards под тёмную тему) */
+.astra-app .sidebar{background:var(--ink);color:var(--paper);border-right:1px solid var(--gray-700)}
+.astra-app .sidebar-header{border-bottom-color:var(--gray-700)}
+.astra-app .sidebar-header h2{color:var(--paper)}
+.astra-app .sidebar-header small{color:var(--gray-400)}
+.astra-app .sidebar-nav li a{color:var(--paper)}
+.astra-app .sidebar-nav li a:hover,.astra-app .sidebar-nav li a.active{background:rgba(255,255,255,.08);color:var(--accent);border-left-color:var(--accent)}
+.astra-app .main-content{background:var(--ink);color:var(--paper)}
+.astra-app .page-header h1{color:var(--paper)}
+.astra-app .stat-card{background:var(--gray-800);border:1px solid var(--gray-600);color:var(--paper)}
+.astra-app .stat-card .stat-value{color:var(--paper)}
+.astra-app .stat-card .stat-label{color:var(--gray-400)}
+.astra-app .detail-row{border-bottom-color:var(--gray-700)}
+.astra-app .detail-label{color:var(--gray-400)}
+.astra-app .detail-value{color:var(--paper)}
+.astra-app .filter-bar .btn.active{background:var(--accent);color:var(--ink);border-color:var(--accent)}
+.astra-app .chart-bar-fill{background:var(--accent)}
+
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#f5f5f5;--sidebar-bg:#1a1a1a;--sidebar-text:#ccc;--sidebar-active:#fff;--card-bg:#fff;--text:#333;--text-light:#666;--border:#e0e0e0;--primary:#333;--primary-hover:#555;--success:#2d7a2d;--danger:#c0392b;--warning:#d4a017;--info:#2c7be5;--radius:8px;--nav-h:56px}
 body{font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}

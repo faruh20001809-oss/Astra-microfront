@@ -1,4 +1,4 @@
-<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head(${isEdit}?'Редактирование':'Новый маршрут')}"></head><body><div class="layout"><nav th:replace="~{fragments/layout :: sidebar}"></nav><main class="main-content">
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head(${isEdit}?'Редактирование':'Новый маршрут')}"></head><body class="astra-app"><div class="layout"><nav th:replace="~{fragments/layout :: sidebar}"></nav><main class="main-content">
 <div class="page-header"><h1 th:text="${isEdit}?'✏️ Редактирование маршрута':'🚶 Новый маршрут'"></h1><a th:href="@{/admin/routes}" class="btn">← Назад</a></div>
 <div class="card"><form th:action="@{/admin/routes/save}" method="post" enctype="multipart/form-data" th:object="${route}"><input type="hidden" th:field="*{id}"/>
 <div class="form-group"><label>Название *</label><input type="text" class="form-control" th:field="*{name}" required/></div>

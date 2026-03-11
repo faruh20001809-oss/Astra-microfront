@@ -3,9 +3,28 @@ import { defineStore } from 'pinia'
 /* ─────────────────────────────────────────
    Cart Store
 ───────────────────────────────────────── */
+const CART_STORAGE_KEY = 'astra-cart'
+
+function loadCartFromStorage() {
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY)
+    if (raw) {
+      const arr = JSON.parse(raw)
+      return Array.isArray(arr) ? arr : []
+    }
+  } catch (_) {}
+  return []
+}
+
+function saveCartToStorage(items) {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
+  } catch (_) {}
+}
+
 export const useCartStore = defineStore('cart', {
   state: () => ({
-    items: [],
+    items: loadCartFromStorage(),
     isOpen: false
   }),
   getters: {
@@ -20,19 +39,22 @@ export const useCartStore = defineStore('cart', {
       } else {
         this.items.push({ ...product, qty: 1 })
       }
+      saveCartToStorage(this.items)
     },
     removeItem(id) {
       this.items = this.items.filter(i => i.id !== id)
+      saveCartToStorage(this.items)
     },
     updateQty(id, qty) {
       const item = this.items.find(i => i.id === id)
       if (item) {
         if (qty <= 0) this.removeItem(id)
-        else item.qty = qty
+        else { item.qty = qty; saveCartToStorage(this.items) }
       }
     },
     clearCart() {
       this.items = []
+      saveCartToStorage(this.items)
     },
     toggleCart() {
       this.isOpen = !this.isOpen
@@ -64,6 +86,22 @@ export const useMapStore = defineStore('map', {
     categories: (state) => {
       if (!Array.isArray(state.pois)) return []
       return [...new Set(state.pois.map(p => p.category).filter(Boolean))]
+    },
+
+    /** Ближайшая точка к пользователю и расстояние в метрах (для GPS). */
+    nearestPoiWithDistance: (state) => {
+      if (!state.userLocation || !Array.isArray(state.pois) || state.pois.length === 0) return null
+      const { lat, lng } = state.userLocation
+      let nearest = null
+      let minDist = Infinity
+      for (const poi of state.pois) {
+        const d = haversine(lat, lng, poi.lat, poi.lng)
+        if (d < minDist) {
+          minDist = d
+          nearest = poi
+        }
+      }
+      return nearest ? { poi: nearest, distanceMetres: Math.round(minDist) } : null
     }
   },
 
@@ -130,14 +168,15 @@ export const useMapStore = defineStore('map', {
       else this.activeFilters.splice(idx, 1)
     },
 
+    /** Определяет, рядом ли пользователь с какой-либо точкой (в радиусе 150 м). */
     checkGeoTriggers() {
       if (!this.userLocation || !Array.isArray(this.pois)) return
       const { lat, lng } = this.userLocation
-      const TRIGGER_RADIUS = 150 // metres
+      const TRIGGER_RADIUS_M = 150
 
       for (const poi of this.pois) {
         const dist = haversine(lat, lng, poi.lat, poi.lng)
-        if (dist <= TRIGGER_RADIUS) {
+        if (dist <= TRIGGER_RADIUS_M) {
           if (!this.nearbyPoi || this.nearbyPoi.id !== poi.id) {
             this.nearbyPoi = poi
           }

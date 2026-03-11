@@ -6,6 +6,7 @@ import {
   speakWithWebSpeech,
   stopAllAudio,
 } from '@/api/groq.js'
+import { nodeApi } from '@/api/backend.js'
 
 export function usePoiAiTts() {
   const mapStore = useMapStore()
@@ -47,9 +48,18 @@ export function usePoiAiTts() {
         selectedAudience.value,
       )
     } catch (e) {
-      console.error('AI generation error:', e)
-      toastStore.push('Ошибка генерации AI-контента: ' + e.message, 'error')
-      aiContent.value = mapStore.selectedPoi.description
+      console.warn('OpenRouter AI failed, trying Node fallback:', e.message)
+      try {
+        const data = await nodeApi.ai.generatePoiContent(
+          mapStore.selectedPoi,
+          selectedAudience.value,
+        )
+        aiContent.value = (typeof data === 'string' ? data : data?.content) || mapStore.selectedPoi.description || ''
+      } catch (e2) {
+        console.error('AI generation error:', e2)
+        toastStore.push('Ошибка генерации AI-контента: ' + (e2.message || e.message), 'error')
+        aiContent.value = mapStore.selectedPoi.description || ''
+      }
     } finally {
       aiLoading.value = false
     }
@@ -67,6 +77,21 @@ export function usePoiAiTts() {
     ttsLoading.value = true
     try {
       isPlaying.value = true
+      try {
+        const blob = await nodeApi.ai.synthesizeSpeech(aiContent.value)
+        if (blob && blob.size > 0) {
+          const url = URL.createObjectURL(blob)
+          const audio = new Audio(url)
+          await new Promise((resolve, reject) => {
+            audio.onended = () => { URL.revokeObjectURL(url); resolve() }
+            audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Playback failed')) }
+            audio.play().catch(reject)
+          })
+          return
+        }
+      } catch (e) {
+        console.warn('Node TTS failed, using Web Speech:', e.message)
+      }
       await speakWithWebSpeech(aiContent.value)
     } catch (e) {
       console.error('TTS error:', e)
