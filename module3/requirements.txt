@@ -1,4 +1,6 @@
 # Module3: дашборд (пользователи, роли, метрики, отчёты)
+# gunicorn — для запуска на сервере: gunicorn -b 127.0.0.1:5000 app:app
+gunicorn>=21.0
 Flask>=2.3
 flask-sqlalchemy>=3.0
 flask-migrate>=4.0
