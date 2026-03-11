@@ -60,3 +60,63 @@ echo '*/5 * * * * root /opt/astramicro/deploy/auto-update.sh >> /var/log/astrami
 - Debian 12
 - Доступ в интернет (git, Maven, npm)
 - Порт 80 для Nginx (и при необходимости 443 для HTTPS)
+
+## Почта (письма о заказах)
+
+Чтобы клиентам уходили письма (подтверждение заказа, трек-номер), настройте SMTP — переменными окружения на сервере или в `application-local.properties`:
+
+- `SPRING_MAIL_HOST` — хост SMTP (например `smtp.yandex.ru`, `smtp.mail.ru`)
+- `SPRING_MAIL_PORT` — порт (587 или 465)
+- `SPRING_MAIL_USERNAME` и `SPRING_MAIL_PASSWORD` — логин и пароль (для Yandex/Mail.ru часто нужен «пароль приложения»)
+- `APP_MAIL_FROM` — адрес отправителя (должен быть разрешён у провайдера)
+- `APP_MAIL_ENABLED=true` — включить отправку (по умолчанию true; при `false` письма не отправляются, только пишется в лог)
+
+Пример для systemd (в `/etc/systemd/system/astrakhan-admin.service` в секции `[Service]`):
+
+```ini
+Environment="SPRING_MAIL_HOST=smtp.yandex.ru"
+Environment="SPRING_MAIL_PORT=465"
+Environment="SPRING_MAIL_USERNAME=your@yandex.ru"
+Environment="SPRING_MAIL_PASSWORD=your-app-password"
+Environment="APP_MAIL_FROM=your@yandex.ru"
+```
+
+Подробнее см. `astrakhan-admin/src/main/resources/application-mail.example.properties`.
+
+## ИИ (генерация текста)
+
+Функция «ИИ для генерации текста» использует OpenRouter; на сервере должен быть задан API-ключ. Без него запросы к `/api/ai/` не проксируются на OpenRouter и генерация не работает.
+
+**Если сервер уже установлен и ключа не было** — выполните на сервере (подставьте свой ключ и при необходимости путь к проекту):
+
+```bash
+# 1) Создать module2/.env (для единообразия и будущих сборок)
+echo 'VITE_AI_API_KEY=sk-or-v1-ВАШ_КЛЮЧ_OPENROUTER' | sudo tee /opt/astramicro/module2/.env
+
+# 2) Файл с ключом для Nginx (прокси /api/ai/)
+echo 'set $vite_ai_api_key "sk-or-v1-ВАШ_КЛЮЧ_OPENROUTER";' | sudo tee /opt/astramicro/deploy/nginx-ai-key.conf
+
+# 3) Добавить в Nginx проксирование /api/ai/ и перезагрузить Nginx
+# (если при установке VITE_AI_API_KEY не задавали — конфиг без location /api/ai/)
+# Вставьте в server { } в /etc/nginx/sites-available/astramicro после "root ...;":
+#     include /opt/astramicro/deploy/nginx-ai-key.conf;
+#     location /api/ai/ {
+#         rewrite ^/api/ai/chat/(.*)$ /api/v1/chat/$1 break;
+#         proxy_pass https://openrouter.ai;
+#         proxy_http_version 1.1;
+#         proxy_set_header Host openrouter.ai;
+#         proxy_set_header Authorization "Bearer $vite_ai_api_key";
+#         proxy_set_header X-Real-IP $remote_addr;
+#         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+#         proxy_set_header X-Forwarded-Proto $scheme;
+#         proxy_ssl_server_name on;
+#     }
+# Затем: sudo nginx -t && sudo systemctl reload nginx
+```
+
+**При первичной установке** можно сразу передать ключ — тогда `setup.sh` создаст `module2/.env` и настроит Nginx с проксированием AI:
+
+```bash
+export VITE_AI_API_KEY="sk-or-v1-ВАШ_КЛЮЧ_OPENROUTER"
+sudo GIT_REPO="" APP_DIR=/opt/astramicro bash deploy/setup.sh
+```

@@ -1,12 +1,10 @@
 <template>
   <div class="map-page">
-    <!-- Sidebar — всегда виден, без сворачивания -->
+    <!-- Sidebar: на десктопе — слева в потоке; на мобильных скрыт, контент в Drawer -->
     <aside class="map-sidebar">
       <div class="sidebar-header">
         <h2 class="sidebar-title">Исторические объекты</h2>
       </div>
-
-      <!-- Filters -->
       <div class="filter-section">
         <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Категории</p>
         <div class="filter-chips">
@@ -20,10 +18,7 @@
           </button>
         </div>
       </div>
-
       <div class="divider" />
-
-      <!-- GPS toggle -->
       <div class="gps-section">
         <div class="gps-header">
           <span class="text-mono">GPS-трекинг</span>
@@ -37,8 +32,6 @@
         </button>
         <p v-if="gpsStatus" class="gps-status">{{ gpsStatus }}</p>
       </div>
-
-      <!-- Geo-trigger notification -->
       <transition name="slide-up">
         <div v-if="mapStore.nearbyPoi" class="geo-trigger-card">
           <p class="text-mono" style="color:var(--accent);margin-bottom:0.375rem">⚡ Рядом с вами</p>
@@ -48,10 +41,7 @@
           </button>
         </div>
       </transition>
-
       <div class="divider" />
-
-      <!-- POI list -->
       <div class="poi-list">
         <div
           v-for="poi in mapStore.filteredPois"
@@ -89,6 +79,16 @@
         </div>
       </transition>
 
+      <!-- Кнопка «Точки» на мобильных — открывает список слева -->
+      <button
+          type="button"
+          class="map-poins-btn"
+          aria-label="Список точек"
+          @click="mobileSidebarOpen = true"
+      >
+        ◎ Точки
+      </button>
+
       <!-- Map controls -->
       <div class="map-controls">
         <button class="map-ctrl-btn" @click="flyToAstrakhan" title="Вернуться к Астрахани">
@@ -97,6 +97,74 @@
         <button class="map-ctrl-btn" @click="zoomIn" title="Приблизить">+</button>
         <button class="map-ctrl-btn" @click="zoomOut" title="Отдалить">−</button>
       </div>
+
+      <!-- Мобильный сайдбар: выезжает слева, при выборе точки закрывается -->
+      <Drawer
+          v-model:visible="mobileSidebarOpen"
+          position="left"
+          :modal="true"
+          :dismissable="true"
+          :showCloseIcon="true"
+          class="map-sidebar-drawer"
+      >
+        <template #header>
+          <span class="sidebar-title">Исторические объекты</span>
+        </template>
+        <div class="map-sidebar-drawer-content">
+          <div class="filter-section">
+            <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Категории</p>
+            <div class="filter-chips">
+              <button
+                  v-for="cat in mapStore.categories"
+                  :key="cat"
+                  :class="['filter-chip', { active: mapStore.activeFilters.includes(cat) }]"
+                  @click="mapStore.toggleFilter(cat)"
+              >
+                {{ categoryIcon(cat) }} {{ cat }}
+              </button>
+            </div>
+          </div>
+          <div class="divider" />
+          <div class="gps-section">
+            <div class="gps-header">
+              <span class="text-mono">GPS-трекинг</span>
+              <div v-if="gpsActive" class="pulse-dot" />
+            </div>
+            <button
+                :class="['btn btn-sm', gpsActive ? 'btn-danger' : 'btn-ghost']"
+                @click="toggleGPS"
+            >
+              {{ gpsActive ? '⬡ Остановить' : '◉ Включить GPS' }}
+            </button>
+            <p v-if="gpsStatus" class="gps-status">{{ gpsStatus }}</p>
+          </div>
+          <div v-if="mapStore.nearbyPoi" class="geo-trigger-card">
+            <p class="text-mono" style="color:var(--accent);margin-bottom:0.375rem">⚡ Рядом с вами</p>
+            <p class="geo-trigger-name">{{ mapStore.nearbyPoi.name }}</p>
+            <button class="btn btn-accent btn-sm" @click="openPoi(mapStore.nearbyPoi); mobileSidebarOpen = false">
+              Подробнее
+            </button>
+          </div>
+          <div class="divider" />
+          <div class="poi-list">
+            <div
+                v-for="poi in mapStore.filteredPois"
+                :key="poi.id"
+                class="poi-list-item"
+                :class="{ active: mapStore.selectedPoi?.id === poi.id }"
+                @click="onSelectPoiMobile(poi)"
+                role="button"
+                tabindex="0"
+            >
+              <span class="poi-icon">{{ categoryIcon(poi.category) }}</span>
+              <div>
+                <p class="poi-list-name">{{ poi.name }}</p>
+                <p class="poi-list-meta">{{ poi.year || '—' }} · {{ poi.category }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Drawer>
       <!-- Connector line from marker to card -->
       <div
         v-if="mapStore.selectedPoi"
@@ -329,6 +397,9 @@ const modalStyle = computed(() => ({
 // Collapsed/expanded state for text description
 const isDescExpanded = ref(false)
 
+// Мобильный сайдбар с точками (выезжает слева)
+const mobileSidebarOpen = ref(false)
+
 // Screen position of marker (for connector line)
 const markerScreen = ref({ x: 0, y: 0 })
 
@@ -514,6 +585,12 @@ function selectAndFlyTo(poi) {
   } else {
     updateModalPosition(poi)
   }
+}
+
+// На мобильных: выбрать точку и закрыть drawer
+function onSelectPoiMobile(poi) {
+  selectAndFlyTo(poi)
+  mobileSidebarOpen.value = false
   resetForPoi()
   isDescExpanded.value = false
 }
@@ -625,17 +702,18 @@ function categoryIcon(cat) {
   display: flex;
   flex-direction: row;
   height: calc(100dvh - var(--nav-h, 64px));
-  margin-top: var(--nav-h, 64px); /* 👈 отступ под фиксированный хедер */
+  margin-top: var(--nav-h, 64px);
   width: 100%;
   max-width: 100vw;
   position: relative;
   overflow: hidden;
 }
 
-/* ===== Sidebar — всегда виден, без анимаций ===== */
+/* Sidebar: в потоке слева, не перекрывает карту */
 .map-sidebar {
+  flex: 0 0 auto;
   width: var(--sidebar-w, 320px);
-  flex-shrink: 0;
+  min-width: 0;
   background: rgba(15, 15, 15, 0.96);
   border-right: 1px solid var(--gray-800);
   display: flex;
@@ -643,7 +721,7 @@ function categoryIcon(cat) {
   overflow-y: auto;
   padding: var(--spacing-lg);
   gap: var(--spacing-md);
-  z-index: 100;
+  z-index: 10;
 }
 
 .sidebar-header {
@@ -774,11 +852,48 @@ function categoryIcon(cat) {
   flex: 1 1 0;
   min-width: 0;
   min-height: 0;
+  width: 0; /* flex: 1 1 0 + min-width: 0 + width: 0 — карта занимает остаток без наезда */
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
+/* Кнопка «Точки» на мобильных */
+.map-poins-btn {
+  display: none;
+  position: absolute;
+  left: var(--spacing-md);
+  bottom: calc(var(--spacing-xl) + env(safe-area-inset-bottom, 0));
+  z-index: 160;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 1rem;
+  background: var(--ink);
+  border: 1px solid var(--gray-600);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-card);
+}
+.map-poins-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Контент мобильного drawer с точками */
+.map-sidebar-drawer .map-sidebar-drawer-content {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.map-sidebar-drawer .filter-chips { display: flex; flex-wrap: wrap; gap: var(--spacing-xs); }
+.map-sidebar-drawer .poi-list-item { min-height: 48px; padding: 0.75rem 1rem; }
 
 .map-container {
   flex: 1;
@@ -1180,30 +1295,56 @@ function categoryIcon(cat) {
 
 @media (max-width: 768px) {
   .map-page {
-    flex-direction: column;
+    flex-direction: row;
     height: calc(100dvh - var(--nav-h, 64px));
     margin-top: var(--nav-h, 64px);
   }
 
+  /* На мобильных сайдбар скрыт — список точек в Drawer слева */
   .map-sidebar {
-    width: 100%;
-    height: auto;
-    max-height: 32vh;
-    min-height: 120px;
-    border-right: none;
-    border-bottom: 1px solid var(--gray-800);
-    overflow-y: auto;
-    flex-shrink: 0;
+    display: none;
   }
 
   .map-wrapper {
-    flex: 1;
-    min-height: 70vh;
+    flex: 1 1 0;
+    min-width: 0;
+    width: 100%;
   }
 
-  .poi-modal {
-    margin: var(--spacing-md);
-    max-height: calc(100dvh - 100px);
+  .map-poins-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Карточка POI на мобильных: снизу экрана (bottom sheet) */
+  .poi-modal.floating {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    bottom: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+    max-height: 85vh;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    transform: none !important;
+  }
+  .poi-modal.floating::after { display: none; }
+  .poi-modal-body {
+    flex-direction: column;
+  }
+  .poi-photo-col { flex: 0 0 auto; max-height: 200px; }
+  .poi-photo, .poi-photo-placeholder { max-height: 200px; object-fit: cover; }
+  .poi-modal-title { font-size: 1.35rem; }
+  .poi-tabs .poi-tab-btn { min-height: 44px; padding: 0.6rem 1rem; }
+  .modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    top: var(--spacing-sm);
+    right: var(--spacing-sm);
   }
 
   .photo-grid {
@@ -1222,6 +1363,7 @@ function categoryIcon(cat) {
     min-height: 44px;
     padding: 0.5rem 0.875rem;
   }
+  .poi-connector { display: none; }
 }
 
 @media (max-width: 480px) {

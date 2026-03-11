@@ -12,8 +12,27 @@
         var sidebar = document.querySelector('.sidebar');
         var overlay = document.getElementById('sidebar-overlay');
         var closeBtn = document.getElementById('sidebar-close-btn');
-        function openMenu() { document.body.classList.add('sidebar-open'); }
-        function closeMenu() { document.body.classList.remove('sidebar-open'); }
+        var scrollY = 0;
+        function openMenu() {
+          document.body.classList.add('sidebar-open');
+          if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            scrollY = window.scrollY;
+            document.body.style.position = 'fixed';
+            document.body.style.top = '-' + scrollY + 'px';
+            document.body.style.left = '0';
+            document.body.style.right = '0';
+          }
+        }
+        function closeMenu() {
+          document.body.classList.remove('sidebar-open');
+          if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
+            window.scrollTo(0, scrollY);
+          }
+        }
         if (overlay) overlay.addEventListener('click', closeMenu);
         if (closeBtn) closeBtn.addEventListener('click', closeMenu);
         var topbar = document.querySelector('.mobile-topbar');

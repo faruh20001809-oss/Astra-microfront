@@ -33,8 +33,16 @@ public class StubPaymentService implements PaymentService {
     @Override
     public PaymentLinkResult createPaymentLink(Order order, String returnUrl, String cancelUrl) {
         if (!paymentEnabled) {
-            log.warn("Payment is disabled (app.payment.enabled=false)");
-            return null;
+            // Пока касса не привязана — сразу редирект на страницу успеха с номером заказа
+            String redirectUrl = buildRedirectToSuccess(returnUrl, order.getOrderId());
+            log.info("Payment disabled: redirecting to success page, orderId={}", order.getOrderId());
+            return PaymentLinkResult.builder()
+                    .paymentId("no-cash-" + order.getOrderId())
+                    .redirectUrl(redirectUrl)
+                    .orderId(order.getOrderId())
+                    .amount(order.getTotal())
+                    .currency(order.getCurrency() != null ? order.getCurrency() : "RUB")
+                    .build();
         }
         String paymentId = "stub-" + order.getOrderId();
         order.setPaymentId(paymentId);
@@ -89,5 +97,12 @@ public class StubPaymentService implements PaymentService {
             return "https://example.com/payment/success?orderId=" + orderId + "&stub=1";
         }
         return returnUrl + (returnUrl.contains("?") ? "&" : "?") + "orderId=" + orderId + "&stub=1";
+    }
+
+    private String buildRedirectToSuccess(String returnUrl, String orderId) {
+        if (returnUrl == null || returnUrl.isBlank()) {
+            return "https://example.com/payment/success?orderId=" + orderId;
+        }
+        return returnUrl + (returnUrl.contains("?") ? "&" : "?") + "orderId=" + orderId;
     }
 }

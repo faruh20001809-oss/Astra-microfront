@@ -54,6 +54,11 @@ cd "$APP_DIR"
 # 4. Сборка фронта
 echo "[4/6] Сборка фронта (module2)..."
 cd "$APP_DIR/module2"
+# Ключ AI для сборки (и для Nginx — см. шаг 6): задайте VITE_AI_API_KEY при запуске setup.sh при необходимости
+if [ -n "$VITE_AI_API_KEY" ]; then
+  echo "VITE_AI_API_KEY=$VITE_AI_API_KEY" > .env
+  echo "  Создан module2/.env с VITE_AI_API_KEY"
+fi
 npm ci
 npm run build
 cd "$APP_DIR"
@@ -83,20 +88,39 @@ systemctl enable astrakhan-admin
 systemctl start astrakhan-admin
 echo "  Сервис astrakhan-admin: включён и запущен."
 
-# 6. Nginx: статика + прокси к API
+# 6. Nginx: статика + прокси к API и к OpenRouter AI (если задан VITE_AI_API_KEY)
 echo "[6/6] Настройка Nginx..."
 FRONTEND_ROOT="$APP_DIR/module2/dist"
+if [ -n "$VITE_AI_API_KEY" ]; then
+  echo "set \$vite_ai_api_key \"$VITE_AI_API_KEY\";" > "$APP_DIR/deploy/nginx-ai-key.conf"
+  AI_LOCATION="
+    location /api/ai/ {
+        rewrite ^/api/ai/chat/(.*)$ /api/v1/chat/\$1 break;
+        proxy_pass https://openrouter.ai;
+        proxy_http_version 1.1;
+        proxy_set_header Host openrouter.ai;
+        proxy_set_header Authorization \"Bearer \$vite_ai_api_key\";
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_ssl_server_name on;
+    }
+"
+else
+  AI_LOCATION=""
+fi
 cat > /etc/nginx/sites-available/astramicro << EOF
 server {
     listen 80 default_server;
     server_name _;
     root $FRONTEND_ROOT;
     index index.html;
+    $( [ -n "$VITE_AI_API_KEY" ] && echo "include $APP_DIR/deploy/nginx-ai-key.conf;" )
 
     location / {
         try_files \$uri \$uri/ /index.html;
     }
-
+$AI_LOCATION
     location /java-api/ {
         proxy_pass http://127.0.0.1:8080;
         proxy_http_version 1.1;

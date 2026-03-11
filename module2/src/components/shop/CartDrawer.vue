@@ -330,7 +330,7 @@ async function checkout() {
     const result = await javaApi.orders.create(orderPayload)
     const orderId = result?.orderId ?? result?.data?.orderId ?? ''
 
-    // Оплата картой: редирект на страницу оплаты (онлайн-касса)
+    // Оплата картой: редирект на страницу оплаты или на страницу успеха с номером заказа (если касса не привязана)
     if (paymentMethod.value === 'card' && orderId) {
       try {
         const base = window.location.origin + (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
@@ -347,7 +347,15 @@ async function checkout() {
         return
       } catch (payErr) {
         console.warn('Payment link failed, order created:', payErr)
-        toastStore.push(`Заказ #${orderId} создан. Оплата временно недоступна — с вами свяжутся.`, 'warning', 6000)
+        // Пока касса не привязана — показываем страницу успешной оплаты с id заказа
+        cartStore.clearCart()
+        cartStore.isOpen = false
+        customerForm.value = { firstName: '', lastName: '', phone: '', email: '', city: 'Астрахань', address: '', zip: '' }
+        delivery.value = 'pickup'
+        paymentMethod.value = 'card'
+        const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '') || ''
+        window.location.href = `${base ? base + '/' : '/'}payment/success?orderId=${encodeURIComponent(orderId)}`
+        return
       }
     }
 
