@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/admin/users")
 public class AdminRedirectController {
 
-    @Value("${app.admin.url:https://152665.ip-ptr.tech/admin}")
+    @Value("${app.admin.url:http://193.233.49.59/admin}")
     private String adminUrl;
 
     @GetMapping

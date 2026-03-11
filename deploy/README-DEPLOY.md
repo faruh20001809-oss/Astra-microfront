@@ -1,6 +1,6 @@
 # Astra-microfront: сборка и деплой на сервер
 
-Домен: **152665.ip-ptr.tech** (IP 193.233.49.59).  
+Адрес: **http://193.233.49.59** (пока по IP; после покупки домена замените в конфигах).  
 Маршруты: `/` — фронт, `/workflow/` — Java (сотрудники), `/admin/` — module3 (Flask), `/java-api/` — API.
 
 ---
@@ -44,7 +44,7 @@ export BRANCH="main"
 
 # Опционально: ключ для AI (OpenRouter) и домен
 # export VITE_AI_API_KEY="sk-or-v1-..."
-# export APP_DOMAIN="152665.ip-ptr.tech"
+# export APP_DOMAIN="193.233.49.59"
 
 sudo bash -c 'cd /opt && git clone -b main "$GIT_REPO" astramicro 2>/dev/null || true'
 cd /opt/astramicro
@@ -101,7 +101,7 @@ sudo systemctl restart astrakhan-admin
 
 ## 4. Запуск админки (module3, Flask) на сервере
 
-Админка отдаётся по `http://152665.ip-ptr.tech/admin/` и проксируется на порт 5000.
+Админка отдаётся по `http://193.233.49.59/admin/` и проксируется на порт 5000.
 
 ### Однократно (для проверки)
 
@@ -177,8 +177,8 @@ sudo systemctl restart astramicro-admin
 
 ## 6. Переменные окружения (продакшен)
 
-- **APP_MODULE2_URL** — публичный URL основного фронта (письма, редиректы). По умолчанию: `https://152665.ip-ptr.tech`. Задаётся в systemd для `astrakhan-admin`.
-- **APP_ADMIN_URL** — URL админки (module3). По умолчанию: `https://152665.ip-ptr.tech/admin`. В `application-prod.properties`.
+- **APP_MODULE2_URL** — публичный URL основного фронта (письма, редиректы). По умолчанию: `http://193.233.49.59`. Задаётся в systemd для `astrakhan-admin`.
+- **APP_ADMIN_URL** — URL админки (module3). По умолчанию: `http://193.233.49.59/admin`. В `application-prod.properties`.
 - **SPRING_DATASOURCE_*** — БД для Java (по умолчанию PostgreSQL `museum_user` на localhost).
 - **VITE_AI_API_KEY** — в `module2/.env` для сборки и (при необходимости) для Nginx-прокси к OpenRouter.
 

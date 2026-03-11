@@ -9,8 +9,8 @@ set -e
 GIT_REPO="${GIT_REPO:-https://github.com/YOUR_USER/Astra-microfront.git}"
 APP_DIR="${APP_DIR:-/opt/astramicro}"
 BRANCH="${BRANCH:-main}"
-# Домен приложения (VMmanager: 152665.ip-ptr.tech, IP 193.233.49.59). Маршруты: / — фронт, /workflow — сотрудники, /admin — админка
-APP_DOMAIN="${APP_DOMAIN:-152665.ip-ptr.tech}"
+# Адрес приложения (пока IP; после покупки домена задайте APP_DOMAIN). Маршруты: / — фронт, /workflow — сотрудники, /admin — админка
+APP_DOMAIN="${APP_DOMAIN:-193.233.49.59}"
 
 echo "=== Astra-microfront: установка на сервер ==="
 echo "  Репозиторий: $GIT_REPO"

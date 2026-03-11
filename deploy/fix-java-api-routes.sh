@@ -38,6 +38,6 @@ nginx -t && systemctl reload nginx
 systemctl restart astrakhan-admin
 
 echo ""
-echo "Готово. Через 20–30 сек проверьте: http://152665.ip-ptr.tech/workflow/login (или ваш домен/workflow/login)"
+echo "Готово. Через 20–30 сек проверьте: http://193.233.49.59/workflow/login"
 echo "Логи: journalctl -u astrakhan-admin -n 30 -f"
 echo ""
