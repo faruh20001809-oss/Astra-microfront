@@ -67,11 +67,11 @@ sudo bash deploy/setup.sh
 
 ## 3. Обновление на сервере (после git push)
 
-Из каталога репозитория на сервере:
+Из каталога репозитория на сервере (под root; если вы root, `sudo` не нужен):
 
 ```bash
 cd /opt/astramicro
-sudo bash deploy/update.sh
+bash deploy/update.sh
 ```
 
 Скрипт делает: `git pull`, сборка astrakhan-admin, сборка module2, перезапуск `astrakhan-admin`.  
