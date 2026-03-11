@@ -99,7 +99,35 @@ sudo systemctl restart astrakhan-admin
 
 ---
 
-## 4. Запуск админки (module3, Flask) на сервере
+## 4. PostgreSQL на сервере (для Java и module3)
+
+Бэкенд (astrakhan-admin) и админка (module3) используют одну БД PostgreSQL. Если её ещё нет:
+
+```bash
+apt-get install -y postgresql postgresql-contrib
+systemctl start postgresql
+systemctl enable postgresql
+```
+
+Создать пользователя и базу (пароль `root` — замените в prod на свой):
+
+```bash
+sudo -u postgres psql -c "CREATE USER postgres WITH PASSWORD 'root';" 2>/dev/null || true
+sudo -u postgres psql -c "CREATE DATABASE museum_user OWNER postgres;" 2>/dev/null || true
+sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'root';"
+```
+
+Если пользователь `postgres` уже есть, достаточно создать базу:
+
+```bash
+sudo -u postgres createdb -O postgres museum_user
+```
+
+Проверка: `psql -U postgres -h localhost -d museum_user -c "SELECT 1;"`
+
+---
+
+## 5. Запуск админки (module3, Flask) на сервере
 
 Админка отдаётся по `http://193.233.49.59/admin/` и проксируется на порт 5000.
 
@@ -167,7 +195,7 @@ systemctl restart astramicro-admin
 
 ---
 
-## 5. Полезные команды на сервере
+## 6. Полезные команды на сервере
 
 | Действие | Команда |
 |----------|--------|
@@ -180,7 +208,7 @@ systemctl restart astramicro-admin
 
 ---
 
-## 6. Переменные окружения (продакшен)
+## 7. Переменные окружения (продакшен)
 
 - **APP_MODULE2_URL** — публичный URL основного фронта (письма, редиректы). По умолчанию: `http://193.233.49.59`. Задаётся в systemd для `astrakhan-admin`.
 - **APP_ADMIN_URL** — URL админки (module3). По умолчанию: `http://193.233.49.59/admin`. В `application-prod.properties`.
@@ -189,7 +217,7 @@ systemctl restart astramicro-admin
 
 ---
 
-## 7. Краткая шпаргалка
+## 8. Краткая шпаргалка
 
 ```text
 # Локально: сборка перед пушем
