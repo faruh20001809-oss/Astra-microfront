@@ -20,7 +20,7 @@ git pull origin "$BRANCH"
 
 echo "[1/3] Сборка бэкенда..."
 cd "$APP_DIR/astrakhan-admin"
-mvn -q package -DskipTests
+mvn -q clean package -DskipTests
 
 echo "[2/3] Сборка фронта..."
 cd "$APP_DIR/module2"

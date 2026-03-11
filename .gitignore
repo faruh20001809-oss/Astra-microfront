@@ -1,3 +1,9 @@
+# Python venv
+venv/
+.venv/
+**/venv/
+**/.venv/
+
 # Build outputs
 astrakhan-admin/target/
 **/target/

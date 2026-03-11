@@ -103,24 +103,36 @@ sudo systemctl restart astrakhan-admin
 
 Админка отдаётся по `http://193.233.49.59/admin/` и проксируется на порт 5000.
 
-### Однократно (для проверки)
+На Debian 12 нельзя ставить пакеты в системный Python (PEP 668), поэтому используем **виртуальное окружение (venv)**.
+
+### Установка venv и зависимостей (один раз)
+
+```bash
+apt-get install -y python3-venv
+cd /opt/astramicro/module3
+bash setup_venv.sh
+```
+
+Скрипт создаёт каталог `venv/` и ставит в него все пакеты из `requirements.txt`.
+
+### Однократный запуск (для проверки)
 
 ```bash
 cd /opt/astramicro/module3
-sudo pip2 install -r requirements.txt   # или: pip3 install -r requirements.txt
+venv/bin/python app.py
+# Или: source venv/bin/activate && python app.py
 # Переменные для БД (если не по умолчанию):
 # export DATABASE_URL="postgresql://user:pass@localhost:5432/museum_user"
-sudo python3 app.py
 ```
 
 Остановка: Ctrl+C.
 
 ### Постоянно через systemd (рекомендуется)
 
-Создайте сервис (один раз):
+Сервис должен запускать gunicorn из venv:
 
 ```bash
-sudo tee /etc/systemd/system/astramicro-admin.service << 'EOF'
+tee /etc/systemd/system/astramicro-admin.service << 'EOF'
 [Unit]
 Description=Astra-microfront admin (Flask module3)
 After=network.target postgresql.service
@@ -129,8 +141,7 @@ After=network.target postgresql.service
 Type=simple
 User=root
 WorkingDirectory=/opt/astramicro/module3
-Environment="PATH=/usr/bin"
-ExecStart=/usr/bin/python3 -m gunicorn -w 1 -b 127.0.0.1:5000 app:app
+ExecStart=/opt/astramicro/module3/venv/bin/gunicorn -w 1 -b 127.0.0.1:5000 app:app
 Restart=on-failure
 RestartSec=5
 
@@ -139,25 +150,19 @@ WantedBy=multi-user.target
 EOF
 ```
 
-Установите gunicorn, если его нет:
+Включите и запустите (сначала выполните `setup_venv.sh`, чтобы был каталог venv):
 
 ```bash
-sudo pip3 install gunicorn
-```
-
-Включите и запустите:
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable astramicro-admin
-sudo systemctl start astramicro-admin
-sudo systemctl status astramicro-admin
+systemctl daemon-reload
+systemctl enable astramicro-admin
+systemctl start astramicro-admin
+systemctl status astramicro-admin
 ```
 
 Дальше при обновлении кода module3 перезапускайте сервис:
 
 ```bash
-sudo systemctl restart astramicro-admin
+systemctl restart astramicro-admin
 ```
 
 ---
