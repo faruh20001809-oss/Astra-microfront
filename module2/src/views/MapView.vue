@@ -955,7 +955,7 @@ function categoryIcon(cat) {
   min-width: 44px;
   min-height: 44px;
   padding: 0 1rem;
-  background: var(--ink);
+  background: var(--header-bg, rgba(73, 62, 62, 0.98));
   border: 1px solid var(--gray-600);
   color: var(--paper);
   font-family: var(--font-mono);
@@ -1033,7 +1033,7 @@ function categoryIcon(cat) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--ink);
+  background: var(--header-bg, rgba(73, 62, 62, 0.98));
   border: 1px solid var(--gray-600);
   color: var(--paper);
   font-size: 1rem;
@@ -1053,7 +1053,7 @@ function categoryIcon(cat) {
   bottom: var(--spacing-xl);
   padding: 10px 14px;
   font-size: 13px;
-  background: var(--ink, #0a0a0a);
+  background: var(--header-bg, rgba(73, 62, 62, 0.98));
   border: 1px solid var(--gray-600);
   border-radius: 8px;
   color: var(--paper);

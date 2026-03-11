@@ -14,11 +14,12 @@
   --gray-300: #d1d5db;
   --gray-400: #9ca3af;
   --gray-500: #6b7280;
-  --gray-600: #4b5563;
-  --gray-700: #374151;
-  --gray-800: #1f2937;
-  --gray-900: #111827;
-  --gray-950: #030712;
+  /* Кофейные оттенки (в тон --accent / --accent-dark) */
+  --gray-600: #5c5248;
+  --gray-700: #4a4035;
+  --gray-800: #2d2620;
+  --gray-900: #1c1814;
+  --gray-950: #0f0d0a;
   --accent: #c8a96e;
   --accent-dark: #8a6e3a;
   --danger: #c0392b;
@@ -45,6 +46,7 @@
   --shadow-modal: 0 20px 60px rgba(0,0,0,0.3);
 
   --nav-h: 64px;
+  --header-bg: rgba(73, 62, 62, 0.98); /* фон топ-бара и кнопок на карте */
   --sidebar-w: 380px;
   --z-header: 1000;      /* 👆 Хедер — всегда сверху */
   --z-sidebar: 500;      /* Сайдбар — ниже хедера */
@@ -603,7 +605,7 @@ textarea:focus-visible {
 .app-dark .p-dialog.suggest-poi-dialog,
 .app-dark .p-dialog.suggest-poi-dialog .p-dialog-header,
 .app-dark .p-dialog.suggest-poi-dialog .p-dialog-content {
-  background: rgba(73, 62, 62, 0.98) !important;
+  background: var(--header-bg) !important;
   border-color: var(--gray-700) !important;
   color: var(--paper) !important;
 }
@@ -618,5 +620,24 @@ textarea:focus-visible {
 }
 .app-dark .p-dialog.suggest-poi-dialog .p-dialog-close-button:hover {
   background: var(--gray-700) !important;
+  color: var(--paper) !important;
+}
+/* Кнопки в диалоге «Предложить точку» — как топ-бар, не белые */
+.app-dark .p-dialog.suggest-poi-dialog .p-button {
+  background: var(--header-bg) !important;
+  border: 1px solid var(--gray-600) !important;
+  color: var(--paper) !important;
+}
+.app-dark .p-dialog.suggest-poi-dialog .p-button:hover:not(:disabled) {
+  background: var(--gray-700) !important;
+  border-color: var(--accent) !important;
+  color: var(--paper) !important;
+}
+.app-dark .p-dialog.suggest-poi-dialog .p-button.p-button-primary {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+.app-dark .p-dialog.suggest-poi-dialog .p-button.p-button-primary:hover:not(:disabled) {
+  background: rgba(200, 169, 110, 0.2) !important;
   color: var(--paper) !important;
 }

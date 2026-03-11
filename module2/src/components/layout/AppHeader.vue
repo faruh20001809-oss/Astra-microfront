@@ -159,7 +159,7 @@ onUnmounted(() => {
   padding-left: env(safe-area-inset-left, 0);
   padding-right: env(safe-area-inset-right, 0);
   z-index: 1000;
-  background: rgba(73, 62, 62, 0.98);
+  background: var(--header-bg, rgba(73, 62, 62, 0.98));
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--gray-800);
   transform: translateY(0);
@@ -183,7 +183,7 @@ onUnmounted(() => {
 
 .app-header.hovered {
   transform: translateY(0);
-  background: rgba(73, 62, 62, 0.98);
+  background: var(--header-bg, rgba(73, 62, 62, 0.98));
 }
 
 .header-inner {

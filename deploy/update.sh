@@ -29,16 +29,19 @@ git reset --hard "origin/$BRANCH"
 git checkout -B "$BRANCH" "origin/$BRANCH"
 git clean -fd astrakhan-admin/target module2/dist 2>/dev/null || true
 
-echo "[1/3] Сборка бэкенда (Maven)..."
+echo "[1/4] Сборка бэкенда (Maven)..."
 cd "$APP_DIR/astrakhan-admin"
 mvn -q clean package -DskipTests
 
-echo "[2/3] Сборка фронта (npm)..."
+echo "[2/4] Сборка фронта (npm)..."
 cd "$APP_DIR/module2"
 npm ci
 npm run build
 
-echo "[3/3] Перезапуск сервиса astrakhan-admin..."
+echo "[3/4] Перезапуск astrakhan-admin (Java)..."
 systemctl restart astrakhan-admin
+
+echo "[4/4] Перезапуск astramicro-admin (Flask)..."
+systemctl restart astramicro-admin
 
 echo "Готово. Статика из module2/dist, Nginx перезагружать не нужно."

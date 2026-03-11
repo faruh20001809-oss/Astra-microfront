@@ -1,5 +1,5 @@
 <template>
-  <div id="app-root">
+  <div id="app-root" class="app-dark">
     <!-- Navigation -->
     <AppHeader />
 
