@@ -4,6 +4,9 @@
     <aside class="map-sidebar">
       <div class="sidebar-header">
         <h2 class="sidebar-title">Исторические объекты</h2>
+        <button type="button" class="sidebar-suggest-btn" @click="suggestPoiOpen = true" aria-label="Предложить точку">
+          💡 Предложить точку
+        </button>
       </div>
       <div class="filter-section">
         <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Категории</p>
@@ -160,6 +163,9 @@
           <span class="sidebar-title">Исторические объекты</span>
         </template>
         <div class="map-sidebar-drawer-content">
+          <button type="button" class="drawer-suggest-btn" @click="suggestPoiOpen = true; mobileSidebarOpen = false" aria-label="Предложить точку">
+            💡 Предложить точку
+          </button>
           <div class="filter-section">
             <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Категории</p>
             <div class="filter-chips">
@@ -807,6 +813,7 @@ function categoryIcon(cat) {
 
 .sidebar-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--spacing-sm);
@@ -819,6 +826,25 @@ function categoryIcon(cat) {
   font-size: 1.25rem;
   line-height: 1.2;
   word-break: break-word;
+}
+
+.sidebar-suggest-btn {
+  flex-shrink: 0;
+  padding: 0.35rem 0.6rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--gray-400);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.sidebar-suggest-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 /* ===== Filters ===== */
@@ -977,6 +1003,25 @@ function categoryIcon(cat) {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
+}
+.drawer-suggest-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: var(--spacing-md);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm);
+  background: rgba(200, 169, 110, 0.08);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+.drawer-suggest-btn:hover {
+  border-color: var(--accent);
+  background: rgba(200, 169, 110, 0.15);
 }
 .map-sidebar-drawer .filter-chips { display: flex; flex-wrap: wrap; gap: var(--spacing-xs); }
 .map-sidebar-drawer .poi-list-item { min-height: 48px; padding: 0.75rem 1rem; }
