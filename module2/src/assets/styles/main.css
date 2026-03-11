@@ -598,3 +598,25 @@ textarea:focus-visible {
   background: var(--gray-700) !important;
   border-color: var(--paper) !important;
 }
+
+/* Окно «Предложить точку» на карте — в тон шапке (app-header) */
+.app-dark .p-dialog.suggest-poi-dialog,
+.app-dark .p-dialog.suggest-poi-dialog .p-dialog-header,
+.app-dark .p-dialog.suggest-poi-dialog .p-dialog-content {
+  background: rgba(73, 62, 62, 0.98) !important;
+  border-color: var(--gray-700) !important;
+  color: var(--paper) !important;
+}
+.app-dark .p-dialog.suggest-poi-dialog .p-dialog-header {
+  border-bottom: 1px solid var(--gray-700) !important;
+}
+.app-dark .p-dialog.suggest-poi-dialog .p-dialog-title {
+  color: var(--paper) !important;
+}
+.app-dark .p-dialog.suggest-poi-dialog .p-dialog-close-button {
+  color: var(--paper) !important;
+}
+.app-dark .p-dialog.suggest-poi-dialog .p-dialog-close-button:hover {
+  background: var(--gray-700) !important;
+  color: var(--paper) !important;
+}

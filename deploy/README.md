@@ -45,6 +45,26 @@ echo '*/5 * * * * root /opt/astramicro/deploy/auto-update.sh >> /var/log/astrami
 - Логи: `sudo journalctl -u astrakhan-admin -f`
 - Перезапуск: `sudo systemctl restart astrakhan-admin`
 
+## 502 Bad Gateway на /admin/ или /admin/users
+
+По конфигу Nginx путь **/admin/** проксируется на **порт 5000** — там должна работать админка **module3 (Flask)**:
+пользователи, роли, метрики, отчёты. Если module3 не запущен, при открытии `http://ваш-сервер/admin/` или `/admin/users` будет **502 Bad Gateway**.
+
+**Что сделать на сервере:**
+
+1. Установить зависимости и запустить Flask (один раз):
+   ```bash
+   cd /opt/astramicro/module3
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   # Настроить .env или переменные (БД и т.д. — см. module3 и deploy/README-DEPLOY.md)
+   gunicorn -w 1 -b 127.0.0.1:5000 app:app
+   ```
+2. Либо завести systemd-сервис для автозапуска (пример в `deploy/README-DEPLOY.md`, раздел «Запуск админки (module3, Flask)»).
+
+После запуска приложения на порту 5000 страницы `/admin/`, `/admin/users` и т.д. начнут открываться. Если админка на Flask не нужна, пункт меню «Пользователи» в Java-админке можно скрыть или изменить (редирект ведёт на /admin/users).
+
 ## Файлы в deploy/
 
 | Файл | Назначение |
