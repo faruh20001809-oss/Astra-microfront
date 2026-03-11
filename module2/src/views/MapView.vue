@@ -95,16 +95,6 @@
         ◎ Точки
       </button>
 
-      <!-- Кнопка «Предложить точку» — открывает всплывающее окно -->
-      <button
-        type="button"
-        class="map-suggest-poi-btn"
-        aria-label="Предложить точку на карту"
-        @click="suggestPoiOpen = true"
-      >
-        💡 Предложить точку
-      </button>
-
       <!-- Map controls -->
       <div class="map-controls">
         <button class="map-ctrl-btn" @click="flyToAstrakhan" title="Вернуться к Астрахани">
@@ -1090,37 +1080,6 @@ function categoryIcon(cat) {
 .map-ctrl-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
-}
-
-.map-suggest-poi-btn {
-  position: absolute;
-  left: var(--spacing-md);
-  bottom: var(--spacing-xl);
-  padding: 10px 14px;
-  font-size: 13px;
-  background: var(--header-bg, rgba(73, 62, 62, 0.98));
-  border: 1px solid var(--gray-600);
-  border-radius: 8px;
-  color: var(--paper);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 10;
-  transition: border-color 0.2s, color 0.2s;
-}
-.map-suggest-poi-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-@media (max-width: 768px) {
-  .map-suggest-poi-btn {
-    top: calc(var(--nav-h, 64px) + var(--spacing-md));
-    left: var(--spacing-sm);
-    bottom: auto;
-    font-size: 12px;
-    padding: 8px 12px;
-  }
 }
 
 .suggest-poi-form .form-group { margin-bottom: 1rem; }
