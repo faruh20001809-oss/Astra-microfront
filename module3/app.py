@@ -37,6 +37,9 @@ app.wsgi_app = PrefixMiddleware(app.wsgi_app)
 import logging
 import sys
 
+# Каталог для логов (создаётся при первом запуске)
+os.makedirs("logs", exist_ok=True)
+
 # Настройка стандартного логгера для записи в файл
 logging.basicConfig(
     level=logging.INFO,
