@@ -24,7 +24,7 @@ export function usePoiAiTts() {
   const tabs = [
     { key: 'desc', label: 'Описание' },
     { key: 'photos', label: 'Фото' },
-    { key: 'street', label: 'Street View' },
+    { key: 'street', label: 'Панорама' },
   ]
 
   const audiences = [

@@ -220,7 +220,7 @@
         :style="connectorStyle"
       />
 
-      <!-- Floating POI detail card near marker -->
+      <!-- Floating POI detail card (UI/UX 2026: чёткая структура, CTA озвучки) -->
       <transition name="fade">
         <div
           v-if="mapStore.selectedPoi"
@@ -228,17 +228,20 @@
           :style="modalStyle"
           role="dialog"
           aria-modal="true"
+          aria-labelledby="poi-card-title"
         >
           <button
             class="modal-close"
             @click="mapStore.clearSelected()"
-            aria-label="Закрыть"
+            aria-label="Закрыть карточку"
           >
             ✕
           </button>
 
+          <div class="poi-sheet-handle" aria-hidden="true" />
+
           <div class="poi-modal-body">
-            <!-- Left column: photo from Java API -->
+            <!-- Секция: фото объекта -->
             <div class="poi-photo-col">
               <img
                 v-if="mapStore.selectedPoi.image"
@@ -251,22 +254,25 @@
               </div>
             </div>
 
-            <!-- Right column: content -->
+            <!-- Секция: заголовок и контент -->
             <div class="poi-content-col">
-              <!-- Header -->
-              <div class="poi-modal-header">
-                <span :class="['tag', 'tag-accent']">{{ mapStore.selectedPoi.category }}</span>
-                <h3 class="poi-modal-title">{{ mapStore.selectedPoi.name }}</h3>
-                <p class="poi-modal-meta">
-                  <span v-if="mapStore.selectedPoi.year">Год: {{ mapStore.selectedPoi.year }}</span>
-                  <span v-if="mapStore.selectedPoi.architect">
-                    · Архитектор: {{ mapStore.selectedPoi.architect }}
-                  </span>
-                </p>
-              </div>
+              <header class="poi-modal-header">
+                <span class="poi-card-badge">{{ mapStore.selectedPoi.category }}</span>
+                <h2 id="poi-card-title" class="poi-modal-title">{{ mapStore.selectedPoi.name }}</h2>
+                <dl class="poi-meta-list">
+                  <template v-if="mapStore.selectedPoi.year">
+                    <dt>Год</dt>
+                    <dd>{{ mapStore.selectedPoi.year }}</dd>
+                  </template>
+                  <template v-if="mapStore.selectedPoi.architect">
+                    <dt>Архитектор</dt>
+                    <dd>{{ mapStore.selectedPoi.architect }}</dd>
+                  </template>
+                </dl>
+              </header>
 
-              <!-- Content tabs -->
-              <div class="poi-tabs" role="tablist">
+              <!-- Вкладки: Описание | Фото | Панорама -->
+              <div class="poi-tabs" role="tablist" aria-label="Разделы карточки">
                 <button
                   v-for="tab in tabs"
                   :key="tab.key"
@@ -274,87 +280,91 @@
                   @click="activeTab = tab.key"
                   role="tab"
                   :aria-selected="activeTab === tab.key"
+                  :id="`tab-${tab.key}`"
                 >
                   {{ tab.label }}
                 </button>
               </div>
 
-              <!-- Tab: Description -->
-              <div v-if="activeTab === 'desc'" class="poi-tab-content" role="tabpanel">
-                <!-- Audience selector (выбор типа озвучки) -->
-                <div class="audience-row">
-                  <span class="text-mono">Стиль озвучки:</span>
+              <!-- Вкладка: Описание -->
+              <div v-if="activeTab === 'desc'" class="poi-tab-content" role="tabpanel" aria-labelledby="tab-desc">
+                <!-- Стиль текста (аудитория) -->
+                <section class="poi-section" aria-label="Стиль рассказа">
+                  <span class="poi-section-label">Стиль рассказа</span>
                   <div class="audience-btns">
                     <button
                       v-for="a in audiences"
                       :key="a.key"
                       :class="['btn btn-sm', selectedAudience === a.key ? 'btn-primary' : 'btn-ghost']"
                       @click="selectedAudience = a.key"
+                      type="button"
                     >
                       {{ a.label }}
                     </button>
                   </div>
-                </div>
+                </section>
 
-                <!-- Toggle for full text description -->
-                <button
-                  class="btn btn-ghost btn-xs desc-toggle"
-                  type="button"
-                  @click="isDescExpanded = !isDescExpanded"
-                  style="margin-top:0.75rem"
-                >
-                  {{ isDescExpanded ? 'Скрыть текстовое описание' : 'Показать текстовое описание' }}
-                </button>
+                <!-- Текстовое описание (сворачиваемое) -->
+                <section v-if="mapStore.selectedPoi.description" class="poi-section">
+                  <button
+                    class="btn btn-ghost btn-xs desc-toggle"
+                    type="button"
+                    @click="isDescExpanded = !isDescExpanded"
+                    :aria-expanded="isDescExpanded"
+                  >
+                    {{ isDescExpanded ? 'Скрыть текстовое описание' : 'Показать текстовое описание' }}
+                  </button>
+                  <transition name="fade">
+                    <p v-if="isDescExpanded" class="poi-description">
+                      {{ mapStore.selectedPoi.description }}
+                    </p>
+                  </transition>
+                </section>
 
-                <transition name="fade">
-                  <p v-if="isDescExpanded" class="poi-description">
-                    {{ mapStore.selectedPoi.description }}
-                  </p>
-                </transition>
+                <!-- AI-описание и озвучка -->
+                <section class="poi-section ai-section" aria-label="AI-описание и озвучка">
+                  <div v-if="aiContent || aiLoading" class="ai-content-box">
+                    <div class="ai-content-header">
+                      <span class="text-mono ai-label">✦ AI-описание</span>
+                      <div v-if="aiLoading" class="spinner ai-spinner" aria-hidden="true" />
+                    </div>
+                    <p v-if="aiContent && !aiLoading" class="ai-content-text">
+                      {{ aiContent }}
+                    </p>
 
-                <!-- AI content -->
-                <div v-if="aiContent || aiLoading" class="ai-content-box">
-                  <div class="ai-content-header">
-                    <span class="text-mono" style="color:var(--accent)">✦ AI-описание</span>
-                    <div v-if="aiLoading" class="spinner" style="width:16px;height:16px" />
+                    <!-- Кнопка озвучки — основной CTA при наличии текста -->
+                    <div v-if="aiContent && !aiLoading" class="tts-row">
+                      <button
+                        type="button"
+                        :class="['btn', 'btn-tts', isPlaying ? 'btn-danger' : 'btn-accent']"
+                        :disabled="ttsLoading"
+                        @click="toggleTTS"
+                        :aria-label="isPlaying ? 'Остановить озвучку' : 'Озвучить текст'"
+                      >
+                        <span v-if="ttsLoading" class="tts-loading">
+                          <span class="spinner" aria-hidden="true" />
+                          Подготовка…
+                        </span>
+                        <span v-else-if="isPlaying">⏹ Остановить</span>
+                        <span v-else>▶ Озвучить текст</span>
+                      </button>
+                      <span v-if="isPlaying" class="pulse-dot" aria-hidden="true" />
+                    </div>
                   </div>
-                  <p v-if="aiContent && !aiLoading" class="ai-content-text">
-                    {{ aiContent }}
-                  </p>
 
-                  <!-- TTS Player -->
-                  <div v-if="aiContent && !aiLoading" class="tts-row">
-                    <button
-                      :class="['btn btn-sm', isPlaying ? 'btn-danger' : 'btn-ghost']"
-                      :disabled="ttsLoading"
-                      @click="toggleTTS"
-                      :aria-label="isPlaying ? 'Остановить озвучку' : 'Озвучить текст'"
-                    >
-                      <span v-if="ttsLoading">
-                        <span
-                          class="spinner"
-                          style="width:12px;height:12px;display:inline-block"
-                        />
-                        Генерация…
-                      </span>
-                      <span v-else-if="isPlaying">⏹ Стоп</span>
-                      <span v-else>▶ Озвучить</span>
-                    </button>
-                    <span v-if="isPlaying" class="pulse-dot" />
-                  </div>
-                </div>
-
-                <button
-                  class="btn btn-ghost btn-sm ai-gen-btn"
-                  :disabled="aiLoading"
-                  @click="generateAiContent"
-                >
-                  {{ aiContent ? '↻ Обновить' : '✦ Сгенерировать AI-описание' }}
-                </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm ai-gen-btn"
+                    :disabled="aiLoading"
+                    @click="generateAiContent"
+                  >
+                    {{ aiContent ? '↻ Обновить описание' : '✦ Сгенерировать AI-описание' }}
+                  </button>
+                </section>
               </div>
 
-              <!-- Tab: Photos -->
-              <div v-if="activeTab === 'photos'" class="poi-tab-content" role="tabpanel">
+              <!-- Вкладка: Фото -->
+              <div v-if="activeTab === 'photos'" class="poi-tab-content" role="tabpanel" aria-labelledby="tab-photos">
                 <div v-if="!mapStore.selectedPoi.photos?.length" class="empty-state">
                   <p>Фотографии не добавлены</p>
                 </div>
@@ -364,27 +374,24 @@
                     :key="i"
                     class="photo-card"
                   >
-                    <img :src="ph.url" :alt="ph.caption" loading="lazy" />
-                    <p class="photo-caption">
+                    <img :src="ph.url" :alt="ph.caption || 'Фото объекта'" loading="lazy" />
+                    <p v-if="ph.caption" class="photo-caption">
                       {{ ph.caption }} <span v-if="ph.year">({{ ph.year }})</span>
                     </p>
                   </div>
                 </div>
               </div>
 
-              <!-- Tab: StreetView -->
-              <div v-if="activeTab === 'street'" class="poi-tab-content" role="tabpanel">
+              <!-- Вкладка: Панорама -->
+              <div v-if="activeTab === 'street'" class="poi-tab-content" role="tabpanel" aria-labelledby="tab-street">
                 <div class="street-view-placeholder">
-                  <p class="text-mono" style="color:var(--gray-400)">
-                    Яндекс Панорамы / 2GIS Street View
-                  </p>
-                  <p>Для интеграции укажите API-ключ Яндекс.Карт</p>
+                  <p class="text-mono street-hint">Яндекс Панорамы / 2GIS Street View</p>
+                  <p>Откройте объект в картах для просмотра панорамы.</p>
                   <a
                     :href="`https://yandex.ru/maps/?ll=${mapStore.selectedPoi.lng},${mapStore.selectedPoi.lat}&z=17&l=stv,sta`"
                     target="_blank"
-                    rel="noopener"
+                    rel="noopener noreferrer"
                     class="btn btn-ghost btn-sm"
-                    style="margin-top:0.75rem"
                   >
                     ↗ Открыть в Яндекс.Картах
                   </a>
@@ -1184,17 +1191,92 @@ function categoryIcon(cat) {
 }
 
 .poi-modal-header {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+
+.poi-card-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(200, 169, 110, 0.12);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(200, 169, 110, 0.25);
 }
 
 .poi-modal-title {
   font-family: var(--font-display);
-  font-size: 1.75rem;
-  margin: 0.5rem 0 0.25rem;
+  font-size: 1.5rem;
+  margin: 0.5rem 0 0.35rem;
+  line-height: 1.2;
 }
 
-.poi-modal-meta {
+.poi-meta-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  margin: 0;
   font-size: 0.75rem;
+  color: var(--gray-400);
+}
+
+.poi-meta-list dt {
+  margin: 0;
+  font-weight: 600;
+  color: var(--gray-500);
+}
+
+.poi-meta-list dd {
+  margin: 0;
+}
+
+.poi-meta-list dt::after {
+  content: ': ';
+}
+
+/* Секции контента (UI/UX 2026) */
+.poi-section {
+  margin-top: var(--spacing-lg);
+}
+
+.poi-section-label {
+  display: block;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: var(--spacing-sm);
+}
+
+.ai-section .ai-label {
+  color: var(--accent);
+}
+
+.ai-spinner {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-tts {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+}
+
+.tts-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tts-loading .spinner {
+  width: 14px;
+  height: 14px;
+}
+
+.street-hint {
   color: var(--gray-400);
 }
 
@@ -1249,18 +1331,10 @@ function categoryIcon(cat) {
   white-space: pre-wrap;
 }
 
-/* ===== Audience selector ===== */
-.audience-row {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  flex-wrap: wrap;
-  margin-top: var(--spacing-lg);
-}
-
 .audience-btns {
   display: flex;
   gap: var(--spacing-xs);
+  flex-wrap: wrap;
 }
 
 .ai-gen-btn {
@@ -1358,6 +1432,7 @@ function categoryIcon(cat) {
   font-size: 14px;
   transition: transform 0.15s;
   outline: none;
+  touch-action: manipulation;
 }
 
 ::global(.custom-marker:hover),
@@ -1418,13 +1493,14 @@ function categoryIcon(cat) {
   transform: translateY(-10px);
 }
 
-/* ===== Responsive ===== */
+/* ===== Responsive: планшеты ===== */
 @media (max-width: 1024px) {
   :root {
     --sidebar-w: 280px;
   }
 }
 
+/* ===== Responsive: телефоны (оптимизация точек под сенсор) ===== */
 @media (max-width: 768px) {
   .map-page {
     flex-direction: row;
@@ -1432,7 +1508,6 @@ function categoryIcon(cat) {
     margin-top: var(--nav-h, 64px);
   }
 
-  /* На мобильных сайдбар скрыт — список точек в Drawer слева */
   .map-sidebar {
     display: none;
   }
@@ -1447,9 +1522,46 @@ function categoryIcon(cat) {
     display: flex;
     align-items: center;
     justify-content: center;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0 1rem;
+    touch-action: manipulation;
   }
 
-  /* Карточка POI на мобильных: снизу экрана (bottom sheet) */
+  /* Маркеры: зона нажатия ≥44px для удобного тапа */
+  ::global(.custom-marker) {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  ::global(.user-marker) {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+  }
+
+  /* Список точек в Drawer: высота строки под палец */
+  .map-sidebar-drawer-content .poi-list-item,
+  .poi-list-item {
+    min-height: 48px;
+    padding: 0.75rem 0.875rem;
+    gap: 0.75rem;
+  }
+  .map-sidebar-drawer-content .poi-list {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    -webkit-overflow-scrolling: touch;
+  }
+  .map-sidebar-drawer-content {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    -webkit-overflow-scrolling: touch;
+  }
+  .drawer-suggest-btn {
+    min-height: 44px;
+    padding: 0.6rem 1rem;
+    touch-action: manipulation;
+  }
+
+  /* Карточка POI: bottom sheet с ручкой и плавной прокруткой */
   .poi-modal.floating {
     position: fixed !important;
     left: 0 !important;
@@ -1458,25 +1570,41 @@ function categoryIcon(cat) {
     bottom: 0 !important;
     max-width: none !important;
     width: 100% !important;
-    max-height: 85vh;
-    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    max-height: 88vh;
+    border-radius: 12px 12px 0 0;
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+    padding-top: 0;
     padding-bottom: env(safe-area-inset-bottom, 0);
     transform: none !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   .poi-modal.floating::after { display: none; }
   .poi-modal-body {
     flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    flex: 1 1 auto;
+    min-height: 0;
   }
   .poi-photo-col { flex: 0 0 auto; max-height: 200px; }
   .poi-photo, .poi-photo-placeholder { max-height: 200px; object-fit: cover; }
   .poi-modal-title { font-size: 1.35rem; }
-  .poi-tabs .poi-tab-btn { min-height: 44px; padding: 0.6rem 1rem; }
+  .poi-tabs .poi-tab-btn {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.6rem 1rem;
+    touch-action: manipulation;
+  }
   .modal-close {
     min-width: 44px;
     min-height: 44px;
     top: var(--spacing-sm);
     right: var(--spacing-sm);
+    touch-action: manipulation;
   }
 
   .photo-grid {
@@ -1486,6 +1614,7 @@ function categoryIcon(cat) {
   .map-ctrl-btn {
     width: 44px;
     height: 44px;
+    touch-action: manipulation;
   }
   .map-controls {
     right: var(--spacing-sm);
@@ -1493,16 +1622,53 @@ function categoryIcon(cat) {
   }
   .filter-chip {
     min-height: 44px;
+    min-width: 44px;
     padding: 0.5rem 0.875rem;
+    touch-action: manipulation;
   }
   .poi-connector { display: none; }
+
+  /* Кнопка озвучки в карточке */
+  .btn-tts {
+    min-height: 48px;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Ручка bottom sheet (только на мобильных) */
+.poi-sheet-handle {
+  display: none;
+}
+@media (max-width: 768px) {
+  .poi-sheet-handle {
+    display: block;
+    flex-shrink: 0;
+    padding: 0.5rem 0;
+    text-align: center;
+    cursor: grab;
+    touch-action: none;
+  }
+  .poi-sheet-handle::before {
+    content: '';
+    display: inline-block;
+    width: 36px;
+    height: 4px;
+    background: var(--gray-600);
+    border-radius: 2px;
+  }
 }
 
 @media (max-width: 480px) {
-  .poi-modal {
-    margin: var(--spacing-md);
-    max-height: calc(100dvh - 100px);
+  .poi-modal.floating {
+    max-height: 90vh;
   }
+  .poi-modal-body {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
+  .poi-photo-col { max-height: 180px; }
+  .poi-photo, .poi-photo-placeholder { max-height: 180px; }
   .photo-grid {
     grid-template-columns: 1fr;
   }

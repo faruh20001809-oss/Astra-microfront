@@ -275,19 +275,25 @@ export const nodeApi = {
     },
 
     /**
-     * Синтез речи через Node.js API.
+     * Синтез речи через Node.js API (Yandex TTS или Groq). Ответ — бинарный audio.
      * @param {string} text
      * @param {{ voice?: string, emotion?: string }=} options
+     * @returns {Promise<Blob>}
      */
     synthesizeSpeech: async (text, options = {}) => {
       const payload = { text }
       if (options.voice) payload.voice = options.voice
       if (options.emotion) payload.emotion = options.emotion
-      const res = await baseFetch(`${NODE_API_BASE}/ai/tts`, {
+      const res = await fetch(`${NODE_API_BASE}/ai/tts`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: '*/*' },
         body: JSON.stringify(payload)
       })
-      return res.blob() // TTS возвращает audio/blob
+      if (!res.ok) {
+        const errText = await res.text().catch(() => '')
+        throw new Error(errText || `Озвучка недоступна (${res.status})`)
+      }
+      return res.blob()
     }
   },
 

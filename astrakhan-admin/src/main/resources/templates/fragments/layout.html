@@ -76,10 +76,10 @@
 
         <li><a th:href="@{/admin/users}" th:classappend="${#strings.startsWith(request.requestURI, '/admin/users') ? 'active' : ''}"><span class="icon">👤</span><span>Пользователи</span></a></li>
     </ul>
-    <div style="padding: 12px 20px; border-top: 1px solid #333;">
-        <a th:href="@{/admin/profile}" class="btn btn-sm btn-ghost" style="width:100%; margin-bottom:8px; color:var(--sidebar-text); border-color:#555;">Профиль</a>
+    <div style="padding: 12px 20px; border-top: 1px solid var(--gray-700);">
+        <a th:href="@{/admin/profile}" class="btn btn-sm btn-ghost" style="width:100%; margin-bottom:8px; color:var(--paper); border-color:var(--gray-600);">Профиль</a>
         <form th:action="@{/logout}" method="post" style="margin:0;">
-            <button type="submit" class="btn btn-sm" style="width:100%; background:transparent; color:var(--sidebar-text); border-color:#555;">Выйти</button>
+            <button type="submit" class="btn btn-sm" style="width:100%; background:transparent; color:var(--paper); border-color:var(--gray-600);">Выйти</button>
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
         </form>
     </div>

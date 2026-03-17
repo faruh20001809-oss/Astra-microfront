@@ -14,7 +14,7 @@
   <a th:href="@{/admin/poi-suggestions(status='REJECTED')}" class="btn" th:classappend="${currentStatus=='REJECTED'?'active':''}">Отклонённые</a>
 </div>
 <div class="card">
-<table>
+<div class="table-responsive"><table aria-label="Список предложений точек">
 <thead><tr><th>ID</th><th>Название</th><th>Место</th><th>Почему добавить</th><th>Статус</th><th>Дата</th><th>Действия</th></tr></thead>
 <tbody>
 <tr th:each="s : ${suggestions}">
@@ -26,8 +26,8 @@
   <td th:text="${#temporals.format(s.createdAt,'dd.MM.yyyy HH:mm')}"></td>
   <td><a th:href="@{'/admin/poi-suggestions/view/'+${s.id}}" class="btn btn-sm">👁️ Просмотр</a></td>
 </tr>
-<tr th:if="${#lists.isEmpty(suggestions)}"><td colspan="7" style="text-align:center;padding:40px;color:#999">Нет предложений</td></tr>
+<tr th:if="${#lists.isEmpty(suggestions)}"><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">Нет предложений</td></tr>
 </tbody>
-</table>
+</table></div>
 </div>
 </main></div></body></html>
