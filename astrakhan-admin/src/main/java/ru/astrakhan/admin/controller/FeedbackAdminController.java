@@ -9,6 +9,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.astrakhan.admin.entity.Feedback;
 import ru.astrakhan.admin.service.FeedbackService;
 
+import java.util.stream.Collectors;
+
 @Controller
 @RequestMapping("/admin/feedback")
 @RequiredArgsConstructor
@@ -33,7 +35,7 @@ public class FeedbackAdminController {
                             (f.getName() != null && f.getName().toLowerCase().contains(query)) ||
                             (f.getEmail() != null && f.getEmail().toLowerCase().contains(query)) ||
                             (f.getSubject() != null && f.getSubject().toLowerCase().contains(query)))
-                    .toList();
+                    .collect(Collectors.toList());
         }
 
         model.addAttribute("feedbacks", feedbacks);
