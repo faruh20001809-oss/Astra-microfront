@@ -1,0 +1,16 @@
+[Unit]
+Description=Astra-microfront Node API (module2: карта, AI, TTS)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/astramicro/module2/server
+ExecStart=/usr/bin/node index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

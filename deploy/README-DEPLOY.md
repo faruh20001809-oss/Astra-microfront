@@ -195,16 +195,51 @@ systemctl restart astramicro-admin
 
 ---
 
+## 5.1. Node API (module2: карта, AI, TTS)
+
+Фронт module2 ходит на `/api/` (озвучка, генерация текста). Nginx проксирует эти запросы на Node (порт 3001). Сервис должен быть запущен.
+
+### Запуск через systemd (рекомендуется)
+
+```bash
+cp /opt/astramicro/deploy/astramicro-node.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable astramicro-node
+systemctl start astramicro-node
+systemctl status astramicro-node
+```
+
+Дальше при обновлении:
+
+```bash
+systemctl restart astramicro-node
+```
+
+Логи: `journalctl -u astramicro-node -n 100 -f`
+
+### Перезагрузка Nginx после изменения конфига
+
+Если вы под **root**, `sudo` не нужен:
+
+```bash
+nginx -t && systemctl reload nginx
+```
+
+Если используете sudo: `sudo nginx -t && sudo systemctl reload nginx`
+
+---
+
 ## 6. Полезные команды на сервере
 
 | Действие | Команда |
 |----------|--------|
-| Логи бэкенда (Java) | `sudo journalctl -u astrakhan-admin -n 100 -f` |
-| Логи админки (Flask) | `sudo journalctl -u astramicro-admin -n 100 -f` |
-| Перезапуск Nginx | `sudo nginx -t && sudo systemctl reload nginx` |
-| Проверка конфига Nginx | `sudo nginx -t` |
-| Статус сервисов | `sudo systemctl status astrakhan-admin astramicro-admin nginx` |
-| Лог автообновления (cron) | `sudo tail -f /var/log/astramicro-auto-update.log` |
+| Логи бэкенда (Java) | `journalctl -u astrakhan-admin -n 100 -f` |
+| Логи админки (Flask) | `journalctl -u astramicro-admin -n 100 -f` |
+| Логи Node API (TTS/AI) | `journalctl -u astramicro-node -n 100 -f` |
+| Перезапуск Nginx | `nginx -t && systemctl reload nginx` |
+| Проверка конфига Nginx | `nginx -t` |
+| Статус сервисов | `systemctl status astrakhan-admin astramicro-admin astramicro-node nginx` |
+| Лог автообновления (cron) | `tail -f /var/log/astramicro-auto-update.log` |
 
 ---
 
