@@ -241,7 +241,7 @@
           <div class="poi-sheet-handle" aria-hidden="true" />
 
           <div class="poi-modal-body">
-            <!-- Секция: фото объекта -->
+            <!-- Слева: прямоугольник с фото + разделительная линия -->
             <div class="poi-photo-col">
               <img
                 v-if="mapStore.selectedPoi.image"
@@ -253,13 +253,14 @@
                 Нет фото
               </div>
             </div>
+            <div class="poi-card-divider" aria-hidden="true" />
 
-            <!-- Секция: заголовок и контент -->
+            <!-- Справа: название, тип в углу, описание, две кнопки -->
             <div class="poi-content-col">
               <header class="poi-modal-header">
-                <span class="poi-card-badge">{{ mapStore.selectedPoi.category }}</span>
                 <h2 id="poi-card-title" class="poi-modal-title">{{ mapStore.selectedPoi.name }}</h2>
-                <dl class="poi-meta-list">
+                <span class="poi-card-badge poi-type-badge">{{ mapStore.selectedPoi.category }}</span>
+                <dl v-if="mapStore.selectedPoi.year || mapStore.selectedPoi.architect" class="poi-meta-list">
                   <template v-if="mapStore.selectedPoi.year">
                     <dt>Год</dt>
                     <dd>{{ mapStore.selectedPoi.year }}</dd>
@@ -304,8 +305,49 @@
                   </div>
                 </section>
 
-                <!-- Текстовое описание (сворачиваемое) -->
-                <section v-if="mapStore.selectedPoi.description" class="poi-section">
+                <!-- Описание (AI или краткое) -->
+                <div v-if="aiContent || aiLoading" class="ai-content-box">
+                  <div v-if="aiLoading" class="ai-content-header">
+                    <span class="text-mono ai-label">✦ AI-описание</span>
+                    <div class="spinner ai-spinner" aria-hidden="true" />
+                  </div>
+                  <p v-if="aiContent && !aiLoading" class="ai-content-text poi-desc-text">
+                    {{ aiContent }}
+                  </p>
+                </div>
+                <p v-else-if="mapStore.selectedPoi.description" class="poi-desc-text poi-desc-fallback">
+                  {{ mapStore.selectedPoi.description }}
+                </p>
+                <p v-else class="poi-desc-placeholder">Нажмите «Сгенерировать», чтобы получить AI-описание.</p>
+
+                <!-- Две кнопки: Озвучить и Описание -->
+                <div class="poi-card-actions">
+                  <button
+                    type="button"
+                    :class="['btn', 'btn-tts', 'btn-action-ozvuchit', isPlaying ? 'btn-danger' : 'btn-accent']"
+                    :disabled="ttsLoading || !aiContent"
+                    @click="toggleTTS"
+                    :aria-label="isPlaying ? 'Остановить озвучку' : 'Озвучить текст'"
+                  >
+                    <span v-if="ttsLoading" class="tts-loading">
+                      <span class="spinner" aria-hidden="true" />
+                      Подготовка…
+                    </span>
+                    <span v-else-if="isPlaying">⏹ Остановить</span>
+                    <span v-else>▶ Озвучить</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-action-opisanie"
+                    @click="activeTab = 'desc'; isDescExpanded = true"
+                    aria-label="Подробное описание"
+                  >
+                    Описание
+                  </button>
+                </div>
+
+                <!-- Свернуть/развернуть текстовое описание и генерация AI -->
+                <section v-if="mapStore.selectedPoi.description" class="poi-section poi-section-more">
                   <button
                     class="btn btn-ghost btn-xs desc-toggle"
                     type="button"
@@ -320,47 +362,14 @@
                     </p>
                   </transition>
                 </section>
-
-                <!-- AI-описание и озвучка -->
-                <section class="poi-section ai-section" aria-label="AI-описание и озвучка">
-                  <div v-if="aiContent || aiLoading" class="ai-content-box">
-                    <div class="ai-content-header">
-                      <span class="text-mono ai-label">✦ AI-описание</span>
-                      <div v-if="aiLoading" class="spinner ai-spinner" aria-hidden="true" />
-                    </div>
-                    <p v-if="aiContent && !aiLoading" class="ai-content-text">
-                      {{ aiContent }}
-                    </p>
-
-                    <!-- Кнопка озвучки — основной CTA при наличии текста -->
-                    <div v-if="aiContent && !aiLoading" class="tts-row">
-                      <button
-                        type="button"
-                        :class="['btn', 'btn-tts', isPlaying ? 'btn-danger' : 'btn-accent']"
-                        :disabled="ttsLoading"
-                        @click="toggleTTS"
-                        :aria-label="isPlaying ? 'Остановить озвучку' : 'Озвучить текст'"
-                      >
-                        <span v-if="ttsLoading" class="tts-loading">
-                          <span class="spinner" aria-hidden="true" />
-                          Подготовка…
-                        </span>
-                        <span v-else-if="isPlaying">⏹ Остановить</span>
-                        <span v-else>▶ Озвучить текст</span>
-                      </button>
-                      <span v-if="isPlaying" class="pulse-dot" aria-hidden="true" />
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-sm ai-gen-btn"
-                    :disabled="aiLoading"
-                    @click="generateAiContent"
-                  >
-                    {{ aiContent ? '↻ Обновить описание' : '✦ Сгенерировать AI-описание' }}
-                  </button>
-                </section>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-sm ai-gen-btn"
+                  :disabled="aiLoading"
+                  @click="generateAiContent"
+                >
+                  {{ aiContent ? '↻ Обновить описание' : '✦ Сгенерировать AI-описание' }}
+                </button>
               </div>
 
               <!-- Вкладка: Фото -->
@@ -1110,52 +1119,81 @@ function categoryIcon(cat) {
   z-index: 140;
 }
 
-/* ===== Floating modal near marker ===== */
+/* ===== Floating modal: горизонтальная карточка на десктопе ===== */
 .poi-modal.floating {
   position: absolute;
-  max-width: 480px;
   width: 100%;
-  max-height: 60vh;
-  overflow-y: auto;
-  background: rgba(10, 10, 10, 0.92);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.7);
+  max-width: 640px;
+  min-width: 520px;
+  max-height: 75vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: rgba(18, 16, 14, 0.96);
+  border-radius: 8px;
+  padding: 0;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(200, 169, 110, 0.12);
   pointer-events: auto;
 }
 
 .poi-modal-body {
   display: flex;
-  gap: var(--spacing-md);
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0;
 }
 
+/* Слева: прямоугольник с фото (~42% ширины) */
 .poi-photo-col {
-  flex: 0 0 160px;
+  flex: 0 0 42%;
+  max-width: 280px;
+  min-width: 200px;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
 }
 
 .poi-photo {
   width: 100%;
-  aspect-ratio: 4/5;
+  height: 100%;
+  min-height: 240px;
   object-fit: cover;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--gray-700);
+  border-radius: 8px 0 0 0;
 }
 
 .poi-photo-placeholder {
   width: 100%;
-  aspect-ratio: 4/5;
-  border-radius: var(--radius-sm);
-  border: 1px dashed var(--gray-600);
+  min-height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.8rem;
-  color: var(--gray-400);
+  color: var(--gray-500);
+  background: var(--gray-800);
+  border-radius: 8px 0 0 0;
+}
+
+/* Разделительная линия между фото и контентом */
+.poi-card-divider {
+  flex: 0 0 1px;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(200, 169, 110, 0.15) 15%,
+    rgba(200, 169, 110, 0.35) 50%,
+    rgba(200, 169, 110, 0.15) 85%,
+    transparent 100%
+  );
+  align-self: stretch;
 }
 
 .poi-content-col {
   flex: 1 1 auto;
   min-width: 0;
+  padding: var(--spacing-lg);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .poi-modal.floating::after {
@@ -1192,9 +1230,39 @@ function categoryIcon(cat) {
 
 .poi-modal-header {
   margin-bottom: var(--spacing-md);
+  position: relative;
+  padding-right: 0;
 }
 
-.poi-card-badge {
+/* Название с подчёркиванием */
+.poi-modal-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+  line-height: 1.25;
+  color: var(--paper);
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid rgba(200, 169, 110, 0.4);
+  padding-right: 6rem;
+}
+
+/* Тип (категория) в правом углу карточки */
+.poi-type-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(200, 169, 110, 0.12);
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid rgba(200, 169, 110, 0.25);
+}
+
+.poi-card-badge:not(.poi-type-badge) {
   display: inline-block;
   font-size: 0.7rem;
   letter-spacing: 0.06em;
@@ -1204,13 +1272,6 @@ function categoryIcon(cat) {
   padding: 0.25rem 0.5rem;
   border-radius: var(--radius-sm);
   border: 1px solid rgba(200, 169, 110, 0.25);
-}
-
-.poi-modal-title {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
-  margin: 0.5rem 0 0.35rem;
-  line-height: 1.2;
 }
 
 .poi-meta-list {
@@ -1337,17 +1398,63 @@ function categoryIcon(cat) {
   flex-wrap: wrap;
 }
 
-.ai-gen-btn {
+/* Текст описания: читаемый на десктопе */
+.poi-desc-text {
+  color: var(--gray-200);
+  line-height: 1.7;
+  font-size: 0.9rem;
+  max-width: 52ch;
+  white-space: pre-wrap;
+  margin: 0 0 var(--spacing-md);
+}
+
+.poi-desc-fallback {
+  color: var(--gray-300);
+  line-height: 1.7;
+  font-size: 0.875rem;
+}
+
+.poi-desc-placeholder {
+  color: var(--gray-500);
+  font-size: 0.85rem;
+  margin: 0 0 var(--spacing-md);
+}
+
+/* Две кнопки: Озвучить + Описание */
+.poi-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
   margin-top: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.btn-action-ozvuchit {
+  min-height: 44px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+}
+
+.btn-action-opisanie {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+}
+
+.poi-section-more {
+  margin-top: var(--spacing-sm);
+}
+
+.ai-gen-btn {
+  margin-top: var(--spacing-sm);
 }
 
 /* ===== AI content box ===== */
 .ai-content-box {
-  background: rgba(200, 169, 110, 0.05);
-  border: 1px solid rgba(200, 169, 110, 0.2);
-  border-radius: var(--radius-sm);
+  background: rgba(200, 169, 110, 0.04);
+  border: 1px solid rgba(200, 169, 110, 0.15);
+  border-radius: 6px;
   padding: var(--spacing-md);
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-sm);
 }
 
 .ai-content-header {
@@ -1359,12 +1466,13 @@ function categoryIcon(cat) {
 
 .ai-content-text {
   color: var(--gray-200);
-  line-height: 1.8;
+  line-height: 1.7;
   white-space: pre-wrap;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  margin: 0;
 }
 
-/* ===== TTS row ===== */
+/* ===== TTS row (мобильные / внутри блока) ===== */
 .tts-row {
   display: flex;
   align-items: center;
@@ -1580,7 +1688,17 @@ function categoryIcon(cat) {
     display: flex;
     flex-direction: column;
   }
+  .poi-modal.floating {
+    min-width: 0;
+    max-width: none;
+  }
   .poi-modal.floating::after { display: none; }
+  .poi-card-divider {
+    width: 100%;
+    height: 1px;
+    flex: 0 0 1px;
+    background: linear-gradient(to right, transparent, rgba(200, 169, 110, 0.3), transparent);
+  }
   .poi-modal-body {
     flex-direction: column;
     overflow-y: auto;
@@ -1590,9 +1708,11 @@ function categoryIcon(cat) {
     flex: 1 1 auto;
     min-height: 0;
   }
-  .poi-photo-col { flex: 0 0 auto; max-height: 200px; }
-  .poi-photo, .poi-photo-placeholder { max-height: 200px; object-fit: cover; }
-  .poi-modal-title { font-size: 1.35rem; }
+  .poi-photo-col { flex: 0 0 auto; max-width: none; min-width: 0; max-height: 200px; }
+  .poi-photo { min-height: 0; max-height: 200px; object-fit: cover; border-radius: 0; }
+  .poi-photo-placeholder { min-height: 0; max-height: 200px; border-radius: 0; }
+  .poi-modal-title { font-size: 1.35rem; padding-right: 0; }
+  .poi-type-badge { position: static; margin-top: 0.25rem; display: inline-block; }
   .poi-tabs .poi-tab-btn {
     min-height: 44px;
     min-width: 44px;
