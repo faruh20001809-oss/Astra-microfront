@@ -26,15 +26,28 @@ public class OrderAdminController {
                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
                        @RequestParam(required = false) Boolean showArchived,
+                       @RequestParam(required = false) String q,
                        Model model, HttpServletRequest request) {
         model.addAttribute("request", request);
         List<Order> orders = orderService.findFiltered(showArchived, status != null && !status.isEmpty() ? Order.OrderStatus.valueOf(status) : null, dateFrom, dateTo);
+
+        if (q != null && !q.isBlank()) {
+            String query = q.toLowerCase();
+            orders = orders.stream()
+                    .filter(o ->
+                            (o.getOrderId() != null && o.getOrderId().toLowerCase().contains(query)) ||
+                            (o.getCustomerName() != null && o.getCustomerName().toLowerCase().contains(query)) ||
+                            (o.getEmail() != null && o.getEmail().toLowerCase().contains(query)) ||
+                            (o.getPhone() != null && o.getPhone().toLowerCase().contains(query)))
+                    .toList();
+        }
         model.addAttribute("orders", orders);
         model.addAttribute("currentStatus", status);
         model.addAttribute("dateFrom", dateFrom);
         model.addAttribute("dateTo", dateTo);
         model.addAttribute("showArchived", Boolean.TRUE.equals(showArchived));
         model.addAttribute("statusCounts", orderService.countByStatus());
+        model.addAttribute("q", q);
         return "orders/list";
     }
 

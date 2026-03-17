@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Ошибка')}"></head>
+<body class="astra-app">
+<div class="layout">
+    <nav th:replace="~{fragments/layout :: sidebar}"></nav>
+    <main class="main-content">
+        <div class="page-header">
+            <h1>Что-то пошло не так</h1>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3>Мы уже разбираемся</h3>
+            </div>
+            <p>
+                Произошла непредвиденная ошибка при загрузке страницы админ‑панели.
+                Попробуйте обновить страницу или вернуться на главную панель.
+            </p>
+
+            <div class="alert alert-error" th:if="${logId}">
+                <div><strong>Идентификатор ошибки:</strong> <span th:text="${logId}">—</span></div>
+                <div th:if="${timestamp}">
+                    <strong>Время:</strong> <span th:text="${timestamp}">—</span>
+                </div>
+                <div th:if="${path}">
+                    <strong>Адрес:</strong> <span th:text="${path}">—</span>
+                </div>
+                <p style="margin-top:8px;font-size:13px;color:var(--text-light);">
+                    Сообщите этот идентификатор разработчикам, чтобы мы смогли быстрее найти причину.
+                </p>
+            </div>
+
+            <div class="form-actions" style="margin-top:24px;">
+                <a th:href="@{/admin}" class="btn btn-primary">Вернуться в панель</a>
+                <button type="button" class="btn btn-ghost" onclick="window.history.back();">
+                    Назад
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>
+

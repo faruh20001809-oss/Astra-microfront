@@ -16,14 +16,29 @@ public class FeedbackAdminController {
     private final FeedbackService feedbackService;
 
     @GetMapping
-    public String list(@RequestParam(required = false) String status, Model model, HttpServletRequest request) {
+    public String list(@RequestParam(required = false) String status,
+                       @RequestParam(required = false) String q,
+                       Model model, HttpServletRequest request) {
         // 🔹 Явно добавляем request в модель для использования в шаблонах
         model.addAttribute("request", request);
 
-        model.addAttribute("feedbacks", (status != null && !status.isEmpty())
+        var feedbacks = (status != null && !status.isEmpty())
                 ? feedbackService.findByStatus(Feedback.FeedbackStatus.valueOf(status))
-                : feedbackService.findAll());
+                : feedbackService.findAll();
+
+        if (q != null && !q.isBlank()) {
+            String query = q.toLowerCase();
+            feedbacks = feedbacks.stream()
+                    .filter(f ->
+                            (f.getName() != null && f.getName().toLowerCase().contains(query)) ||
+                            (f.getEmail() != null && f.getEmail().toLowerCase().contains(query)) ||
+                            (f.getSubject() != null && f.getSubject().toLowerCase().contains(query)))
+                    .toList();
+        }
+
+        model.addAttribute("feedbacks", feedbacks);
         model.addAttribute("currentStatus", status);
+        model.addAttribute("q", q);
         model.addAttribute("newCount", feedbackService.countNew());
         return "feedback/list";
     }

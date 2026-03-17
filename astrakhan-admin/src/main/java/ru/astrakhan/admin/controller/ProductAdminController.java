@@ -12,7 +12,29 @@ import java.io.IOException;
 @Controller @RequestMapping("/admin/products") @RequiredArgsConstructor
 public class ProductAdminController {
     private final ProductService productService;
-    @GetMapping public String list(Model model) { model.addAttribute("products", productService.findAll()); return "products/list"; }
+    @GetMapping
+    public String list(@RequestParam(required = false) String q,
+                       @RequestParam(required = false) Boolean onlyInStock,
+                       Model model) {
+        var products = productService.findAll();
+        if (q != null && !q.isBlank()) {
+            String query = q.toLowerCase();
+            products = products.stream()
+                    .filter(p ->
+                            (p.getName() != null && p.getName().toLowerCase().contains(query)) ||
+                            (p.getCategory() != null && p.getCategory().toLowerCase().contains(query)))
+                    .toList();
+        }
+        if (Boolean.TRUE.equals(onlyInStock)) {
+            products = products.stream()
+                    .filter(p -> Boolean.TRUE.equals(p.getInStock()))
+                    .toList();
+        }
+        model.addAttribute("products", products);
+        model.addAttribute("q", q);
+        model.addAttribute("onlyInStock", onlyInStock);
+        return "products/list";
+    }
     @GetMapping("/create") public String createForm(Model model) { model.addAttribute("product", new Product()); model.addAttribute("isEdit", false); return "products/form"; }
     @GetMapping("/edit/{id}") public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("product", productService.findById(id).orElseThrow(() -> new RuntimeException("Not found")));
