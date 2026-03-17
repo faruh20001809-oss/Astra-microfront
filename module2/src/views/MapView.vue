@@ -1096,15 +1096,15 @@ function categoryIcon(cat) {
 .poi-modal.floating {
   position: absolute;
   width: 100%;
-  max-width: 640px;
-  min-width: 520px;
-  max-height: 75vh;
-  overflow: hidden;
+  max-width: 660px;
+  min-width: 540px;
+  max-height: 78vh;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   background: rgba(18, 16, 14, 0.96);
   border-radius: 8px;
-  padding: 0;
+  padding: 44px 44px 0 14px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(200, 169, 110, 0.12);
   pointer-events: auto;
 }
@@ -1180,19 +1180,19 @@ function categoryIcon(cat) {
 }
 .modal-close {
   position: absolute;
-  top: -12px;
-  right: -12px;
+  top: 0;
+  right: 0;
   background: rgba(0, 0, 0, 0.85);
   border: 1px solid var(--gray-600);
   color: var(--paper);
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   transition: all var(--transition);
   z-index: 20;
 }
