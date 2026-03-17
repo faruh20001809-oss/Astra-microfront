@@ -20,7 +20,13 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY || 'gsk_FOyPevvehbccRIRlNcpzWGdyb3
 const groq = new Groq({ apiKey: GROQ_API_KEY })
 
 // ─── Middleware ───────────────────────────────────
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:4173'] }))
+const CORS_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'http://193.233.49.59',
+  'http://localhost:3001',
+]
+app.use(cors({ origin: CORS_ORIGINS }))
 app.use(express.json({ limit: '10mb' }))
 
 // Request logger
@@ -150,13 +156,10 @@ app.post('/api/node/ai/tts', async (req, res) => {
     if (yandexScript) {
       const { spawn } = await import('child_process')
       const args = [yandexScript]
-      if (voice) {
-        args.push('--voice', String(voice))
-      }
-      if (emotion) {
-        args.push('--emotion', String(emotion))
-      }
-      const py = spawn(process.env.PYTHON_PATH || 'python3', args, { stdio: ['pipe', 'pipe', 'pipe'] })
+      if (voice) args.push('--voice', String(voice))
+      if (emotion) args.push('--emotion', String(emotion))
+      const pyCmd = process.env.PYTHON_PATH || 'python3'
+      const py = spawn(pyCmd, args, { stdio: ['pipe', 'pipe', 'pipe'] })
       const chunks = []
       py.stdin.write(trimmed, () => py.stdin.end())
       py.stdout.on('data', (chunk) => chunks.push(chunk))
@@ -167,6 +170,9 @@ app.post('/api/node/ai/tts', async (req, res) => {
         res.set({ 'Content-Type': 'audio/mpeg', 'Content-Length': buffer.length })
         return res.send(buffer)
       }
+      console.warn('[TTS] Yandex script exited with code', code, ', falling back to Groq')
+    } else {
+      console.warn('[TTS] No YANDEX_TTS_SCRIPT and script not found at', path.resolve(__dirname, '../../scripts/yandex_tts.py'))
     }
 
     // Fallback: Groq TTS

@@ -14,7 +14,6 @@ export function usePoiAiTts() {
 
   const activeTab = ref('desc')
 
-  const selectedAudience = ref('default')
   const aiContent = ref('')
   const aiLoading = ref(false)
 
@@ -27,22 +26,16 @@ export function usePoiAiTts() {
     { key: 'street', label: 'Панорама' },
   ]
 
-  const audiences = [
-    { key: 'default', label: 'Обычный' },
-    { key: 'children', label: 'Детский' },
-    { key: 'academic', label: 'Научный' },
-  ]
-
-  // Озвучки для Yandex TTS (голос + эмоция)
+  // Озвучки для Yandex TTS (голос + эмоция). По умолчанию — Джейн.
   const ttsVoices = [
+    { voice: 'jane', emotion: 'good', label: 'Джейн (доброжелательно)' },
     { voice: 'oksana', emotion: 'good', label: 'Оксана (доброжелательно)' },
     { voice: 'oksana', emotion: 'neutral', label: 'Оксана (нейтрально)' },
-    { voice: 'jane', emotion: 'good', label: 'Джейн (доброжелательно)' },
     { voice: 'omazh', emotion: 'neutral', label: 'Омаж (нейтрально)' },
     { voice: 'zahar', emotion: 'good', label: 'Захар (доброжелательно)' },
     { voice: 'ermil', emotion: 'neutral', label: 'Ермил (нейтрально)' },
   ]
-  const selectedTtsVoice = ref(0) // индекс в ttsVoices
+  const selectedTtsVoice = ref(0)
 
   function resetForPoi() {
     aiContent.value = ''
@@ -56,14 +49,14 @@ export function usePoiAiTts() {
     try {
       aiContent.value = await generatePoiContent(
         mapStore.selectedPoi,
-        selectedAudience.value,
+        'default',
       )
     } catch (e) {
       console.warn('OpenRouter AI failed, trying Node fallback:', e.message)
       try {
         const data = await nodeApi.ai.generatePoiContent(
           mapStore.selectedPoi,
-          selectedAudience.value,
+          'default',
         )
         aiContent.value = (typeof data === 'string' ? data : data?.content) || mapStore.selectedPoi.description || ''
       } catch (e2) {
@@ -129,15 +122,9 @@ export function usePoiAiTts() {
     }
   }
 
-  watch(selectedAudience, () => {
-    if (aiContent.value) generateAiContent()
-  })
-
   return {
     activeTab,
     tabs,
-    selectedAudience,
-    audiences,
     ttsVoices,
     selectedTtsVoice,
     aiContent,

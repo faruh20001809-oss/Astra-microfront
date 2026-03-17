@@ -270,18 +270,6 @@
                     <dd>{{ mapStore.selectedPoi.architect }}</dd>
                   </template>
                 </dl>
-                <!-- Аудитория: компактные чипы без заголовка -->
-                <div class="audience-btns poi-audience-chips">
-                  <button
-                    v-for="a in audiences"
-                    :key="a.key"
-                    :class="['btn btn-xs', 'btn-chip', selectedAudience === a.key ? 'btn-primary' : 'btn-ghost']"
-                    type="button"
-                    @click="selectedAudience = a.key"
-                  >
-                    {{ a.label }}
-                  </button>
-                </div>
               </header>
 
               <!-- Вкладки: Описание | Фото | Панорама -->
@@ -503,8 +491,6 @@ const connectorStyle = computed(() => {
 const {
   activeTab,
   tabs,
-  selectedAudience,
-  audiences,
   ttsVoices,
   selectedTtsVoice,
   aiContent,
@@ -1373,15 +1359,6 @@ function categoryIcon(cat) {
   white-space: pre-wrap;
 }
 
-.audience-btns {
-  display: flex;
-  gap: var(--spacing-xs);
-  flex-wrap: wrap;
-}
-
-.poi-audience-chips {
-  margin-top: var(--spacing-sm);
-}
 
 /* Текст описания: читаемый на десктопе */
 .poi-desc-text {
