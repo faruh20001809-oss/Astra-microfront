@@ -270,6 +270,18 @@
                     <dd>{{ mapStore.selectedPoi.architect }}</dd>
                   </template>
                 </dl>
+                <!-- Аудитория: компактные чипы без заголовка -->
+                <div class="audience-btns poi-audience-chips">
+                  <button
+                    v-for="a in audiences"
+                    :key="a.key"
+                    :class="['btn btn-xs', 'btn-chip', selectedAudience === a.key ? 'btn-primary' : 'btn-ghost']"
+                    type="button"
+                    @click="selectedAudience = a.key"
+                  >
+                    {{ a.label }}
+                  </button>
+                </div>
               </header>
 
               <!-- Вкладки: Описание | Фото | Панорама -->
@@ -289,23 +301,11 @@
 
               <!-- Вкладка: Описание -->
               <div v-if="activeTab === 'desc'" class="poi-tab-content" role="tabpanel" aria-labelledby="tab-desc">
-                <!-- Стиль текста (аудитория) -->
-                <section class="poi-section" aria-label="Стиль рассказа">
-                  <span class="poi-section-label">Стиль рассказа</span>
-                  <div class="audience-btns">
-                    <button
-                      v-for="a in audiences"
-                      :key="a.key"
-                      :class="['btn btn-sm', selectedAudience === a.key ? 'btn-primary' : 'btn-ghost']"
-                      @click="selectedAudience = a.key"
-                      type="button"
-                    >
-                      {{ a.label }}
-                    </button>
-                  </div>
-                </section>
+                <!-- Описание: сначала краткий текст POI, затем AI (по запросу) -->
+                <p v-if="mapStore.selectedPoi.description" class="poi-desc-text poi-desc-fallback">
+                  {{ mapStore.selectedPoi.description }}
+                </p>
 
-                <!-- Описание (AI или краткое) -->
                 <div v-if="aiContent || aiLoading" class="ai-content-box">
                   <div v-if="aiLoading" class="ai-content-header">
                     <span class="text-mono ai-label">✦ AI-описание</span>
@@ -315,17 +315,14 @@
                     {{ aiContent }}
                   </p>
                 </div>
-                <p v-else-if="mapStore.selectedPoi.description" class="poi-desc-text poi-desc-fallback">
-                  {{ mapStore.selectedPoi.description }}
-                </p>
                 <p v-else class="poi-desc-placeholder">Нажмите «Сгенерировать», чтобы получить AI-описание.</p>
 
-                <!-- Две кнопки: Озвучить и Описание -->
+                <!-- CTA: Озвучить (главная) и генерация AI как вторичное действие -->
                 <div class="poi-card-actions">
                   <button
                     type="button"
                     :class="['btn', 'btn-tts', 'btn-action-ozvuchit', isPlaying ? 'btn-danger' : 'btn-accent']"
-                    :disabled="ttsLoading || !aiContent"
+                    :disabled="ttsLoading || !(aiContent || mapStore.selectedPoi.description)"
                     @click="toggleTTS"
                     :aria-label="isPlaying ? 'Остановить озвучку' : 'Озвучить текст'"
                   >
@@ -336,32 +333,8 @@
                     <span v-else-if="isPlaying">⏹ Остановить</span>
                     <span v-else>▶ Озвучить</span>
                   </button>
-                  <button
-                    type="button"
-                    class="btn btn-ghost btn-action-opisanie"
-                    @click="activeTab = 'desc'; isDescExpanded = true"
-                    aria-label="Подробное описание"
-                  >
-                    Описание
-                  </button>
                 </div>
 
-                <!-- Свернуть/развернуть текстовое описание и генерация AI -->
-                <section v-if="mapStore.selectedPoi.description" class="poi-section poi-section-more">
-                  <button
-                    class="btn btn-ghost btn-xs desc-toggle"
-                    type="button"
-                    @click="isDescExpanded = !isDescExpanded"
-                    :aria-expanded="isDescExpanded"
-                  >
-                    {{ isDescExpanded ? 'Скрыть текстовое описание' : 'Показать текстовое описание' }}
-                  </button>
-                  <transition name="fade">
-                    <p v-if="isDescExpanded" class="poi-description">
-                      {{ mapStore.selectedPoi.description }}
-                    </p>
-                  </transition>
-                </section>
                 <button
                   type="button"
                   class="btn btn-ghost btn-sm ai-gen-btn"
@@ -1302,15 +1275,6 @@ function categoryIcon(cat) {
   margin-top: var(--spacing-lg);
 }
 
-.poi-section-label {
-  display: block;
-  font-size: 0.7rem;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--gray-400);
-  margin-bottom: var(--spacing-sm);
-}
-
 .ai-section .ai-label {
   color: var(--accent);
 }
@@ -1396,6 +1360,10 @@ function categoryIcon(cat) {
   display: flex;
   gap: var(--spacing-xs);
   flex-wrap: wrap;
+}
+
+.poi-audience-chips {
+  margin-top: var(--spacing-sm);
 }
 
 /* Текст описания: читаемый на десктопе */
@@ -1678,7 +1646,9 @@ function categoryIcon(cat) {
     bottom: 0 !important;
     max-width: none !important;
     width: 100% !important;
-    max-height: 88vh;
+    /* Карточка занимает нижнюю часть экрана, сверху остаётся карта */
+    max-height: 70vh;
+    min-height: 40vh;
     border-radius: 12px 12px 0 0;
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
     padding-top: 0;
