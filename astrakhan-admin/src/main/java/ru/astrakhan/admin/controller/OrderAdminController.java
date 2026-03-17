@@ -13,6 +13,7 @@ import ru.astrakhan.admin.service.OrderEmailService;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/orders")
@@ -39,7 +40,7 @@ public class OrderAdminController {
                             (o.getCustomerName() != null && o.getCustomerName().toLowerCase().contains(query)) ||
                             (o.getEmail() != null && o.getEmail().toLowerCase().contains(query)) ||
                             (o.getPhone() != null && o.getPhone().toLowerCase().contains(query)))
-                    .toList();
+                    .collect(Collectors.toList());
         }
         model.addAttribute("orders", orders);
         model.addAttribute("currentStatus", status);

@@ -1,4 +1,5 @@
 package ru.astrakhan.admin.controller;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -8,6 +9,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.astrakhan.admin.entity.Product;
 import ru.astrakhan.admin.service.ProductService;
 import java.io.IOException;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller @RequestMapping("/admin/products") @RequiredArgsConstructor
@@ -16,8 +18,9 @@ public class ProductAdminController {
     @GetMapping
     public String list(@RequestParam(required = false) String q,
                        @RequestParam(required = false) Boolean onlyInStock,
-                       Model model) {
-        var products = productService.findAll();
+                       Model model, HttpServletRequest request) {
+        model.addAttribute("request", request);
+        List<Product> products = productService.findAll();
         if (q != null && !q.isBlank()) {
             String query = q.toLowerCase();
             products = products.stream()
