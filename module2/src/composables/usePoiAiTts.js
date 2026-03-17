@@ -33,6 +33,17 @@ export function usePoiAiTts() {
     { key: 'academic', label: 'Научный' },
   ]
 
+  // Озвучки для Yandex TTS (голос + эмоция)
+  const ttsVoices = [
+    { voice: 'oksana', emotion: 'good', label: 'Оксана (доброжелательно)' },
+    { voice: 'oksana', emotion: 'neutral', label: 'Оксана (нейтрально)' },
+    { voice: 'jane', emotion: 'good', label: 'Джейн (доброжелательно)' },
+    { voice: 'omazh', emotion: 'neutral', label: 'Омаж (нейтрально)' },
+    { voice: 'zahar', emotion: 'good', label: 'Захар (доброжелательно)' },
+    { voice: 'ermil', emotion: 'neutral', label: 'Ермил (нейтрально)' },
+  ]
+  const selectedTtsVoice = ref(0) // индекс в ttsVoices
+
   function resetForPoi() {
     aiContent.value = ''
     activeTab.value = 'desc'
@@ -76,27 +87,39 @@ export function usePoiAiTts() {
     }
 
     ttsLoading.value = true
+    let played = false
     try {
       isPlaying.value = true
+      const preset = ttsVoices[selectedTtsVoice.value] || ttsVoices[0]
       try {
         const blob = await nodeApi.ai.synthesizeSpeech(text, {
-          voice: 'oksana',
-          emotion: 'good',
+          voice: preset.voice,
+          emotion: preset.emotion,
         })
         if (blob && blob.size > 0) {
           const url = URL.createObjectURL(blob)
           const audio = new Audio(url)
-          await new Promise((resolve, reject) => {
-            audio.onended = () => { URL.revokeObjectURL(url); resolve() }
-            audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Playback failed')) }
-            audio.play().catch(reject)
-          })
-          return
+          try {
+            await new Promise((resolve, reject) => {
+              audio.onended = () => { URL.revokeObjectURL(url); resolve() }
+              audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Playback failed')) }
+              audio.play().catch(reject)
+            })
+            played = true
+            return
+          } catch (playErr) {
+            URL.revokeObjectURL(url)
+            console.warn('Playback failed:', playErr.message)
+            toastStore.push('Не удалось воспроизвести аудио', 'error')
+            return
+          }
         }
       } catch (e) {
-        console.warn('Node TTS failed, using Web Speech:', e.message)
+        console.warn('Node TTS failed:', e.message)
       }
-      await speakWithWebSpeech(text)
+      if (!played) {
+        await speakWithWebSpeech(text)
+      }
     } catch (e) {
       console.error('TTS error:', e)
       toastStore.push('Ошибка озвучки: ' + e.message, 'error')
@@ -115,6 +138,8 @@ export function usePoiAiTts() {
     tabs,
     selectedAudience,
     audiences,
+    ttsVoices,
+    selectedTtsVoice,
     aiContent,
     aiLoading,
     ttsLoading,

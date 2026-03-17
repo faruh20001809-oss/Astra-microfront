@@ -317,7 +317,22 @@
                 </div>
                 <p v-else class="poi-desc-placeholder">Нажмите «Сгенерировать», чтобы получить AI-описание.</p>
 
-                <!-- CTA: Озвучить (главная) и генерация AI как вторичное действие -->
+                <!-- Выбор озвучки -->
+                <div class="poi-tts-voice-row">
+                  <label for="poi-tts-voice" class="poi-tts-voice-label">Озвучка:</label>
+                  <select
+                    id="poi-tts-voice"
+                    v-model.number="selectedTtsVoice"
+                    class="poi-tts-voice-select"
+                    :disabled="ttsLoading"
+                  >
+                    <option v-for="(v, i) in ttsVoices" :key="i" :value="i">
+                      {{ v.label }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- CTA: Озвучить (главная) -->
                 <div class="poi-card-actions">
                   <button
                     type="button"
@@ -490,6 +505,8 @@ const {
   tabs,
   selectedAudience,
   audiences,
+  ttsVoices,
+  selectedTtsVoice,
   aiContent,
   aiLoading,
   ttsLoading,
@@ -1388,12 +1405,42 @@ function categoryIcon(cat) {
   margin: 0 0 var(--spacing-md);
 }
 
-/* Две кнопки: Озвучить + Описание */
+/* Выбор озвучки */
+.poi-tts-voice-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+.poi-tts-voice-label {
+  font-size: 0.8rem;
+  color: var(--gray-400);
+  white-space: nowrap;
+}
+.poi-tts-voice-select {
+  flex: 1;
+  min-width: 0;
+  max-width: 280px;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  background: var(--gray-800);
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm);
+  color: var(--paper);
+  cursor: pointer;
+}
+.poi-tts-voice-select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Кнопка Озвучить */
 .poi-card-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--spacing-sm);
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
 }
 
