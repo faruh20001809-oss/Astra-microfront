@@ -133,7 +133,7 @@ app.post('/api/groq/tts', async (req, res) => {
  */
 app.post('/api/node/ai/tts', async (req, res) => {
   try {
-    const { text } = req.body
+    const { text, voice, emotion } = req.body || {}
     if (!text) return res.status(400).json({ error: 'text required' })
     const trimmed = (text || '').slice(0, 5000).trim()
     if (!trimmed) return res.status(400).json({ error: 'text required' })
@@ -141,7 +141,14 @@ app.post('/api/node/ai/tts', async (req, res) => {
     const yandexScript = process.env.YANDEX_TTS_SCRIPT || process.env.YANDEX_TTS_PYTHON
     if (yandexScript) {
       const { spawn } = await import('child_process')
-      const py = spawn(process.env.PYTHON_PATH || 'python3', [yandexScript], { stdio: ['pipe', 'pipe', 'pipe'] })
+      const args = [yandexScript]
+      if (voice) {
+        args.push('--voice', String(voice))
+      }
+      if (emotion) {
+        args.push('--emotion', String(emotion))
+      }
+      const py = spawn(process.env.PYTHON_PATH || 'python3', args, { stdio: ['pipe', 'pipe', 'pipe'] })
       const chunks = []
       py.stdin.write(trimmed, () => py.stdin.end())
       py.stdout.on('data', (chunk) => chunks.push(chunk))

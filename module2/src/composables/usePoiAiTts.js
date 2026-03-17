@@ -78,7 +78,10 @@ export function usePoiAiTts() {
     try {
       isPlaying.value = true
       try {
-        const blob = await nodeApi.ai.synthesizeSpeech(aiContent.value)
+        const blob = await nodeApi.ai.synthesizeSpeech(aiContent.value, {
+          voice: 'oksana',
+          emotion: 'good',
+        })
         if (blob && blob.size > 0) {
           const url = URL.createObjectURL(blob)
           const audio = new Audio(url)

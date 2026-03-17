@@ -274,11 +274,18 @@ export const nodeApi = {
       return handleJavaResponse(res)
     },
 
-    /** @param {string} text */
-    synthesizeSpeech: async (text) => {
+    /**
+     * Синтез речи через Node.js API.
+     * @param {string} text
+     * @param {{ voice?: string, emotion?: string }=} options
+     */
+    synthesizeSpeech: async (text, options = {}) => {
+      const payload = { text }
+      if (options.voice) payload.voice = options.voice
+      if (options.emotion) payload.emotion = options.emotion
       const res = await baseFetch(`${NODE_API_BASE}/ai/tts`, {
         method: 'POST',
-        body: JSON.stringify({ text })
+        body: JSON.stringify(payload)
       })
       return res.blob() // TTS возвращает audio/blob
     }
