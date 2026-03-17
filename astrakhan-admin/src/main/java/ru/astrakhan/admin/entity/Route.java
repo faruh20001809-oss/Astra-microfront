@@ -11,7 +11,7 @@ public class Route {
     @Column(columnDefinition = "TEXT") private String description;
     private String category;
     @Column(name = "image_url") private String imageUrl;
-    @Lob @Column(name = "image_data") private byte[] imageData;
+    @Column(name = "image_data", columnDefinition = "bytea") private byte[] imageData;
     @Column(name = "image_filename") private String imageFilename;
     private Double distance;
     private Integer duration;

@@ -13,7 +13,7 @@ public class Product {
     @Column(nullable = false) private Double price;
     @Builder.Default private String currency = "RUB";
     @Column(name = "image_url") private String imageUrl;
-    @Lob @Column(name = "image_data") private byte[] imageData;
+    @Column(name = "image_data", columnDefinition = "bytea") private byte[] imageData;
     @Column(name = "image_filename") private String imageFilename;
     @Builder.Default private Double rating = 0.0;
     @Column(name = "reviews_count") @Builder.Default private Integer reviewsCount = 0;
