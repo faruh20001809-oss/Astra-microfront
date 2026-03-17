@@ -10,7 +10,7 @@
   <div>
     <label for="status">Статус</label>
     <select id="status" name="status" class="form-control">
-      <option th:value="" th:selected="${currentStatus == null}">Все</option>
+      <option th:value="''" th:selected="${currentStatus == null}">Все</option>
       <option th:value="NEW" th:selected="${currentStatus=='NEW'}">Новые</option>
       <option th:value="READ" th:selected="${currentStatus=='READ'}">Прочитанные</option>
       <option th:value="RESPONDED" th:selected="${currentStatus=='RESPONDED'}">С ответом</option>

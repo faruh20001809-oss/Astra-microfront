@@ -13,7 +13,7 @@
   <div>
     <label for="onlyInStock">Фильтр</label>
     <select id="onlyInStock" name="onlyInStock" class="form-control">
-      <option th:value="" th:selected="${onlyInStock == null}">Все товары</option>
+      <option th:value="''" th:selected="${onlyInStock == null}">Все товары</option>
       <option th:value="true" th:selected="${onlyInStock}">Только в наличии</option>
     </select>
   </div>
