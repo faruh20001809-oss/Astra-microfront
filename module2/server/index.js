@@ -6,7 +6,7 @@
 
 import express from 'express'
 import cors from 'cors'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import Groq from 'groq-sdk'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -138,7 +138,15 @@ app.post('/api/node/ai/tts', async (req, res) => {
     const trimmed = (text || '').slice(0, 5000).trim()
     if (!trimmed) return res.status(400).json({ error: 'text required' })
 
-    const yandexScript = process.env.YANDEX_TTS_SCRIPT || process.env.YANDEX_TTS_PYTHON
+    // Авто-подключение Python-скрипта из репозитория, если переменная окружения не задана
+    let yandexScript = process.env.YANDEX_TTS_SCRIPT || process.env.YANDEX_TTS_PYTHON
+    if (!yandexScript) {
+      const candidate = path.resolve(__dirname, '../../scripts/yandex_tts.py')
+      if (existsSync(candidate)) {
+        yandexScript = candidate
+      }
+    }
+
     if (yandexScript) {
       const { spawn } = await import('child_process')
       const args = [yandexScript]

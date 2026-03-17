@@ -66,7 +66,8 @@ export function usePoiAiTts() {
   }
 
   async function toggleTTS() {
-    if (!aiContent.value) return
+    const text = aiContent.value || mapStore.selectedPoi?.description || ''
+    if (!text) return
 
     if (isPlaying.value) {
       stopAllAudio()
@@ -78,7 +79,7 @@ export function usePoiAiTts() {
     try {
       isPlaying.value = true
       try {
-        const blob = await nodeApi.ai.synthesizeSpeech(aiContent.value, {
+        const blob = await nodeApi.ai.synthesizeSpeech(text, {
           voice: 'oksana',
           emotion: 'good',
         })
@@ -95,7 +96,7 @@ export function usePoiAiTts() {
       } catch (e) {
         console.warn('Node TTS failed, using Web Speech:', e.message)
       }
-      await speakWithWebSpeech(aiContent.value)
+      await speakWithWebSpeech(text)
     } catch (e) {
       console.error('TTS error:', e)
       toastStore.push('Ошибка озвучки: ' + e.message, 'error')

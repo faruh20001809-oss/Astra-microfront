@@ -1180,21 +1180,21 @@ function categoryIcon(cat) {
 }
 .modal-close {
   position: absolute;
-  top: var(--spacing-md);
-  right: var(--spacing-md);
-  background: transparent;
+  top: -12px;
+  right: -12px;
+  background: rgba(0, 0, 0, 0.85);
   border: 1px solid var(--gray-600);
   color: var(--paper);
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-radius: var(--radius-sm);
+  border-radius: 999px;
   font-size: 0.8rem;
   transition: all var(--transition);
-  z-index: 10;
+  z-index: 20;
 }
 
 .modal-close:hover {
@@ -1690,8 +1690,8 @@ function categoryIcon(cat) {
     touch-action: manipulation;
   }
   .modal-close {
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 36px;
+    min-height: 36px;
     top: var(--spacing-sm);
     right: var(--spacing-sm);
     touch-action: manipulation;
