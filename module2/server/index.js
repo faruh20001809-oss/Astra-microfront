@@ -158,7 +158,12 @@ app.post('/api/node/ai/tts', async (req, res) => {
       const args = [yandexScript]
       if (voice) args.push('--voice', String(voice))
       if (emotion) args.push('--emotion', String(emotion))
-      const pyCmd = process.env.PYTHON_PATH || 'python3'
+      let pyCmd = process.env.PYTHON_PATH || process.env.PYTHON
+      if (!pyCmd) {
+        const venvPython = path.resolve(__dirname, '../../scripts/venv/bin/python3')
+        if (existsSync(venvPython)) pyCmd = venvPython
+        else pyCmd = 'python3'
+      }
       const py = spawn(pyCmd, args, { stdio: ['pipe', 'pipe', 'pipe'] })
       const chunks = []
       py.stdin.write(trimmed, () => py.stdin.end())
@@ -175,16 +180,29 @@ app.post('/api/node/ai/tts', async (req, res) => {
       console.warn('[TTS] No YANDEX_TTS_SCRIPT and script not found at', path.resolve(__dirname, '../../scripts/yandex_tts.py'))
     }
 
-    // Fallback: Groq TTS
-    const wav = await groq.audio.speech.create({
-      model: 'playai-tts',
-      voice: 'Celeste-PlayAI',
-      response_format: 'wav',
-      input: trimmed.slice(0, 2000)
+    // Fallback: Groq TTS (если в SDK есть audio.speech)
+    if (groq.audio?.speech?.create) {
+      try {
+        const wav = await groq.audio.speech.create({
+          model: 'playai-tts',
+          voice: 'Celeste-PlayAI',
+          response_format: 'wav',
+          input: trimmed.slice(0, 2000)
+        })
+        const buffer = Buffer.from(await wav.arrayBuffer())
+        res.set({ 'Content-Type': 'audio/wav', 'Content-Length': buffer.length })
+        return res.send(buffer)
+      } catch (groqErr) {
+        console.warn('[TTS] Groq fallback failed:', groqErr.message)
+      }
+    } else {
+      console.warn('[TTS] Groq SDK has no audio.speech API')
+    }
+
+    res.status(503).json({
+      error: 'TTS temporarily unavailable. Install on server: pip install yandex-tts-free, ffmpeg.',
+      fallback: 'browser'
     })
-    const buffer = Buffer.from(await wav.arrayBuffer())
-    res.set({ 'Content-Type': 'audio/wav', 'Content-Length': buffer.length })
-    res.send(buffer)
   } catch (err) {
     console.error('TTS error:', err.message)
     res.status(500).json({ error: err.message })
