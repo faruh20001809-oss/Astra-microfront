@@ -8,6 +8,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.astrakhan.admin.entity.Product;
 import ru.astrakhan.admin.service.ProductService;
 import java.io.IOException;
+import java.util.stream.Collectors;
 
 @Controller @RequestMapping("/admin/products") @RequiredArgsConstructor
 public class ProductAdminController {
@@ -23,12 +24,12 @@ public class ProductAdminController {
                     .filter(p ->
                             (p.getName() != null && p.getName().toLowerCase().contains(query)) ||
                             (p.getCategory() != null && p.getCategory().toLowerCase().contains(query)))
-                    .toList();
+                    .collect(Collectors.toList());
         }
         if (Boolean.TRUE.equals(onlyInStock)) {
             products = products.stream()
                     .filter(p -> Boolean.TRUE.equals(p.getInStock()))
-                    .toList();
+                    .collect(Collectors.toList());
         }
         model.addAttribute("products", products);
         model.addAttribute("q", q);
