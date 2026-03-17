@@ -564,8 +564,8 @@ function initMap() {
     map = new window.mapgl.Map(mapEl.value, {
       center: ASTRAKHAN_CENTER,
       zoom: 14,
-      key: 'acc639af-54cb-4b8e-bd72-23d0af937d50',
-      style: 'c080bb6a-8134-4993-93d1-1b8ee55d40be',
+      key: '2fa2df2d-9b29-4877-ac65-818e02de807d',
+      style: '0651ff51-79b6-409c-8b90-37a9be2e97ad',
     })
 
     zoomLevel.value = map.getZoom()
