@@ -15,6 +15,36 @@
     <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value" th:text="${newFeedback}">0</div><div class="stat-label">Новых обращений</div></div>
     <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" th:text="${#numbers.formatDecimal(revenue, 0, 0)} + ' ₽'">0 ₽</div><div class="stat-label">Выручка</div></div>
 </div>
+
+<div class="grid-2" style="margin-top:1.5rem">
+    <div class="card">
+        <div class="card-header"><h3>Прогресс команды</h3></div>
+        <p style="color:#888;font-size:0.9rem;margin:0 0 1rem">Сводные показатели по данным в системе (общие для команды).</p>
+        <table style="width:100%;font-size:0.9rem;color:#ccc">
+            <tr><td>Опубликованные точки</td><td style="text-align:right"><strong th:text="${employeeStats.publishedPois}">0</strong></td></tr>
+            <tr><td>Опубликованные маршруты</td><td style="text-align:right"><strong th:text="${employeeStats.publishedRoutes}">0</strong></td></tr>
+            <tr><td>Товары в магазине</td><td style="text-align:right"><strong th:text="${employeeStats.products}">0</strong></td></tr>
+            <tr><td>Заказы (всего)</td><td style="text-align:right"><strong th:text="${employeeStats.orders}">0</strong></td></tr>
+            <tr><td>Обращения / предложения POI</td><td style="text-align:right"><strong th:text="|${employeeStats.feedbackCount} / ${employeeStats.poiSuggestionsCount}|">0 / 0</strong></td></tr>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>Достижения</h3></div>
+        <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));margin-top:0.75rem">
+            <div th:each="a : ${employeeAchievements}" class="stat-card">
+                <div class="stat-label" th:text="${a.title}">Название</div>
+                <p style="font-size:0.8rem;color:#aaa;margin:0.35rem 0" th:text="${a.description}">Описание</p>
+                <span class="status-badge" th:if="${a.status == 'UNLOCKED'}">Получено</span>
+                <span class="status-badge" th:if="${a.status == 'IN_PROGRESS'}" th:text="|${a.progress}%|">0%</span>
+                <span class="tag" th:if="${a.status == 'LOCKED'}" style="opacity:0.5">Закрыто</span>
+                <div th:if="${a.status == 'IN_PROGRESS'}" style="margin-top:0.5rem;height:4px;background:#333;border-radius:2px;overflow:hidden">
+                    <div th:style="|width:${a.progress}%;height:100%;background:#c8a96e|"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="grid-2">
     <div class="card"><div class="card-header"><h3>🔥 Популярные точки</h3></div>
         <table><thead><tr><th>Название</th><th>Просмотры</th></tr></thead><tbody>

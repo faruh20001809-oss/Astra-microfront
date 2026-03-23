@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findByOrderId(String orderId);
 
+    List<Order> findByEmailIgnoreCaseAndDeletedFalseOrderByCreatedAtDesc(String email);
+
     List<Order> findAllByDeletedFalseOrderByCreatedAtDesc();
     List<Order> findAllByOrderByCreatedAtDesc();
     List<Order> findByStatusAndDeletedFalseOrderByCreatedAtDesc(Order.OrderStatus status);

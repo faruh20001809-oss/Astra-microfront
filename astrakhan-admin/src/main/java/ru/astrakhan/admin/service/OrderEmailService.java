@@ -78,6 +78,27 @@ public class OrderEmailService {
     /**
      * Sends tracking number email when order is shipped.
      */
+    /**
+     * Код для входа в «Мои заказы» по email (гостевой кабинет).
+     */
+    public void sendGuestOrderLookupCode(String email, String code) {
+        if (!mailEnabled) {
+            log.info("MAIL DISABLED — код для просмотра заказов {}: {}", email, code);
+            return;
+        }
+        if (email == null || email.isBlank()) {
+            return;
+        }
+        try {
+            String subject = "Код для просмотра заказов — Астрахань. Живая История";
+            String html = buildLookupCodeHtml(code);
+            sendHtml(email.trim(), subject, html);
+            log.info("Guest order lookup code sent to {}", email);
+        } catch (Exception e) {
+            log.error("Failed to send guest lookup code to " + email, e);
+        }
+    }
+
     public void sendTrackingUpdate(Order order) {
         if (!mailEnabled) {
             log.debug("Mail disabled, skipping tracking email for {}", order.getOrderId());
@@ -158,6 +179,20 @@ public class OrderEmailService {
         sb.append("<p>Спасибо за заказ. Мы получили ваш заказ <strong>").append(escape(order.getOrderId())).append("</strong> и приняли его в обработку.</p>");
         sb.append("<p>Сумма заказа: <strong>").append(order.getTotal() != null ? order.getTotal() : 0).append(" ₽</strong>.</p>");
         sb.append("<p>Когда заказ будет отправлен, мы пришлём вам письмо с трек-номером для отслеживания.</p>");
+        sb.append("<p style=\"color:#666;margin-top:24px;\">— Астрахань. Живая История</p>");
+        sb.append("</body></html>");
+        return sb.toString();
+    }
+
+    private String buildLookupCodeHtml(String code) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body style=\"font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;\">");
+        sb.append("<h2>Код для просмотра заказов</h2>");
+        sb.append("<p>Вы запросили доступ к списку заказов на сайте «Астрахань. Живая История».</p>");
+        sb.append("<p style=\"font-size:28px;letter-spacing:0.2em;font-weight:bold;background:#f5f5f5;padding:16px;border-radius:8px;text-align:center;\">");
+        sb.append(escape(code));
+        sb.append("</p>");
+        sb.append("<p>Код действует 10 минут. Если это были не вы — проигнорируйте письмо.</p>");
         sb.append("<p style=\"color:#666;margin-top:24px;\">— Астрахань. Живая История</p>");
         sb.append("</body></html>");
         return sb.toString();

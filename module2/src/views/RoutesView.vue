@@ -30,6 +30,10 @@
             :class="['filter-chip', { active: showPaid }]"
             @click="showPaid = !showPaid"
           >Платные</button>
+          <button
+            :class="['filter-chip', { active: showFavoritesOnly }]"
+            @click="showFavoritesOnly = !showFavoritesOnly"
+          >Только избранные</button>
         </div>
       </div>
 
@@ -45,7 +49,10 @@
           v-for="r in filteredRoutes"
           :key="r.id"
           :route="r"
+          :favorite="isRouteFavorite(r.id)"
           @open="openRoute(r)"
+          @toggle-favorite="toggleRoute(r.id)"
+          @share="openShare(r)"
         />
       </transition-group>
 
@@ -97,10 +104,10 @@
           </div>
 
           <div class="route-modal-actions">
-            <button v-if="selected.isPaid" class="btn btn-primary btn-lg">
+            <button v-if="selected.isPaid" type="button" class="btn btn-primary btn-lg" @click="onPaidRoute(selected)">
               Купить за {{ selected.price }} ₽
             </button>
-            <button v-else class="btn btn-accent btn-lg">
+            <button v-else type="button" class="btn btn-accent btn-lg" @click="onStartRoute(selected)">
               Начать маршрут
             </button>
             <button class="btn btn-ghost" @click="selected = null">Закрыть</button>
@@ -108,21 +115,48 @@
         </div>
       </div>
     </transition>
+
+    <transition name="fade">
+      <div v-if="shareModalOpen" class="modal-backdrop" @click.self="shareModalOpen = false">
+        <div class="modal-box route-modal" style="max-width: 420px">
+          <button type="button" class="modal-close-btn" @click="shareModalOpen = false">✕</button>
+          <h2 style="margin: 0 0 0.75rem; font-size: 1.1rem">Поделиться маршрутом</h2>
+          <input :value="shareUrl" readonly class="form-input" style="margin-bottom: 1rem" @focus="$event.target.select()" />
+          <div class="route-modal-actions">
+            <button type="button" class="btn btn-primary" @click="copyShareUrl">Скопировать ссылку</button>
+            <button type="button" class="btn btn-ghost" @click="qrOpen = true">Показать QR</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <QrModal v-model="qrOpen" :text="shareUrl" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import RouteCard from '@/components/routes/RouteCard.vue'
+import QrModal from '@/components/common/QrModal.vue'
 import { useToastStore } from '@/store/index.js'
+import { useFavorites } from '@/composables/useFavorites.js'
+import { useGuestProgress } from '@/composables/useGuestProgress.js'
 
 const toastStore = useToastStore()
+const { isRouteFavorite, toggleRoute, favoriteRoutesList } = useFavorites()
+const { markRouteCompleted } = useGuestProgress()
+
 const routes = ref([])
 const selected = ref(null)
 const isLoading = ref(false)
 const activeCategory = ref(null)
 const showFree = ref(false)
 const showPaid = ref(false)
+const showFavoritesOnly = ref(false)
+
+const shareModalOpen = ref(false)
+const shareUrl = ref('')
+const qrOpen = ref(false)
 
 // 🔹 categories: защита от не-массива
 const categories = computed(() => {
@@ -131,6 +165,8 @@ const categories = computed(() => {
 })
 
 // 🔹 filteredRoutes: защита от не-массива
+const favoriteIdSet = computed(() => new Set(favoriteRoutesList.value))
+
 const filteredRoutes = computed(() => {
   if (!Array.isArray(routes.value)) return []
 
@@ -138,8 +174,46 @@ const filteredRoutes = computed(() => {
   if (activeCategory.value) list = list.filter(r => r.category === activeCategory.value)
   if (showFree.value && !showPaid.value) list = list.filter(r => !r.isPaid)
   if (showPaid.value && !showFree.value) list = list.filter(r => r.isPaid)
+  if (showFavoritesOnly.value) list = list.filter(r => favoriteIdSet.value.has(r.id))
   return list
 })
+
+function buildRouteShareUrl(route) {
+  const base = window.location.origin + (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/')
+  return `${base}routes/${route.id}?utm_source=share&utm_medium=route&utm_campaign=route_${route.id}`
+}
+
+async function openShare(route) {
+  const url = buildRouteShareUrl(route)
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    try {
+      await navigator.share({ title: route.title, text: route.title, url })
+      return
+    } catch (e) {
+      if (e?.name === 'AbortError') return
+    }
+  }
+  shareUrl.value = url
+  shareModalOpen.value = true
+}
+
+async function copyShareUrl() {
+  try {
+    await navigator.clipboard.writeText(shareUrl.value)
+    toastStore.push('Ссылка скопирована', 'success')
+  } catch {
+    toastStore.push('Не удалось скопировать', 'error')
+  }
+}
+
+function onStartRoute(route) {
+  markRouteCompleted(route.id)
+  toastStore.push('Маршрут отмечен в вашем прогрессе', 'success')
+}
+
+function onPaidRoute() {
+  toastStore.push('Покупка маршрута доступна в развитии каталога', 'info')
+}
 
 onMounted(async () => {
   isLoading.value = true

@@ -188,6 +188,75 @@ export const javaApi = {
     },
 
     /**
+     * Поиск заказа для гостя: null при 404, throw при сети/ошибке API.
+     * @param {string} orderId
+     * @returns {Promise<object|null>}
+     */
+    getByIdForGuest: async (orderId) => {
+      const id = encodeURIComponent(String(orderId).trim())
+      const res = await baseFetch(`${JAVA_API_BASE}/orders/${id}`)
+      if (res.status === 404) return null
+      const contentType = res.headers.get('content-type') || ''
+      if (!contentType.includes('application/json')) {
+        const text = await res.text().catch(() => '')
+        if (!res.ok) {
+          throw new Error(text?.slice(0, 200) || `Ошибка сервера (${res.status})`)
+        }
+        throw new Error('Сервер вернул не JSON')
+      }
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json?.message || `HTTP ${res.status}`)
+      }
+      if (json?.status === 'success' && json.data !== undefined && json.data !== null) {
+        return typeof json.data === 'object' ? json.data : null
+      }
+      return null
+    },
+
+    /** @param {string} email */
+    requestLookupCode: async (email) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/orders/lookup/request-code`, {
+        method: 'POST',
+        body: JSON.stringify({ email: String(email || '').trim() }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.status === 429) {
+        throw new Error(json.message || 'Новый код можно запросить не чаще раза в минуту')
+      }
+      if (!res.ok || json.status === 'error') {
+        throw new Error(json.message || `Ошибка сервера (${res.status})`)
+      }
+      return json.data?.message || json.message || 'Готово'
+    },
+
+    /**
+     * @param {string} email
+     * @param {string} code
+     * @returns {Promise<object[]>}
+     */
+    verifyLookupCode: async (email, code) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/orders/lookup/verify`, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: String(email || '').trim(),
+          code: String(code ?? '').trim(),
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (res.status === 401 || res.status === 403) {
+        throw new Error(json.message || 'Неверный или просроченный код')
+      }
+      if (!res.ok || json.status === 'error') {
+        throw new Error(json.message || `Ошибка (${res.status})`)
+      }
+      if (json.status === 'success' && Array.isArray(json.data)) {
+        return json.data
+      }
+      return []
+    },
+
+    /**
      * Создать платёж и получить ссылку на оплату (онлайн-касса).
      * @param {string} orderId
      * @param {{ returnUrl: string, cancelUrl?: string }} urls

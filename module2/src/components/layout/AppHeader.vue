@@ -106,6 +106,7 @@ const navItems = [
   { to: '/', label: 'Карта', icon: '◎' },
   { to: '/routes', label: 'Маршруты', icon: '⊹' },
   { to: '/shop', label: 'Магазин', icon: '◻' },
+  { to: '/orders', label: 'Заказы', icon: '◫' },
   { to: '/contact', label: 'Контакты', icon: '◇' }
 ]
 

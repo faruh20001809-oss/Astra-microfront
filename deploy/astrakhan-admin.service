@@ -10,6 +10,8 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/astramicro/astrakhan-admin
+# Секреты SMTP: скопируйте deploy/astrakhan-admin.mail.env.example → /etc/astrakhan-admin.env (chmod 600)
+EnvironmentFile=-/etc/astrakhan-admin.env
 ExecStart=/usr/bin/java -Xmx1024m -Dspring.profiles.active=prod -jar /opt/astramicro/astrakhan-admin/target/history-admin-1.0.0.jar
 Restart=on-failure
 RestartSec=10

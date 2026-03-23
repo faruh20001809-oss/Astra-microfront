@@ -1,6 +1,7 @@
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\AstrakhanAdminApplication.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\config\CsrfControllerAdvice.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\config\DataInitializer.java
+C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\config\GlobalExceptionHandler.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\config\GlobalModelAttributes.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\config\SecurityConfig.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\config\WebConfig.java
@@ -18,6 +19,8 @@ C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\controller\ProductAdminController.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\controller\RouteAdminController.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\dto\CreateOrderRequest.java
+C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\dto\EmployeeAchievementDto.java
+C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\dto\EmployeeStatsDto.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\dto\OrderItemRequest.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\dto\PaymentLinkResult.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\entity\AnalyticsEvent.java
@@ -43,7 +46,9 @@ C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\AdminProfileService.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\AdminUserDetailsService.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\AnalyticsService.java
+C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\EmployeeStatsService.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\FeedbackService.java
+C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\GuestOrderLookupService.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\impl\StubPaymentService.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\OrderEmailService.java
 C:\Users\Silever\Documents\GitHub\Astra-microfront\astrakhan-admin\src\main\java\ru\astrakhan\admin\service\OrderService.java

@@ -127,6 +127,71 @@ sudo -u postgres createdb -O postgres museum_user
 
 ---
 
+## 4.1. Почта (SMTP) для Java-бэкенда (`astrakhan-admin`)
+
+Письма уходят из Spring Boot: подтверждения заказов, код для страницы «Мои заказы» и т.д. Нужны **реальные SMTP-данные** (часто — **пароль приложения**, не пароль от входа в почту).
+
+### Шаг 1 — провайдер
+
+| Провайдер | Хост | Порт | Примечание |
+|-----------|------|------|------------|
+| **Yandex** | `smtp.yandex.ru` | `465` | В аккаунте: Пароли и авторизация → пароли приложений |
+| **Mail.ru** | `smtp.mail.ru` | `465` | Пароль для внешних приложений |
+| **Gmail** | `smtp.gmail.com` | `587` | Пароль приложения; на сервере нужен STARTTLS (см. шаг 3) |
+
+В профиле **prod** по умолчанию ожидается схема **465 + SSL** (как у Yandex/Mail.ru). Базовые ключи те же, что в `application.properties`:
+
+- `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`
+- `APP_MAIL_FROM` — адрес «От кого» (часто совпадает с `USERNAME`)
+- `APP_MAIL_ENABLED=true` — отправка включена; при `false` письма не шлются, код для «Мои заказы» пишется **в лог** (`MAIL DISABLED`)
+
+### Шаг 2 — файл с секретами (рекомендуется)
+
+Не храните пароль в Git. На сервере:
+
+```bash
+sudo cp /opt/astramicro/deploy/astrakhan-admin.mail.env.example /etc/astrakhan-admin.env
+sudo nano /etc/astrakhan-admin.env   # подставьте хост, логин, пароль приложения, APP_MAIL_FROM
+sudo chmod 600 /etc/astrakhan-admin.env
+```
+
+В unit **`astrakhan-admin.service`** должна быть строка (в репозитории и в `setup.sh` она уже добавлена):
+
+```ini
+EnvironmentFile=-/etc/astrakhan-admin.env
+```
+
+Префикс `-` значит: файла может ещё не быть — сервис всё равно стартует.
+
+Если unit создавали вручную **до** появления этой строки — добавьте её в секцию `[Service]`, затем:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart astrakhan-admin
+```
+
+### Шаг 3 — если нужен порт 587 (STARTTLS)
+
+В `/etc/astrakhan-admin.env` добавьте (или раскомментируйте в примере):
+
+```bash
+SPRING_MAIL_PORT=587
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE=false
+SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+```
+
+### Шаг 4 — проверка
+
+```bash
+sudo journalctl -u astrakhan-admin -n 80 --no-pager
+```
+
+Ошибки SMTP обычно видны при первой отправке. Быстрая проверка с сайта: **«Мои заказы»** → ввести email с заказом → **«Получить код»** → письмо или строка в логе при `APP_MAIL_ENABLED=false`.
+
+Подробные комментарии к переменным: `astrakhan-admin/src/main/resources/application-mail.example.properties`.
+
+---
+
 ## 5. Запуск админки (module3, Flask) на сервере
 
 Админка отдаётся по `http://193.233.49.59/admin/` и проксируется на порт 5000.
@@ -217,6 +282,29 @@ systemctl restart astramicro-node
 
 Логи: `journalctl -u astramicro-node -n 100 -f`
 
+### Yandex TTS (озвучка голосом)
+
+На Debian 12 (PEP 668) пакеты в системный Python ставить нельзя — нужен **venv**. Выполните на сервере **один раз**:
+
+```bash
+apt-get update
+apt-get install -y ffmpeg python3-venv python3-pip
+
+cd /opt/astramicro/scripts
+python3 -m venv venv
+./venv/bin/pip install yandex-tts-free
+```
+
+Скрипт уже в репозитории: `/opt/astramicro/scripts/yandex_tts.py`. Node сам подхватит Python из `scripts/venv/bin/python3`, если venv есть.
+
+Перезапуск Node API:
+
+```bash
+systemctl restart astramicro-node
+```
+
+Проверка: в логах не должно быть `[yandex-tts] Install: pip install yandex-tts-free`. Если видите это — venv не создан или пакет не установлен в venv.
+
 ### Перезагрузка Nginx после изменения конфига
 
 Если вы под **root**, `sudo` не нужен:
@@ -226,6 +314,38 @@ nginx -t && systemctl reload nginx
 ```
 
 Если используете sudo: `sudo nginx -t && sudo systemctl reload nginx`
+
+---
+
+## 5.2. Если после обновления ничего не работает
+
+**Шаг 1 — диагностика на сервере:**
+
+```bash
+cd /opt/astramicro
+sudo bash deploy/diagnose.sh
+```
+
+Скрипт покажет: какие сервисы не запущены, есть ли JAR и статика, слушаются ли порты 8080/5000, последние строки логов.
+
+**Шаг 2 — по результатам:**
+
+| Проблема | Что сделать |
+|----------|-------------|
+| `astrakhan-admin` не running | `sudo journalctl -u astrakhan-admin -n 50` — смотреть причину падения. Часто: нет БД, нет JAR. Затем `sudo systemctl start astrakhan-admin`. |
+| JAR не найден | Собрать заново: `cd /opt/astramicro/astrakhan-admin && sudo mvn clean package -DskipTests`, затем `sudo systemctl restart astrakhan-admin`. |
+| Ошибка БД (PostgreSQL) | Проверить, что PostgreSQL запущен: `systemctl status postgresql`. Поднять при необходимости: `systemctl start postgresql`. Проверить строку в `application-prod.properties` и переменные `SPRING_DATASOURCE_*`. |
+| `astramicro-admin` не running | `sudo journalctl -u astramicro-admin -n 30`. Если нет venv: `cd /opt/astramicro/module3 && bash setup_venv.sh`. Затем `sudo systemctl start astramicro-admin`. |
+| Сайт не открывается | `nginx -t && sudo systemctl status nginx`. При изменении конфига Nginx: `sudo systemctl reload nginx`. |
+
+**Шаг 3 — быстрый перезапуск всего:**
+
+```bash
+sudo systemctl restart astrakhan-admin
+sudo systemctl restart astramicro-admin
+sudo systemctl restart astramicro-node
+sudo systemctl reload nginx
+```
 
 ---
 

@@ -6,6 +6,26 @@
       <div v-else class="route-cover-placeholder">
         <span>{{ categoryGlyph }}</span>
       </div>
+      <div class="route-card-top-actions">
+        <button
+          type="button"
+          class="route-icon-btn"
+          :class="{ active: favorite }"
+          :aria-pressed="favorite"
+          :aria-label="favorite ? 'Убрать из избранного' : 'В избранное'"
+          @click.stop="$emit('toggleFavorite')"
+        >
+          {{ favorite ? '♥' : '♡' }}
+        </button>
+        <button
+          type="button"
+          class="route-icon-btn"
+          aria-label="Поделиться"
+          @click.stop="$emit('share')"
+        >
+          ↗
+        </button>
+      </div>
       <div class="route-cover-overlay">
         <span :class="['route-price-tag', route.isPaid ? '' : 'free']">
           {{ route.isPaid ? `${route.price} ₽` : 'Бесплатно' }}
@@ -44,8 +64,11 @@
 <script setup>
 import { computed } from 'vue'
 
-const props = defineProps({ route: Object })
-defineEmits(['open'])
+const props = defineProps({
+  route: Object,
+  favorite: { type: Boolean, default: false },
+})
+defineEmits(['open', 'toggleFavorite', 'share'])
 
 const categoryGlyph = computed(() => {
   const map = {
@@ -77,6 +100,40 @@ const categoryGlyph = computed(() => {
   font-size: 3.5rem;
   color: var(--gray-600);
   background: linear-gradient(135deg, var(--gray-800), var(--ink));
+}
+
+.route-card-top-actions {
+  position: absolute;
+  top: var(--spacing-sm);
+  left: var(--spacing-sm);
+  display: flex;
+  gap: 0.35rem;
+  z-index: 2;
+}
+
+.route-icon-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-600);
+  background: rgba(10, 10, 10, 0.75);
+  color: var(--gray-300);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.route-icon-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.route-icon-btn.active {
+  color: #e8a0a0;
+  border-color: rgba(232, 160, 160, 0.5);
 }
 
 .route-cover-overlay {

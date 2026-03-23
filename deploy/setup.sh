@@ -81,6 +81,7 @@ Type=simple
 User=root
 WorkingDirectory=$APP_DIR/astrakhan-admin
 Environment="APP_MODULE2_URL=$APP_MODULE2_URL_VALUE"
+EnvironmentFile=-/etc/astrakhan-admin.env
 ExecStart=/usr/bin/java -Xmx1024m -Dspring.profiles.active=prod -jar $JAR_PATH
 Restart=on-failure
 RestartSec=10

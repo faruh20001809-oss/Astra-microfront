@@ -2,6 +2,7 @@ package ru.astrakhan.admin.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.astrakhan.admin.entity.*;
@@ -27,6 +28,7 @@ public class ApiController {
     private final ObjectMapper objectMapper;
     private final OrderEmailService orderEmailService;
     private final PoiSuggestionService poiSuggestionService;
+    private final GuestOrderLookupService guestOrderLookupService;
 
     // ===== POIs =====
     @GetMapping("/pois")
@@ -286,8 +288,42 @@ public class ApiController {
 
     @GetMapping("/orders/{orderId}")
     public ResponseEntity<Map<String, Object>> getOrder(@PathVariable String orderId) {
-        return orderService.findByOrderId(orderId).map(o -> okSingle(Map.of("orderId", o.getOrderId(), "status", o.getStatus().name().toLowerCase())))
-            .orElse(ResponseEntity.notFound().build());
+        return orderService.findByOrderId(orderId)
+                .map(o -> okSingle(orderDetailMap(o)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Гостевой кабинет: запросить код на email (если есть заказы с этим email — уходит письмо). */
+    @PostMapping("/orders/lookup/request-code")
+    public ResponseEntity<Map<String, Object>> requestOrderLookupCode(@RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        try {
+            guestOrderLookupService.requestCode(email);
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (GuestOrderLookupService.LookupRateLimitedException e) {
+            return apiError(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("message", "Если этот адрес связан с заказами, мы отправили на него код. Проверьте почту (включая папку «Спам»).");
+        return ok(data);
+    }
+
+    /** Гостевой кабинет: проверить код и получить список заказов по email. */
+    @PostMapping("/orders/lookup/verify")
+    public ResponseEntity<Map<String, Object>> verifyOrderLookup(@RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        String code = b.get("code") != null ? String.valueOf(b.get("code")) : "";
+        try {
+            List<Order> orders = guestOrderLookupService.verifyAndListOrders(email, code);
+            return ok(orders.stream().map(this::orderDetailMap).collect(Collectors.toList()));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (GuestOrderLookupService.LookupAuthException e) {
+            return apiError(HttpStatus.UNAUTHORIZED, e.getMessage());
+        }
     }
 
     // ===== POI Suggestions (предложения точек) =====
@@ -345,6 +381,13 @@ public class ApiController {
         Map<String, Object> r = new LinkedHashMap<>(); r.put("status", "success"); r.put("data", data); return ResponseEntity.ok(r);
     }
     private ResponseEntity<Map<String, Object>> okSingle(Object data) { return ok(data); }
+
+    private static ResponseEntity<Map<String, Object>> apiError(HttpStatus status, String message) {
+        Map<String, Object> err = new LinkedHashMap<>();
+        err.put("status", "error");
+        err.put("message", message);
+        return ResponseEntity.status(status).body(err);
+    }
 
     private Map<String, Object> poiMap(PointOfInterest p) {
         Map<String, Object> m = new LinkedHashMap<>();
@@ -445,6 +488,13 @@ public class ApiController {
         m.put("paymentMethod", o.getPaymentMethod());
         m.put("createdAt", o.getCreatedAt() != null ? o.getCreatedAt().toString() : "");
         m.put("paidAt", o.getPaidAt() != null ? o.getPaidAt().toString() : null);
+        return m;
+    }
+
+    /** Полная карточка заказа для гостя (кабинет / оплата): позиции из items_json */
+    private Map<String, Object> orderDetailMap(Order o) {
+        Map<String, Object> m = orderMap(o);
+        m.put("items", o.getItemsList());
         return m;
     }
 }

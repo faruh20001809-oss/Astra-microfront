@@ -258,7 +258,19 @@
             <!-- Справа: название, тип в углу, описание, две кнопки -->
             <div class="poi-content-col">
               <header class="poi-modal-header">
-                <h2 id="poi-card-title" class="poi-modal-title">{{ mapStore.selectedPoi.name }}</h2>
+                <div class="poi-modal-title-row">
+                  <h2 id="poi-card-title" class="poi-modal-title">{{ mapStore.selectedPoi.name }}</h2>
+                  <button
+                    type="button"
+                    class="poi-fav-btn"
+                    :class="{ active: isPoiFavorite(mapStore.selectedPoi.id) }"
+                    :aria-pressed="isPoiFavorite(mapStore.selectedPoi.id)"
+                    :aria-label="isPoiFavorite(mapStore.selectedPoi.id) ? 'Убрать из избранного' : 'В избранное'"
+                    @click.stop="togglePoi(mapStore.selectedPoi.id)"
+                  >
+                    {{ isPoiFavorite(mapStore.selectedPoi.id) ? '♥' : '♡' }}
+                  </button>
+                </div>
                 <span class="poi-card-badge poi-type-badge">{{ mapStore.selectedPoi.category }}</span>
                 <dl v-if="mapStore.selectedPoi.year || mapStore.selectedPoi.architect" class="poi-meta-list">
                   <template v-if="mapStore.selectedPoi.year">
@@ -394,10 +406,21 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import { usePoiAiTts } from '@/composables/usePoiAiTts.js'
+import { useFavorites } from '@/composables/useFavorites.js'
+import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import { javaApi } from '@/api/backend.js'
 
 const mapStore = useMapStore()
 const toastStore = useToastStore()
+const { isPoiFavorite, togglePoi } = useFavorites()
+const { markPoiVisited } = useGuestProgress()
+
+watch(
+  () => mapStore.selectedPoi,
+  (poi) => {
+    if (poi?.id != null) markPoiVisited(poi.id)
+  },
+)
 
 // Предложить точку: всплывающее окно на карте
 const suggestPoiOpen = ref(false)
@@ -1210,24 +1233,58 @@ function categoryIcon(cat) {
   padding-right: 0;
 }
 
+.poi-modal-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.poi-fav-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-600);
+  background: rgba(0, 0, 0, 0.35);
+  color: var(--gray-300);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.poi-fav-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.poi-fav-btn.active {
+  color: #e8a0a0;
+  border-color: rgba(232, 160, 160, 0.45);
+}
+
 /* Название с подчёркиванием */
 .poi-modal-title {
   font-family: var(--font-display);
   font-size: 1.5rem;
   font-weight: 600;
-  margin: 0 0 0.4rem;
+  margin: 0;
   line-height: 1.25;
   color: var(--paper);
   padding-bottom: 0.35rem;
   border-bottom: 2px solid rgba(200, 169, 110, 0.4);
-  padding-right: 6rem;
+  flex: 1;
+  min-width: 0;
 }
 
-/* Тип (категория) в правом углу карточки */
+/* Тип (категория) */
 .poi-type-badge {
-  position: absolute;
-  top: 0;
-  right: 0;
+  position: static;
+  display: inline-block;
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1236,6 +1293,7 @@ function categoryIcon(cat) {
   padding: 0.3rem 0.6rem;
   border-radius: 4px;
   border: 1px solid rgba(200, 169, 110, 0.25);
+  margin-bottom: 0.35rem;
 }
 
 .poi-card-badge:not(.poi-type-badge) {
@@ -1705,7 +1763,7 @@ function categoryIcon(cat) {
   .poi-photo-col { flex: 0 0 auto; max-width: none; min-width: 0; max-height: 200px; }
   .poi-photo { min-height: 0; max-height: 200px; object-fit: cover; border-radius: 0; }
   .poi-photo-placeholder { min-height: 0; max-height: 200px; border-radius: 0; }
-  .poi-modal-title { font-size: 1.35rem; padding-right: 0; }
+  .poi-modal-title { font-size: 1.35rem; }
   .poi-type-badge { position: static; margin-top: 0.25rem; display: inline-block; }
   .poi-tabs .poi-tab-btn {
     min-height: 44px;

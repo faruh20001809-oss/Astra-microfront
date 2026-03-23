@@ -103,7 +103,9 @@ echo '*/5 * * * * root /opt/astramicro/deploy/auto-update.sh >> /var/log/astrami
 - `APP_MAIL_FROM` — адрес отправителя (должен быть разрешён у провайдера)
 - `APP_MAIL_ENABLED=true` — включить отправку (по умолчанию true; при `false` письма не отправляются, только пишется в лог)
 
-Пример для systemd (в `/etc/systemd/system/astrakhan-admin.service` в секции `[Service]`):
+**Рекомендуется:** файл `/etc/astrakhan-admin.env` (права `600`) и в unit строка `EnvironmentFile=-/etc/astrakhan-admin.env` — шаблон: `deploy/astrakhan-admin.mail.env.example`. Пошагово: `deploy/README-DEPLOY.md` → раздел **4.1. Почта (SMTP)**.
+
+Альтернатива — переменные прямо в unit:
 
 ```ini
 Environment="SPRING_MAIL_HOST=smtp.yandex.ru"
@@ -112,6 +114,8 @@ Environment="SPRING_MAIL_USERNAME=your@yandex.ru"
 Environment="SPRING_MAIL_PASSWORD=your-app-password"
 Environment="APP_MAIL_FROM=your@yandex.ru"
 ```
+
+Для Gmail (587 + STARTTLS) см. тот же раздел 4.1 в `README-DEPLOY.md`.
 
 Подробнее см. `astrakhan-admin/src/main/resources/application-mail.example.properties`.
 

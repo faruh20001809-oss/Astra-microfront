@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import MapView from '@/views/MapView.vue'
 import RoutesView from '@/views/RoutesView.vue'
+import RouteShareView from '@/views/RouteShareView.vue'
 import ShopView from '@/views/ShopView.vue'
 import ContactView from '@/views/ContactView.vue'
 import PaymentSuccessView from '@/views/PaymentSuccessView.vue'
+import OrdersView from '@/views/OrdersView.vue'
 
 const routes = [
   {
@@ -17,6 +19,18 @@ const routes = [
     name: 'routes',
     component: RoutesView,
     meta: { title: 'Маршруты' }
+  },
+  {
+    path: '/routes/:id',
+    name: 'route-share',
+    component: RouteShareView,
+    meta: { title: 'Маршрут' }
+  },
+  {
+    path: '/orders',
+    name: 'orders',
+    component: OrdersView,
+    meta: { title: 'Мои заказы' }
   },
   {
     path: '/shop',
