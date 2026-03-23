@@ -73,7 +73,7 @@ public class GuestOrderLookupService {
         p.failCount = 0;
         pendingByEmail.put(email, p);
 
-        orderEmailService.sendGuestOrderLookupCode(email, code);
+        orderEmailService.sendGuestOrderLookupCodeAsync(email, code);
     }
 
     /**

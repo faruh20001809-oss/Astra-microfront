@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import ru.astrakhan.admin.entity.Order;
 
@@ -76,8 +77,14 @@ public class OrderEmailService {
     }
 
     /**
-     * Sends tracking number email when order is shipped.
+     * Код для входа в «Мои заказы» по email (гостевой кабинет).
+     * Асинхронно — чтобы HTTP не зависал на SMTP (таймауты curl / фронта).
      */
+    @Async
+    public void sendGuestOrderLookupCodeAsync(String email, String code) {
+        sendGuestOrderLookupCode(email, code);
+    }
+
     /**
      * Код для входа в «Мои заказы» по email (гостевой кабинет).
      */
@@ -99,6 +106,9 @@ public class OrderEmailService {
         }
     }
 
+    /**
+     * Sends tracking number email when order is shipped.
+     */
     public void sendTrackingUpdate(Order order) {
         if (!mailEnabled) {
             log.debug("Mail disabled, skipping tracking email for {}", order.getOrderId());
