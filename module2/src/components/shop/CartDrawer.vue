@@ -538,6 +538,13 @@ async function checkout() {
 }
 .consent-text a { color: var(--gray-400); text-decoration: underline; }
 
+/* Desktop: PrimeVue default is 20rem — widen so line items + two-column form fit */
+@media (min-width: 769px) {
+  .cart-drawer-pv .p-drawer {
+    width: min(32rem, 90vw);
+  }
+}
+
 /* Mobile responsive */
 @media (max-width: 768px) {
   .cart-drawer-pv .p-drawer { width: 100%; max-width: 100vw; }
