@@ -32,6 +32,7 @@ ru\astrakhan\admin\entity\PoiSuggestion$PoiSuggestionBuilder.class
 ru\astrakhan\admin\entity\SharedUser$SharedUserBuilder.class
 ru\astrakhan\admin\dto\PaymentLinkResult$PaymentLinkResultBuilder.class
 ru\astrakhan\admin\repository\SharedUserRepository.class
+ru\astrakhan\admin\service\GuestOrderLookupService$LookupRateLimitedException.class
 ru\astrakhan\admin\entity\Feedback$FeedbackStatus.class
 ru\astrakhan\admin\service\OrderEmailService.class
 ru\astrakhan\admin\controller\AnalyticsAdminController.class
@@ -41,6 +42,8 @@ ru\astrakhan\admin\service\RouteService.class
 ru\astrakhan\admin\repository\FeedbackRepository.class
 ru\astrakhan\admin\entity\Feedback$FeedbackBuilder.class
 ru\astrakhan\admin\repository\ReviewRepository.class
+ru\astrakhan\admin\service\GuestOrderLookupService$Pending.class
+ru\astrakhan\admin\service\GuestOrderLookupService$LookupAuthException.class
 ru\astrakhan\admin\service\OrderService.class
 ru\astrakhan\admin\entity\Order$2.class
 ru\astrakhan\admin\repository\PoiSuggestionRepository.class
@@ -71,6 +74,7 @@ ru\astrakhan\admin\controller\AdminRedirectController.class
 ru\astrakhan\admin\entity\Order.class
 ru\astrakhan\admin\repository\SharedRoleRepository.class
 ru\astrakhan\admin\service\AnalyticsService.class
+ru\astrakhan\admin\service\GuestOrderLookupService.class
 ru\astrakhan\admin\config\SecurityConfig.class
 ru\astrakhan\admin\repository\RouteRepository.class
 ru\astrakhan\admin\controller\LoginController.class

@@ -97,6 +97,13 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <!-- Jakarta Mail: ServiceLoader не видит META-INF/services внутри nested JAR — иначе ServiceConfigurationError StreamProvider -->
+                    <requiresUnpack>
+                        <dependency>
+                            <groupId>org.eclipse.angus</groupId>
+                            <artifactId>jakarta.mail</artifactId>
+                        </dependency>
+                    </requiresUnpack>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
