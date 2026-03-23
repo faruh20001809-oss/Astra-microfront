@@ -48,10 +48,11 @@
   --nav-h: 64px;
   --header-bg: rgba(73, 62, 62, 0.98); /* фон топ-бара и кнопок на карте */
   --sidebar-w: 380px;
-  --z-header: 1000;      /* 👆 Хедер — всегда сверху */
+  --z-header: 1000;      /* 👆 Фиксированный хедер */
   --z-sidebar: 500;      /* Сайдбар — ниже хедера */
   --z-backdrop: 400;     /* Бэкдроп модалок */
-  --z-modal: 1000;       /* Модалки — на уровне хедера или выше */
+  /* Модалки строго выше хедера (иначе backdrop не виден под тем же z-index) */
+  --z-modal: 1200;
   --z-map-controls: 150; /* Кнопки карты */
 }
 
@@ -334,7 +335,7 @@ textarea:focus-visible {
   inset: 0;
   background: rgba(0,0,0,0.75);
   backdrop-filter: blur(4px);
-  z-index: 1000;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;

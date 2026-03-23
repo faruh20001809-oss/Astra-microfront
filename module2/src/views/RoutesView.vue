@@ -117,7 +117,7 @@
     </transition>
 
     <transition name="fade">
-      <div v-if="shareModalOpen" class="modal-backdrop" @click.self="shareModalOpen = false">
+      <div v-if="shareModalOpen" class="modal-backdrop" @click.self="closeShareModalFromBackdrop">
         <div class="modal-box route-modal" style="max-width: 420px">
           <button type="button" class="modal-close-btn" @click="shareModalOpen = false">✕</button>
           <h2 style="margin: 0 0 0.75rem; font-size: 1.1rem">Поделиться маршрутом</h2>
@@ -135,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import RouteCard from '@/components/routes/RouteCard.vue'
 import QrModal from '@/components/common/QrModal.vue'
 import { useToastStore } from '@/store/index.js'
@@ -157,6 +157,13 @@ const showFavoritesOnly = ref(false)
 const shareModalOpen = ref(false)
 const shareUrl = ref('')
 const qrOpen = ref(false)
+/** Игнорировать закрытие по backdrop сразу после открытия (ghost click / тач). */
+let shareModalIgnoreBackdropUntilMs = 0
+
+function closeShareModalFromBackdrop() {
+  if (Date.now() < shareModalIgnoreBackdropUntilMs) return
+  shareModalOpen.value = false
+}
 
 // 🔹 categories: защита от не-массива
 const categories = computed(() => {
@@ -185,16 +192,40 @@ function buildRouteShareUrl(route) {
 
 async function openShare(route) {
   const url = buildRouteShareUrl(route)
-  if (typeof navigator !== 'undefined' && navigator.share) {
+  const title = route?.title || route?.name || 'Маршрут'
+
+  // Web Share API только в безопасном контексте (HTTPS / localhost). На http://IP шаринг часто «молча» не работает — сразу показываем модалку.
+  const secureContext =
+    typeof window !== 'undefined' &&
+    (window.isSecureContext ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1')
+
+  const canNativeShare =
+    secureContext &&
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function'
+
+  if (canNativeShare) {
     try {
-      await navigator.share({ title: route.title, text: route.title, url })
+      const payload = { title, text: title, url }
+      if (typeof navigator.canShare === 'function' && !navigator.canShare(payload)) {
+        throw new Error('canShare')
+      }
+      await navigator.share(payload)
       return
     } catch (e) {
       if (e?.name === 'AbortError') return
     }
   }
+
   shareUrl.value = url
-  shareModalOpen.value = true
+  // Открываем после завершения текущего клика — иначе тот же жест попадает на backdrop и @click.self закрывает окно.
+  await nextTick()
+  requestAnimationFrame(() => {
+    shareModalIgnoreBackdropUntilMs = Date.now() + 450
+    shareModalOpen.value = true
+  })
 }
 
 async function copyShareUrl() {
