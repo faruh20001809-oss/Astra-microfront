@@ -16,6 +16,8 @@ export function usePoiAiTts() {
 
   const aiContent = ref('')
   const aiLoading = ref(false)
+  /** @type {import('vue').Ref<'default'|'children'|'academic'>} */
+  const aiAudience = ref('default')
 
   const ttsLoading = ref(false)
   const isPlaying = ref(false)
@@ -46,17 +48,18 @@ export function usePoiAiTts() {
     if (!mapStore.selectedPoi) return
     aiLoading.value = true
     aiContent.value = ''
+    const audience = aiAudience.value || 'default'
     try {
       aiContent.value = await generatePoiContent(
         mapStore.selectedPoi,
-        'default',
+        audience,
       )
     } catch (e) {
       console.warn('OpenRouter AI failed, trying Node fallback:', e.message)
       try {
         const data = await nodeApi.ai.generatePoiContent(
           mapStore.selectedPoi,
-          'default',
+          audience,
         )
         aiContent.value = (typeof data === 'string' ? data : data?.content) || mapStore.selectedPoi.description || ''
       } catch (e2) {
@@ -127,6 +130,7 @@ export function usePoiAiTts() {
     tabs,
     ttsVoices,
     selectedTtsVoice,
+    aiAudience,
     aiContent,
     aiLoading,
     ttsLoading,

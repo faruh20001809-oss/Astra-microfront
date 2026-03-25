@@ -42,8 +42,8 @@ public class SecurityConfig {
                 )
                 .userDetailsService(adminUserDetailsService);
 
-        // API вызывается с фронта без CSRF-токена; админка — формами с токеном
-        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**"));
+        // API вызывается с фронта без CSRF-токена; админка — формами с токеном; JSON API ТОИ (AI) — из той же сессии
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/h2-console/**", "/api/**", "/admin/api/**"));
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
 
         return http.build();

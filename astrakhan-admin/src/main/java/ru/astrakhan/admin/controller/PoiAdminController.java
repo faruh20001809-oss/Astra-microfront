@@ -2,6 +2,7 @@ package ru.astrakhan.admin.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +12,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.astrakhan.admin.entity.PointOfInterest;
 import ru.astrakhan.admin.entity.Route;
 import ru.astrakhan.admin.repository.ReviewRepository;
+import ru.astrakhan.admin.service.PoiPublicationNotificationService;
 import ru.astrakhan.admin.service.PoiService;
 import ru.astrakhan.admin.service.RouteService;
 import java.io.IOException;
@@ -24,6 +26,10 @@ public class PoiAdminController {
     private final RouteService routeService;
     private final ReviewRepository reviewRepository;
     private final ObjectMapper objectMapper;
+    private final PoiPublicationNotificationService publicationNotificationService;
+
+    @Value("${app.ai.enabled:false}")
+    private boolean poiAiEnabled;
 
     @GetMapping public String list(@RequestParam(required = false) String status, Model model) {
         List<PointOfInterest> pois = (status != null && !status.isEmpty()) ?
@@ -34,12 +40,16 @@ public class PoiAdminController {
     }
 
     @GetMapping("/create") public String createForm(Model model) {
-        model.addAttribute("poi", new PointOfInterest()); model.addAttribute("isEdit", false); return "poi/form";
+        model.addAttribute("poi", new PointOfInterest()); model.addAttribute("isEdit", false);
+        model.addAttribute("poiAiEnabled", poiAiEnabled);
+        return "poi/form";
     }
 
     @GetMapping("/edit/{id}") public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("poi", poiService.findById(id).orElseThrow(() -> new RuntimeException("Not found")));
-        model.addAttribute("isEdit", true); return "poi/form";
+        model.addAttribute("isEdit", true);
+        model.addAttribute("poiAiEnabled", poiAiEnabled);
+        return "poi/form";
     }
 
     @PostMapping("/save") public String save(@ModelAttribute PointOfInterest poi,
@@ -60,6 +70,18 @@ public class PoiAdminController {
 
     @PostMapping("/publish/{id}") public String publish(@PathVariable Long id, RedirectAttributes ra) {
         poiService.publish(id); ra.addFlashAttribute("success", "Точка опубликована! JSON отправлен в Модуль 2."); return "redirect:/admin/poi";
+    }
+
+    /** Повторная ручная рассылка подписчикам о точке (кнопка в списке). */
+    @PostMapping("/broadcast-newsletter/{id}") public String broadcastNewsletter(@PathVariable Long id, RedirectAttributes ra) {
+        return poiService.findById(id).map(poi -> {
+            publicationNotificationService.sendNewPoiToSubscribersAsync(poi);
+            ra.addFlashAttribute("success", "Рассылка подписчикам поставлена в очередь.");
+            return "redirect:/admin/poi";
+        }).orElseGet(() -> {
+            ra.addFlashAttribute("error", "Точка не найдена");
+            return "redirect:/admin/poi";
+        });
     }
     @PostMapping("/archive/{id}") public String archive(@PathVariable Long id, RedirectAttributes ra) {
         poiService.archive(id); ra.addFlashAttribute("success", "Точка архивирована"); return "redirect:/admin/poi";

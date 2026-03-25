@@ -9,7 +9,8 @@
         <p v-if="routeData?.description" class="share-desc">{{ routeData.description }}</p>
         <p v-if="error" class="share-desc">{{ error }}</p>
         <div v-if="routeData" class="share-actions">
-          <router-link to="/routes" class="btn btn-accent btn-lg">Все маршруты</router-link>
+          <button type="button" class="btn btn-accent btn-lg" @click="startRouteOnMap">Начать маршрут на карте</button>
+          <router-link to="/routes" class="btn btn-ghost btn-lg">Все маршруты</router-link>
           <router-link to="/" class="btn btn-ghost">На карту</router-link>
         </div>
       </section>
@@ -19,10 +20,13 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { javaApi } from '@/api/backend.js'
+import { useMapStore } from '@/store/index.js'
 
 const vueRoute = useRoute()
+const router = useRouter()
+const mapStore = useMapStore()
 const routeData = ref(null)
 const error = ref('')
 
@@ -48,6 +52,16 @@ async function load(id) {
 
 onMounted(() => load(vueRoute.params.id))
 watch(() => vueRoute.params.id, (id) => load(id))
+
+function startRouteOnMap() {
+  const d = routeData.value
+  if (!d?.id) return
+  const id = Number(d.id)
+  const poiIds = Array.isArray(d.pois) ? d.pois.map(Number).filter(Number.isFinite) : []
+  const title = d.title || d.name || 'Маршрут'
+  mapStore.setActiveFollowRoute({ id, title, poiIds })
+  router.push({ path: '/', query: { route: String(id) } })
+}
 </script>
 
 <style scoped>

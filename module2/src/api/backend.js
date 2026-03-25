@@ -125,6 +125,42 @@ export const javaApi = {
       return handleJavaResponse(res)
     },
 
+    /** Max id среди сейчас видимых на карте ТОИ (для polling). */
+    getCatalogRevision: async () => {
+      try {
+        const res = await baseFetch(`${JAVA_API_BASE}/pois/catalog-revision`)
+        const data = await handleJavaResponse(res)
+        const n = Number(data?.revision)
+        return Number.isFinite(n) ? n : 0
+      } catch {
+        return 0
+      }
+    },
+
+    /** Новые видимые ТОИ с id > afterId */
+    listSince: async (afterId, limit = 10) => {
+      try {
+        const params = new URLSearchParams({
+          afterId: String(afterId),
+          limit: String(Math.min(Math.max(limit, 1), 20)),
+        })
+        const res = await baseFetch(`${JAVA_API_BASE}/pois/since?${params}`)
+        const data = await handleJavaResponse(res)
+        return Array.isArray(data) ? data : []
+      } catch {
+        return []
+      }
+    },
+
+    /** Подписка на рассылку о новых точках */
+    subscribeNewsletter: async (email) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/newsletter/subscribe`, {
+        method: 'POST',
+        body: JSON.stringify({ email: String(email || '').trim() }),
+      })
+      return handleJavaResponse(res)
+    },
+
     /** @param {number} poiId @param {Object} review */
     addReview: async (poiId, review) => {
       const res = await baseFetch(`${JAVA_API_BASE}/pois/${poiId}/reviews`, {

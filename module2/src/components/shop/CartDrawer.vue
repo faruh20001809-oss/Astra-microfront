@@ -99,6 +99,13 @@
               />
             </div>
 
+            <div class="form-group newsletter-opt">
+              <label class="checkbox-inline">
+                <input v-model="newsletterSubscribe" type="checkbox" />
+                <span>Уведомлять о новых точках на карте по email</span>
+              </label>
+            </div>
+
             <div class="form-row">
               <div class="form-group">
                 <label for="city" class="form-label">Город *</label>
@@ -209,6 +216,7 @@ const toastStore = useToastStore()
 const delivery = ref('pickup')
 const paymentMethod = ref('card')
 const checkoutLoading = ref(false)
+const newsletterSubscribe = ref(false)
 
 // Customer form
 const customerForm = ref({
@@ -330,7 +338,9 @@ async function checkout() {
         price: item.price,
         qty: item.qty || 1,
         category: item.category
-      }))
+      })),
+      newsletterSubscribe:
+        newsletterSubscribe.value && !!(customerForm.value.email && customerForm.value.email.trim()),
     }
 
     const result = await Promise.race([
@@ -350,6 +360,7 @@ async function checkout() {
         cartStore.clearCart()
         cartStore.isOpen = false
         customerForm.value = { firstName: '', lastName: '', phone: '', email: '', city: 'Астрахань', address: '', zip: '' }
+        newsletterSubscribe.value = false
         delivery.value = 'pickup'
         paymentMethod.value = 'card'
         window.location.href = paymentData.redirectUrl
@@ -360,6 +371,7 @@ async function checkout() {
         cartStore.clearCart()
         cartStore.isOpen = false
         customerForm.value = { firstName: '', lastName: '', phone: '', email: '', city: 'Астрахань', address: '', zip: '' }
+        newsletterSubscribe.value = false
         delivery.value = 'pickup'
         paymentMethod.value = 'card'
         const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '') || ''
@@ -377,6 +389,7 @@ async function checkout() {
       firstName: '', lastName: '', phone: '', email: '',
       city: 'Астрахань', address: '', zip: ''
     }
+    newsletterSubscribe.value = false
     delivery.value = 'pickup'
     paymentMethod.value = 'card'
 
@@ -583,4 +596,16 @@ async function checkout() {
   .form-row { grid-template-columns: 1fr; }
   .cart-footer { padding: var(--spacing-md); }
 }
+
+.newsletter-opt { margin-bottom: 0.5rem; }
+.checkbox-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--gray-300);
+  cursor: pointer;
+  line-height: 1.4;
+}
+.checkbox-inline input { margin-top: 0.2rem; flex-shrink: 0; }
 </style>

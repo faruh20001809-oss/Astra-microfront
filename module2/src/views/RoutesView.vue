@@ -136,15 +136,35 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import RouteCard from '@/components/routes/RouteCard.vue'
 import QrModal from '@/components/common/QrModal.vue'
-import { useToastStore } from '@/store/index.js'
+import { useToastStore, useMapStore } from '@/store/index.js'
 import { useFavorites } from '@/composables/useFavorites.js'
-import { useGuestProgress } from '@/composables/useGuestProgress.js'
 
 const toastStore = useToastStore()
+const router = useRouter()
+const mapStore = useMapStore()
 const { isRouteFavorite, toggleRoute, favoriteRoutesList } = useFavorites()
-const { markRouteCompleted } = useGuestProgress()
+
+function normalizeRouteFromApi(r) {
+  if (!r || typeof r !== 'object') return r
+  const pois = Array.isArray(r.pois) ? r.pois.map(Number).filter(Number.isFinite) : []
+  return {
+    ...r,
+    title: r.title || r.name || 'Маршрут',
+    isPaid: !!(r.isPaid ?? r.paid),
+    stops: Array.isArray(r.stops) ? r.stops : [],
+    pois,
+  }
+}
+
+function extractPoiIdsFromRoute(route) {
+  if (Array.isArray(route.pois) && route.pois.length) {
+    return route.pois.map(Number).filter(Number.isFinite)
+  }
+  return []
+}
 
 const routes = ref([])
 const selected = ref(null)
@@ -238,8 +258,17 @@ async function copyShareUrl() {
 }
 
 function onStartRoute(route) {
-  markRouteCompleted(route.id)
-  toastStore.push('Маршрут отмечен в вашем прогрессе', 'success')
+  const id = Number(route.id)
+  if (!Number.isFinite(id)) {
+    toastStore.push('Некорректный маршрут', 'error')
+    return
+  }
+  const poiIds = extractPoiIdsFromRoute(route)
+  const title = route.title || route.name || 'Маршрут'
+  mapStore.setActiveFollowRoute({ id, title, poiIds })
+  router.push({ path: '/', query: { route: String(id) } })
+  selected.value = null
+  toastStore.push('Открываем маршрут на карте…', 'success')
 }
 
 function onPaidRoute() {
@@ -257,13 +286,12 @@ onMounted(async () => {
 
       // 🔹 Java API возвращает { status, data } — извлекаем data!
       if (json?.status === 'success' && Array.isArray(json.data)) {
-        routes.value = json.data
+        routes.value = json.data.map(normalizeRouteFromApi)
       } else if (Array.isArray(json)) {
-        // Если вдруг вернули сразу массив
-        routes.value = json
+        routes.value = json.map(normalizeRouteFromApi)
       } else {
         console.warn('Unexpected API response format:', json)
-        routes.value = getMockRoutes()
+        routes.value = getMockRoutes().map(normalizeRouteFromApi)
       }
     } else {
       throw new Error('Java API unavailable')
@@ -274,12 +302,11 @@ onMounted(async () => {
       const res = await fetch('/api/routes')
       if (res.ok) {
         const json = await res.json()
-        routes.value = Array.isArray(json) ? json : getMockRoutes()
+        routes.value = (Array.isArray(json) ? json : getMockRoutes()).map(normalizeRouteFromApi)
         return
       }
     } catch {}
-    // Fallback на mock-данные
-    routes.value = getMockRoutes()
+    routes.value = getMockRoutes().map(normalizeRouteFromApi)
   } finally {
     isLoading.value = false
   }
@@ -300,6 +327,7 @@ function getMockRoutes() {
       price: null,
       coverImage: null,
       rating: 4.8,
+      pois: [1, 2, 3, 4],
       stops: [
         { name: 'Астраханский Кремль', description: 'Главная достопримечательность города' },
         { name: 'Успенский собор', description: 'Шедевр русского барокко XVII в.' },
@@ -370,6 +398,7 @@ function getMockRoutes() {
       price: null,
       coverImage: null,
       rating: 4.3,
+      pois: [1, 3, 5],
       stops: [
         { name: 'Площадь Ленина', description: 'Центр советского города' },
         { name: 'Здание ОГПУ', description: 'Конструктивизм 1930-х' },
@@ -387,6 +416,7 @@ function getMockRoutes() {
       price: null,
       coverImage: null,
       rating: 4.5,
+      pois: [2, 3, 4],
       stops: [
         { name: 'Белая мечеть', description: 'Главная мечеть Астрахани' },
         { name: 'Армянская церковь', description: 'XVIII век' },

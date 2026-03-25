@@ -80,7 +80,7 @@ public class OrderEmailService {
      * Код для входа в «Мои заказы» по email (гостевой кабинет).
      * Асинхронно — чтобы HTTP не зависал на SMTP (таймауты curl / фронта).
      */
-    @Async
+    @Async("mailExecutor")
     public void sendGuestOrderLookupCodeAsync(String email, String code) {
         sendGuestOrderLookupCode(email, code);
     }
@@ -220,6 +220,48 @@ public class OrderEmailService {
         sb.append("<p style=\"color:#666;margin-top:24px;\">— Астрахань. Живая История</p>");
         sb.append("</body></html>");
         return sb.toString();
+    }
+
+    /**
+     * Рассылка подписчикам: на карте появилась новая опубликованная точка.
+     */
+    public void sendNewPoiNewsletterEmail(String toEmail, String poiName, String descriptionSnippet,
+            String mapUrl, String unsubscribeUrl) {
+        if (!mailEnabled) {
+            log.debug("Mail disabled, skip newsletter POI email to {}", toEmail);
+            return;
+        }
+        if (toEmail == null || toEmail.isBlank()) {
+            return;
+        }
+        try {
+            String subject = "Новая точка на карте: " + poiName + " — Астрахань. Живая История";
+            String html = buildNewPoiNewsletterHtml(poiName, descriptionSnippet, mapUrl, unsubscribeUrl);
+            sendHtml(toEmail.trim(), subject, html);
+        } catch (Exception e) {
+            log.error("Failed newsletter POI email to {}", toEmail, e);
+        }
+    }
+
+    private String buildNewPoiNewsletterHtml(String poiName, String snippet, String mapUrl, String unsubscribeUrl) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body style=\"font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;\">");
+        sb.append("<h2>На карте новая точка</h2>");
+        sb.append("<p><strong>").append(escape(poiName)).append("</strong></p>");
+        if (snippet != null && !snippet.isBlank()) {
+            sb.append("<p>").append(escape(snippet)).append("</p>");
+        }
+        sb.append("<p><a href=\"").append(escapeAttr(mapUrl)).append("\" style=\"display:inline-block;padding:12px 20px;background:#1a365d;color:#fff;text-decoration:none;border-radius:8px;\">Открыть карту</a></p>");
+        sb.append("<p style=\"color:#888;font-size:12px;margin-top:32px;\">");
+        sb.append("<a href=\"").append(escapeAttr(unsubscribeUrl)).append("\" style=\"color:#888;\">Отписаться от рассылки</a>");
+        sb.append("</p><p style=\"color:#666;margin-top:8px;\">— Астрахань. Живая История</p>");
+        sb.append("</body></html>");
+        return sb.toString();
+    }
+
+    private static String escapeAttr(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;");
     }
 
     private static String escape(String s) {

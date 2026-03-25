@@ -1,5 +1,6 @@
 package ru.astrakhan.admin.service;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import ru.astrakhan.admin.entity.AnalyticsEvent;
 import ru.astrakhan.admin.repository.AnalyticsEventRepository;
@@ -42,6 +43,14 @@ public class AnalyticsService {
      */
     public List<Object[]> topViewedRoutes() {
         return repo.topViewedRoutes();
+    }
+
+    public List<Object[]> leastViewedPois(int limit) {
+        return repo.leastViewedPois(PageRequest.of(0, Math.min(Math.max(limit, 1), 30)));
+    }
+
+    public List<Object[]> leastViewedRoutes(int limit) {
+        return repo.leastViewedRoutes(PageRequest.of(0, Math.min(Math.max(limit, 1), 30)));
     }
 
     /**

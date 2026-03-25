@@ -18,10 +18,62 @@
     </select>
   </div>
   <div>
+    <label for="from">Период с</label>
+    <input id="from" type="date" name="from" class="form-control" th:value="${periodFrom}">
+  </div>
+  <div>
+    <label for="to">по</label>
+    <input id="to" type="date" name="to" class="form-control" th:value="${periodTo}">
+  </div>
+  <div>
     <label>&nbsp;</label>
     <button type="submit" class="btn">Показать</button>
   </div>
 </form>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header"><h3>Сводка за период</h3></div>
+  <p style="color:#888;font-size:13px;margin:0 0 12px">Обратная связь и отзывы за выбранные даты (для списка ниже фильтры по статусу/поиску не меняют сводку).</p>
+  <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div>
+      <h4 style="margin:0 0 8px;font-size:14px">Обращения по статусам</h4>
+      <table class="table-compact"><tbody>
+      <tr th:each="row : ${feedbackStatusInPeriod}"><td th:text="${row[0]}"></td><td th:text="${row[1]}"></td></tr>
+      <tr th:if="${#lists.isEmpty(feedbackStatusInPeriod)}"><td colspan="2" style="color:#999">Нет данных</td></tr>
+      </tbody></table>
+      <p th:if="${feedbackAvgResponseHoursPresent}" style="margin-top:12px;font-size:13px">
+        Среднее время до ответа: <strong th:text="${#numbers.formatDecimal(feedbackAvgResponseHours,1,1)}"></strong> ч
+      </p>
+      <p th:if="${!feedbackAvgResponseHoursPresent}" style="margin-top:12px;font-size:13px;color:#999">Нет ответов с датой в периоде</p>
+    </div>
+    <div>
+      <h4 style="margin:0 0 8px;font-size:14px">Топ тем (subject)</h4>
+      <table class="table-compact"><tbody>
+      <tr th:each="row : ${feedbackTopSubjects}"><td th:text="${row[0] != null ? row[0] : '—'}"></td><td th:text="${row[1]}"></td></tr>
+      <tr th:if="${#lists.isEmpty(feedbackTopSubjects)}"><td colspan="2" style="color:#999">Нет данных</td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  <h4 style="margin:16px 0 8px;font-size:14px">Отзывы: звёзды за период</h4>
+  <table class="table-compact"><thead><tr><th>Оценка</th><th>Кол-во</th></tr></thead><tbody>
+  <tr th:each="row : ${reviewRatingDist}"><td th:text="${row[0]}"></td><td th:text="${row[1]}"></td></tr>
+  <tr th:if="${#lists.isEmpty(reviewRatingDist)}"><td colspan="2" style="color:#999">Нет данных</td></tr>
+  </tbody></table>
+  <h4 style="margin:16px 0 8px;font-size:14px">ТОИ с наибольшим числом отзывов на модерации</h4>
+  <table class="table-compact"><thead><tr><th>Точка</th><th>Ожидают</th></tr></thead><tbody>
+  <tr th:each="row : ${topPoisPendingReviewsDetail}"><td><a th:href="@{'/admin/poi/edit/' + ${row.poiId}}" th:text="${row.name}"></a></td><td th:text="${row.count}"></td></tr>
+  <tr th:if="${#lists.isEmpty(topPoisPendingReviewsDetail)}"><td colspan="2" style="color:#999">Нет</td></tr>
+  </tbody></table>
+  <h4 style="margin:16px 0 8px;font-size:14px">Отзывы за период (последние 15)</h4>
+  <ul style="margin:0;padding-left:18px;font-size:13px;color:var(--gray-300)">
+    <li th:each="r, rStat : ${reviewsInPeriod}" th:if="${rStat.index < 15}">
+      <span th:text="${r.createdAt != null ? #temporals.format(r.createdAt,'dd.MM.yyyy') : '—'}"></span> —
+      POI <span th:text="${r.poiId}"></span>, ★<span th:text="${r.rating}"></span>,
+      <span th:text="${r.text != null ? #strings.abbreviate(r.text,80) : '—'}"></span>
+    </li>
+  </ul>
+  <p th:if="${#lists.isEmpty(reviewsInPeriod)}" style="color:#999;font-size:13px">Нет отзывов в периоде</p>
+</div>
 
 <div class="card"><div class="table-responsive"><table aria-label="Список обращений"><thead><tr><th>ID</th><th>Имя</th><th>Email</th><th>Тема</th><th>Сообщение</th><th>Статус</th><th>Дата</th><th>Действия</th></tr></thead><tbody>
 <tr th:each="fb : ${feedbacks}"><td th:text="${fb.id}"></td><td th:text="${fb.name}"></td><td><small th:text="${fb.email}"></small></td><td th:text="${fb.subject}"></td><td th:text="${fb.message != null ? #strings.abbreviate(fb.message,60) : '—'}"></td><td><span class="status-badge" th:classappend="${fb.status != null ? 'status-'+fb.status.name().toLowerCase() : ''}" th:text="${fb.status != null ? fb.status.name() : '—'}"></span></td><td th:text="${fb.createdAt != null ? #temporals.format(fb.createdAt,'dd.MM.yyyy HH:mm') : '—'}"></td><td><div class="btn-group"><a th:href="@{'/admin/feedback/view/'+${fb.id}}" class="btn btn-sm">👁️</a><form th:action="@{'/admin/feedback/archive/'+${fb.id}}" method="post" style="display:inline"><button class="btn btn-sm btn-warning">📥</button></form></div></td></tr>

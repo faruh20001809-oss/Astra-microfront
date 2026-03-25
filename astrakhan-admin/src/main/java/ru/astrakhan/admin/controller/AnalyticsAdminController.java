@@ -32,6 +32,8 @@ public class AnalyticsAdminController {
         // 🔹 Статистика просмотров
         model.addAttribute("topPois", analyticsService.topViewedPois());
         model.addAttribute("topRoutes", analyticsService.topViewedRoutes());
+        model.addAttribute("leastPois", analyticsService.leastViewedPois(10));
+        model.addAttribute("leastRoutes", analyticsService.leastViewedRoutes(10));
         model.addAttribute("eventCounts", analyticsService.countByEventType());
 
         // 🔹 Счётчики событий

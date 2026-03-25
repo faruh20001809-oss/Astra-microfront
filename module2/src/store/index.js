@@ -72,7 +72,9 @@ export const useMapStore = defineStore('map', {
     activeFilters: [],
     userLocation: null,
     isLoadingPois: false,
-    nearbyPoi: null
+    nearbyPoi: null,
+    /** Активный маршрут с карты: { id, title, poiIds } — задаётся со страницы маршрутов перед переходом на «/». */
+    activeFollowRoute: null,
   }),
 
 
@@ -166,6 +168,25 @@ export const useMapStore = defineStore('map', {
       const idx = this.activeFilters.indexOf(category)
       if (idx === -1) this.activeFilters.push(category)
       else this.activeFilters.splice(idx, 1)
+    },
+
+    setActiveFollowRoute(payload) {
+      if (!payload || payload.id == null) {
+        this.activeFollowRoute = null
+        return
+      }
+      const poiIds = Array.isArray(payload.poiIds)
+        ? payload.poiIds.map(Number).filter((n) => Number.isFinite(n))
+        : []
+      this.activeFollowRoute = {
+        id: Number(payload.id),
+        title: payload.title || 'Маршрут',
+        poiIds,
+      }
+    },
+
+    clearActiveFollowRoute() {
+      this.activeFollowRoute = null
     },
 
     /** Определяет, рядом ли пользователь с какой-либо точкой (в радиусе 150 м). */

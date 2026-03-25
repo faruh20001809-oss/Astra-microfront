@@ -21,7 +21,6 @@ ru\astrakhan\admin\entity\PointOfInterest$PointOfInterestBuilder.class
 ru\astrakhan\admin\dto\PaymentLinkResult.class
 ru\astrakhan\admin\entity\Route.class
 ru\astrakhan\admin\AstrakhanAdminApplication.class
-ru\astrakhan\admin\controller\ApiController.class
 ru\astrakhan\admin\entity\PoiSuggestion$SuggestionStatus.class
 ru\astrakhan\admin\entity\SharedUser.class
 ru\astrakhan\admin\repository\PoiRepository.class

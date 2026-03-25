@@ -71,6 +71,17 @@
     <!-- Map container -->
     <div class="map-wrapper">
       <div
+        v-if="mapStore.activeFollowRoute"
+        class="map-route-banner"
+        role="status"
+      >
+        <span class="map-route-banner-label">Маршрут</span>
+        <span class="map-route-banner-title">{{ mapStore.activeFollowRoute.title }}</span>
+        <button type="button" class="btn btn-sm btn-ghost map-route-banner-close" @click="clearFollowRouteFromMap">
+          Скрыть
+        </button>
+      </div>
+      <div
         ref="mapEl"
         class="map-container"
         role="application"
@@ -138,6 +149,25 @@
             <Button type="button" label="Отмена" class="p-button-text p-button-secondary" @click="suggestPoiOpen = false" />
           </div>
         </form>
+      </Dialog>
+
+      <Dialog
+        v-model:visible="newPoiDialogOpen"
+        modal
+        header="На карте новая точка"
+        :style="{ width: 'min(400px, 92vw)' }"
+        :dismissableMask="true"
+        @hide="onNewPoiDialogHide"
+      >
+        <div v-if="newPoiHighlight" class="new-poi-dialog-body">
+          <p class="new-poi-dialog-name">{{ newPoiHighlight.name }}</p>
+          <p v-if="newPoiHighlight.description" class="new-poi-dialog-desc">{{ newPoiHighlightDescription }}</p>
+          <p v-else class="new-poi-dialog-desc text-mono" style="color:var(--gray-500)">Категория: {{ newPoiHighlight.category || '—' }}</p>
+          <div class="new-poi-dialog-actions">
+            <Button type="button" label="Открыть на карте" class="btn-accent" @click="openNewPoiOnMap" />
+            <Button type="button" label="Закрыть" class="p-button-text p-button-secondary" @click="dismissNewPoiDialog" />
+          </div>
+        </div>
       </Dialog>
 
       <!-- Мобильный сайдбар: выезжает слева, при выборе точки закрывается -->
@@ -317,6 +347,20 @@
                 </div>
                 <p v-else class="poi-desc-placeholder">Нажмите «Сгенерировать», чтобы получить AI-описание.</p>
 
+                <div class="poi-tts-voice-row">
+                  <label for="poi-ai-audience-map" class="poi-tts-voice-label">Стиль AI-текста:</label>
+                  <select
+                    id="poi-ai-audience-map"
+                    v-model="aiAudience"
+                    class="poi-tts-voice-select"
+                    :disabled="aiLoading"
+                  >
+                    <option value="default">Обычное</option>
+                    <option value="children">Детям</option>
+                    <option value="academic">Академично</option>
+                  </select>
+                </div>
+
                 <!-- Выбор озвучки -->
                 <div class="poi-tts-voice-row">
                   <label for="poi-tts-voice" class="poi-tts-voice-label">Озвучка:</label>
@@ -404,14 +448,21 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import { usePoiAiTts } from '@/composables/usePoiAiTts.js'
 import { useFavorites } from '@/composables/useFavorites.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import { javaApi } from '@/api/backend.js'
 
+const LS_POI_CATALOG_MAX = 'astra-poi-catalog-max-id'
+const LS_POI_DISMISSED = 'astra-poi-dismissed-new-ids'
+const NEW_POI_POLL_MS = 75_000
+
 const mapStore = useMapStore()
 const toastStore = useToastStore()
+const vueRoute = useRoute()
+const router = useRouter()
 const { isPoiFavorite, togglePoi } = useFavorites()
 const { markPoiVisited } = useGuestProgress()
 
@@ -460,8 +511,15 @@ let watchId = null
 
 // 2GIS state
 let map = null
+/** Только маркеры ТОИ (пересоздаются в renderMarkers). Метка GPS хранится отдельно — иначе renderMarkers её сносит. */
 let markers = {}
+/** Маркер «вы здесь» (геолокация), не входит в `markers`. */
+let userLocationMarker = null
 let mapglCheckInterval = null
+/** Линия активного маршрута (2GIS MapGL Polyline). */
+let routePolyline = null
+/** Сбрасывать фильтры категорий только при смене маршрута (не при каждом poll POI). */
+let lastFollowRouteAppliedId = null
 
 // Floating modal position (near selected marker)
 const modalPosition = ref({ top: 0, left: 0 })
@@ -516,6 +574,7 @@ const {
   tabs,
   ttsVoices,
   selectedTtsVoice,
+  aiAudience,
   aiContent,
   aiLoading,
   ttsLoading,
@@ -525,12 +584,136 @@ const {
   toggleTTS,
 } = usePoiAiTts()
 
+const newPoiDialogOpen = ref(false)
+const newPoiHighlight = ref(null)
+const newPoiShownSession = new Set()
+let newPoiPollTimer = null
+
+const newPoiHighlightDescription = computed(() => {
+  const t = newPoiHighlight.value?.description
+  if (!t) return ''
+  return t.length > 220 ? `${t.slice(0, 217)}…` : t
+})
+
+function catalogMaxFromStore() {
+  const ids = mapStore.pois.map((p) => Number(p.id)).filter((n) => Number.isFinite(n))
+  return ids.length ? Math.max(...ids) : 0
+}
+
+function syncCatalogPointerFromPois() {
+  try {
+    const m = catalogMaxFromStore()
+    const prev = parseInt(localStorage.getItem(LS_POI_CATALOG_MAX) || '0', 10)
+    if (m > prev) localStorage.setItem(LS_POI_CATALOG_MAX, String(m))
+  } catch (_) { /* ignore */ }
+}
+
+function loadDismissedSet() {
+  try {
+    const raw = localStorage.getItem(LS_POI_DISMISSED)
+    const arr = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(arr) ? arr.map(Number).filter((n) => Number.isFinite(n)) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveDismissedSet(set) {
+  try {
+    localStorage.setItem(LS_POI_DISMISSED, JSON.stringify([...set]))
+  } catch (_) { /* ignore */ }
+}
+
+function normalizeNewPoiFromApi(p) {
+  if (!p || p.id == null) return null
+  return {
+    id: p.id,
+    name: p.name || '',
+    description: p.description || '',
+    category: p.category || '',
+    lat: p.latitude ?? p.lat ?? 0,
+    lng: p.longitude ?? p.lng ?? 0,
+  }
+}
+
+function bumpCatalogMaxAfterPoi(poiId) {
+  try {
+    const stored = parseInt(localStorage.getItem(LS_POI_CATALOG_MAX) || '0', 10)
+    localStorage.setItem(LS_POI_CATALOG_MAX, String(Math.max(stored, Number(poiId))))
+  } catch (_) { /* ignore */ }
+}
+
+async function pollNewCatalogPois() {
+  if (newPoiDialogOpen.value) return
+  try {
+    const rev = await javaApi.pois.getCatalogRevision()
+    const stored = parseInt(localStorage.getItem(LS_POI_CATALOG_MAX) || '0', 10)
+    if (!Number.isFinite(rev) || rev <= stored) return
+    const raw = await javaApi.pois.listSince(stored, 10)
+    const dismissed = loadDismissedSet()
+    const candidates = raw
+      .map(normalizeNewPoiFromApi)
+      .filter((p) => p && !dismissed.has(p.id) && !newPoiShownSession.has(p.id))
+    if (!candidates.length) {
+      localStorage.setItem(LS_POI_CATALOG_MAX, String(rev))
+      return
+    }
+    candidates.sort((a, b) => a.id - b.id)
+    const next = candidates[0]
+    newPoiShownSession.add(next.id)
+    newPoiHighlight.value = next
+    newPoiDialogOpen.value = true
+  } catch (e) {
+    console.warn('POI catalog poll:', e)
+  }
+}
+
+function dismissNewPoiDialog() {
+  newPoiDialogOpen.value = false
+}
+
+function onNewPoiDialogHide() {
+  const h = newPoiHighlight.value
+  if (h?.id == null) return
+  const dismissed = loadDismissedSet()
+  dismissed.add(h.id)
+  saveDismissedSet(dismissed)
+  bumpCatalogMaxAfterPoi(h.id)
+  newPoiHighlight.value = null
+}
+
+async function openNewPoiOnMap() {
+  const highlight = newPoiHighlight.value
+  const id = highlight?.id
+  if (id == null) return
+  bumpCatalogMaxAfterPoi(id)
+  newPoiHighlight.value = null
+  newPoiDialogOpen.value = false
+  await mapStore.fetchPois()
+  syncCatalogPointerFromPois()
+  const poi = mapStore.pois.find((p) => p.id === id)
+  if (poi) {
+    selectAndFlyTo(poi)
+    openPoi(poi)
+    resetForPoi()
+    isDescExpanded.value = false
+  } else {
+    toastStore.push('Обновите карту: точка скоро появится в списке', 'info')
+  }
+}
+
 // Constants
 const ASTRAKHAN_CENTER = [48.0408, 46.3497] // [lng, lat]
 
 // ── Lifecycle ──
 onMounted(async () => {
+  if (!vueRoute.query.route) {
+    mapStore.clearActiveFollowRoute()
+  }
   await mapStore.fetchPois()
+  syncCatalogPointerFromPois()
+  newPoiPollTimer = setInterval(pollNewCatalogPois, NEW_POI_POLL_MS)
+  setTimeout(pollNewCatalogPois, 12_000)
 
   const tryInitMap = () => {
     if (!window.mapgl) return false
@@ -551,11 +734,17 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  if (newPoiPollTimer) {
+    clearInterval(newPoiPollTimer)
+    newPoiPollTimer = null
+  }
   if (mapglCheckInterval) {
     clearInterval(mapglCheckInterval)
     mapglCheckInterval = null
   }
   stopGPS()
+  destroyRoutePolyline()
+  removeUserLocationMarker()
   if (map) {
     map.destroy()
     map = null
@@ -587,6 +776,8 @@ function initMap() {
 
     map.on('load', () => {
       renderMarkers()
+      void applyFollowRouteFromQuery()
+      syncUserLocationMarkerFromStore()
     })
 
     // keep modal attached to marker when map moves/zooms
@@ -701,6 +892,96 @@ function zoomOut() {
   if (map) map.setZoom(map.getZoom() - 1, { animate: true })
 }
 
+function destroyRoutePolyline() {
+  if (routePolyline && typeof routePolyline.destroy === 'function') {
+    try {
+      routePolyline.destroy()
+    } catch (_) { /* ignore */ }
+  }
+  routePolyline = null
+}
+
+async function applyFollowRouteFromQuery() {
+  if (!map) return
+  const rawQ = vueRoute.query.route
+  if (rawQ == null || rawQ === '') {
+    destroyRoutePolyline()
+    mapStore.clearActiveFollowRoute()
+    lastFollowRouteAppliedId = null
+    return
+  }
+  const routeId = Number(rawQ)
+  if (!Number.isFinite(routeId)) return
+
+  let poiIds = []
+  const cached = mapStore.activeFollowRoute
+  if (cached && cached.id === routeId && Array.isArray(cached.poiIds) && cached.poiIds.length) {
+    poiIds = [...cached.poiIds]
+  } else {
+    try {
+      const data = await javaApi.routes.getById(routeId)
+      if (data && Array.isArray(data.pois)) {
+        poiIds = data.pois.map(Number).filter(Number.isFinite)
+      }
+      const title = data?.title || data?.name || 'Маршрут'
+      mapStore.setActiveFollowRoute({ id: routeId, title, poiIds })
+    } catch (e) {
+      console.warn('Route fetch for map:', e)
+      toastStore.push('Не удалось загрузить маршрут', 'error')
+      return
+    }
+  }
+
+  if (!poiIds.length) {
+    toastStore.push('У маршрута нет привязанных точек на карте', 'info')
+    destroyRoutePolyline()
+    return
+  }
+
+  const ordered = []
+  for (const pid of poiIds) {
+    const p = mapStore.pois.find((x) => Number(x.id) === Number(pid))
+    if (p && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng))) ordered.push(p)
+  }
+
+  if (!ordered.length) {
+    toastStore.push('Точки маршрута не найдены среди объектов на карте', 'info')
+    destroyRoutePolyline()
+    return
+  }
+
+  if (lastFollowRouteAppliedId !== routeId) {
+    mapStore.activeFilters = []
+    lastFollowRouteAppliedId = routeId
+  }
+  renderMarkers()
+  destroyRoutePolyline()
+
+  if (ordered.length >= 2 && window.mapgl?.Polyline) {
+    try {
+      const coords = ordered.map((p) => [p.lng, p.lat])
+      routePolyline = new window.mapgl.Polyline(map, {
+        coordinates: coords,
+        width: 6,
+        color: '#c8a96e',
+        zIndex: 2,
+      })
+    } catch (e) {
+      console.warn('Polyline:', e)
+    }
+  }
+
+  selectAndFlyTo(ordered[0])
+  openPoi(ordered[0])
+}
+
+function clearFollowRouteFromMap() {
+  destroyRoutePolyline()
+  lastFollowRouteAppliedId = null
+  mapStore.clearActiveFollowRoute()
+  router.replace({ path: '/', query: {} })
+}
+
 // ── Watchers ──
 watch(
   () => mapStore.activeFilters,
@@ -710,11 +991,68 @@ watch(
   { deep: true },
 )
 
+watch(
+  () => [String(vueRoute.query.route ?? ''), mapStore.pois.length],
+  () => {
+    if (map) void applyFollowRouteFromQuery()
+  },
+)
+
 // ── GPS ──
+/** Первое успешное положение — подвинуть карту к пользователю. */
+let gpsPendingFlyToUser = false
+
+function removeUserLocationMarker() {
+  if (userLocationMarker && typeof userLocationMarker.destroy === 'function') {
+    try {
+      userLocationMarker.destroy()
+    } catch (_) { /* ignore */ }
+  }
+  userLocationMarker = null
+}
+
+function updateUserLocationMarker(lat, lng) {
+  if (!map || !window.mapgl?.HtmlMarker) return
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+
+  if (!userLocationMarker) {
+    const el = document.createElement('div')
+    el.className = 'user-marker'
+    el.innerHTML = '◉'
+    el.setAttribute('aria-label', 'Вы здесь')
+    el.title = 'Ваше местоположение'
+    userLocationMarker = new window.mapgl.HtmlMarker(map, {
+      coordinates: [lng, lat],
+      html: el,
+      anchor: 'center',
+    })
+  } else {
+    userLocationMarker.setCoordinates([lng, lat])
+  }
+
+  if (gpsPendingFlyToUser) {
+    gpsPendingFlyToUser = false
+    try {
+      map.setCenter([lng, lat], { animate: true, duration: 500 })
+      map.setZoom(Math.max(map.getZoom(), 15), { animate: true, duration: 500 })
+    } catch (_) { /* ignore */ }
+  }
+}
+
+function syncUserLocationMarkerFromStore() {
+  const loc = mapStore.userLocation
+  if (!gpsActive.value || !loc) return
+  updateUserLocationMarker(loc.lat, loc.lng)
+}
+
 function toggleGPS() {
   if (gpsActive.value) stopGPS()
   else startGPS()
 }
+
+const GPS_INSECURE_HINT =
+  'Геолокация в браузере разрешена только по HTTPS или на http://localhost. ' +
+  'Для телефона в локальной сети запустите фронт командой npm run dev:https и откройте https://… (примите предупреждение о сертификате).'
 
 function startGPS() {
   if (!navigator.geolocation) {
@@ -722,7 +1060,14 @@ function startGPS() {
     return
   }
 
+  if (typeof window !== 'undefined' && !window.isSecureContext) {
+    gpsStatus.value = 'Нужен HTTPS или localhost'
+    toastStore.push(GPS_INSECURE_HINT, 'error')
+    return
+  }
+
   gpsStatus.value = 'Определение местоположения…'
+  gpsPendingFlyToUser = true
 
   watchId = navigator.geolocation.watchPosition(
     (pos) => {
@@ -731,29 +1076,26 @@ function startGPS() {
       gpsStatus.value = `Точность: ±${Math.round(accuracy)} м`
 
       mapStore.setUserLocation({ lat, lng })
-
-      if (map) {
-        if (!markers['user']) {
-          const el = document.createElement('div')
-          el.className = 'user-marker'
-          el.innerHTML = '◉'
-          markers['user'] = new window.mapgl.HtmlMarker(map, {
-            coordinates: [lng, lat],
-            html: el,
-            anchor: 'center',
-          })
-        } else {
-          markers['user'].setCoordinates([lng, lat])
-        }
-      }
+      updateUserLocationMarker(lat, lng)
     },
     (err) => {
       console.error('GPS error:', err)
-      gpsStatus.value = 'Ошибка: ' + (err.message || 'Неизвестная ошибка')
+      const raw = err?.message || ''
+      const insecureOrigin =
+        /secure origin/i.test(raw) ||
+        /insecure/i.test(raw) ||
+        (typeof window !== 'undefined' && !window.isSecureContext)
+      if (insecureOrigin) {
+        gpsStatus.value = 'Нужен HTTPS или localhost'
+        toastStore.push(GPS_INSECURE_HINT, 'error')
+      } else {
+        gpsStatus.value = 'Ошибка: ' + (raw || 'Неизвестная ошибка')
+        toastStore.push('Не удалось определить местоположение', 'error')
+      }
       gpsActive.value = false
-      toastStore.push('Не удалось определить местоположение', 'error')
+      gpsPendingFlyToUser = false
     },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
   )
 }
 
@@ -764,12 +1106,9 @@ function stopGPS() {
   }
   gpsActive.value = false
   gpsStatus.value = ''
+  gpsPendingFlyToUser = false
   mapStore.setUserLocation(null)
-
-  if (markers['user']) {
-    markers['user'].destroy()
-    delete markers['user']
-  }
+  removeUserLocationMarker()
 }
 
 // ── Utils ──
@@ -976,6 +1315,45 @@ function categoryIcon(cat) {
   overflow: hidden;
 }
 
+.map-route-banner {
+  position: absolute;
+  top: var(--spacing-md);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 170;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  flex-wrap: wrap;
+  max-width: min(420px, calc(100% - 2rem));
+  padding: 0.5rem 0.75rem;
+  background: rgba(18, 16, 14, 0.92);
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+}
+.map-route-banner-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.map-route-banner-title {
+  font-size: 0.85rem;
+  color: var(--paper);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.map-route-banner-close {
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.75rem !important;
+}
+
 /* Кнопка «Точки» на мобильных */
 .map-poins-btn {
   display: none;
@@ -1107,6 +1485,11 @@ function categoryIcon(cat) {
 .suggest-poi-form .form-error { color: var(--danger, #e57373); font-size: 0.85rem; margin-bottom: 0.5rem; }
 .suggest-poi-form .form-success { color: var(--success, #4caf50); font-size: 0.85rem; margin-bottom: 0.5rem; }
 .suggest-poi-form .form-actions { display: flex; gap: 0.75rem; margin-top: 1rem; flex-wrap: wrap; }
+
+.new-poi-dialog-body { padding: 0.25rem 0; }
+.new-poi-dialog-name { font-family: var(--font-display); font-size: 1.1rem; margin: 0 0 0.5rem; color: var(--paper); }
+.new-poi-dialog-desc { font-size: 0.9rem; color: var(--gray-300); margin: 0 0 1rem; line-height: 1.45; }
+.new-poi-dialog-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
 /* ===== Connector line from marker to card ===== */
 .poi-connector {

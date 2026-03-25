@@ -12,6 +12,7 @@ import ru.astrakhan.admin.dto.OrderItemRequest;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import ru.astrakhan.admin.service.*;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ApiController {
     private final PoiService poiService;
+    private final NewsletterService newsletterService;
     private final RouteService routeService;
     private final ProductService productService;
     private final OrderService orderService;
@@ -34,20 +36,61 @@ public class ApiController {
     @GetMapping("/pois")
     public ResponseEntity<Map<String, Object>> getPois(@RequestParam(required = false) String category,
             @RequestParam(required = false) String search, @RequestParam(required = false) String status) {
-        List<PointOfInterest> pois = ("PUBLISHED".equals(status) || status == null) ? poiService.findPublished() :
-            poiService.findByStatus(PointOfInterest.PoiStatus.valueOf(status));
+        List<PointOfInterest> pois;
+        if ("PUBLISHED".equals(status) || status == null) {
+            pois = poiService.findPubliclyVisibleNow();
+        } else {
+            pois = poiService.findByStatus(PointOfInterest.PoiStatus.valueOf(status));
+        }
         if (category != null && !category.isEmpty()) pois = pois.stream().filter(p -> category.equals(p.getCategory())).collect(Collectors.toList());
         if (search != null && !search.isEmpty()) { String q = search.toLowerCase(); pois = pois.stream().filter(p -> p.getName().toLowerCase().contains(q)).collect(Collectors.toList()); }
         return ok(pois.stream().map(this::poiMap).collect(Collectors.toList()));
     }
 
+    /** Версия каталога для клиента: max(id) среди сейчас видимых гостю ТОИ. */
+    @GetMapping("/pois/catalog-revision")
+    public ResponseEntity<Map<String, Object>> getPoiCatalogRevision() {
+        return okSingle(Map.of("revision", poiService.catalogRevision()));
+    }
+
+    /** Новые видимые ТОИ с id строго больше afterId (для модалки на витрине). */
+    @GetMapping("/pois/since")
+    public ResponseEntity<Map<String, Object>> getPoisSince(
+            @RequestParam("afterId") long afterId,
+            @RequestParam(defaultValue = "10") int limit) {
+        List<PointOfInterest> list = poiService.findPublicVisibleAfterId(afterId, limit);
+        return ok(list.stream().map(this::poiSinceMap).collect(Collectors.toList()));
+    }
+
     @GetMapping("/pois/{id}")
     public ResponseEntity<Map<String, Object>> getPoi(@PathVariable Long id) {
-        return poiService.findById(id).map(poi -> {
-            analyticsService.trackEvent("poi_view", poi.getId(), poi.getName());
-            poiService.incrementViews(id);
-            return okSingle(poiDetailMap(poi));
-        }).orElse(ResponseEntity.notFound().build());
+        Optional<PointOfInterest> opt = poiService.findById(id);
+        if (opt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        PointOfInterest poi = opt.get();
+        LocalDateTime now = LocalDateTime.now();
+        if (!PoiService.isPubliclyVisible(poi, now)) {
+            return ResponseEntity.notFound().build();
+        }
+        analyticsService.trackEvent("poi_view", poi.getId(), poi.getName());
+        poiService.incrementViews(id);
+        return okSingle(poiDetailMap(poi));
+    }
+
+    private Map<String, Object> poiSinceMap(PointOfInterest p) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", p.getId());
+        m.put("name", p.getName());
+        m.put("category", p.getCategory());
+        String desc = p.getDescription();
+        if (desc != null && desc.length() > 280) {
+            desc = desc.substring(0, 277) + "…";
+        }
+        m.put("description", desc);
+        m.put("latitude", p.getLatitude());
+        m.put("longitude", p.getLongitude());
+        return m;
     }
 
     @GetMapping("/pois/{id}/reviews")
@@ -213,6 +256,13 @@ public class ApiController {
             try {
                 orderEmailService.sendOrderAcceptedForProcessing(savedOrder);
                 analyticsService.trackEvent("order_created", savedOrder.getId(), savedOrder.getOrderId());
+                if (Boolean.TRUE.equals(request.getNewsletterSubscribe()) && savedOrder.getEmail() != null) {
+                    try {
+                        newsletterService.subscribe(savedOrder.getEmail());
+                    } catch (IllegalArgumentException ignored) {
+                        // некорректный email — заказ уже создан
+                    }
+                }
             } catch (Exception ex) {
                 log.warn("Post-order processing failed (order {} created): {}", savedOrder.getOrderId(), ex.getMessage());
             }
@@ -363,6 +413,30 @@ public class ApiController {
         res.put("status", "success"); res.put("message", "Сообщение отправлено. Спасибо!");
         res.put("data", Map.of("id", saved.getId(), "createdDate", saved.getCreatedAt().toString()));
         return ResponseEntity.ok(res);
+    }
+
+    // ===== Newsletter (новые точки на карте) =====
+    @PostMapping("/newsletter/subscribe")
+    public ResponseEntity<Map<String, Object>> newsletterSubscribe(@RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        try {
+            newsletterService.subscribe(email);
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("message", "Вы подписались на уведомления о новых точках на карте.");
+        return ok(data);
+    }
+
+    @GetMapping(value = "/newsletter/unsubscribe", produces = "text/html;charset=UTF-8")
+    public ResponseEntity<String> newsletterUnsubscribe(@RequestParam String token) {
+        boolean ok = newsletterService.unsubscribeByToken(token);
+        String body = ok
+                ? "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Отписка</title></head><body style=\"font-family:sans-serif;padding:24px;\"><p>Вы отписаны от рассылки.</p><p><a href=\"/\">На главную</a></p></body></html>"
+                : "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Отписка</title></head><body style=\"font-family:sans-serif;padding:24px;\"><p>Ссылка недействительна или подписка уже отключена.</p></body></html>";
+        return ResponseEntity.ok(body);
     }
 
     // ===== Analytics =====

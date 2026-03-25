@@ -45,6 +45,7 @@ public class GuestOrderLookupService {
      */
     public void requestCode(String emailRaw) {
         String email = normalizeEmail(emailRaw);
+        log.info("Guest order lookup: request-code endpoint processing");
         if (email.isEmpty()) {
             throw new IllegalArgumentException("Укажите email");
         }

@@ -34,6 +34,8 @@ public class PointOfInterest {
     @Column(name = "reviews_count") @Builder.Default private Integer reviewsCount = 0;
     @Column(name = "publish_at") private LocalDateTime publishAt;
     @Column(name = "unpublish_at") private LocalDateTime unpublishAt;
+    /** Рассылка подписчикам о новой точке уже выполнялась (один раз на ТОИ). */
+    @Column(name = "newsletter_notified") @Builder.Default private Boolean newsletterNotified = false;
     @Column(name = "created_at") private LocalDateTime createdAt;
     @Column(name = "updated_at") private LocalDateTime updatedAt;
 
@@ -43,6 +45,7 @@ public class PointOfInterest {
         if (viewsCount == null) viewsCount = 0L;
         if (rating == null) rating = 0.0;
         if (reviewsCount == null) reviewsCount = 0;
+        if (newsletterNotified == null) newsletterNotified = false;
     }
     @PreUpdate protected void onUpdate() { updatedAt = LocalDateTime.now(); }
     public enum PoiStatus { DRAFT, PENDING, PUBLISHED, ARCHIVED }

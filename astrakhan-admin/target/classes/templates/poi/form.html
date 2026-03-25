@@ -11,7 +11,30 @@
     <div class="form-group"><label>Категория *</label><select class="form-control" th:field="*{category}" required><option value="">—</option><option value="История">История</option><option value="Архитектура">Архитектура</option><option value="Музеи">Музеи</option><option value="Парки">Парки</option><option value="Памятники">Памятники</option></select></div>
     <div class="form-group"><label>Статус</label><select class="form-control" th:field="*{status}"><option value="DRAFT">Черновик</option><option value="PENDING">На модерации</option><option value="PUBLISHED">Опубликовано</option><option value="ARCHIVED">В архиве</option></select></div>
 </div>
-<div class="form-group"><label>Описание</label><textarea class="form-control" th:field="*{description}" rows="4"></textarea></div>
+<div class="form-group"><label>Описание</label><textarea class="form-control" id="poi-description-field" th:field="*{description}" rows="4"></textarea></div>
+<div class="form-group" th:if="${poiAiEnabled == true}">
+    <label>Черновик описания (ИИ)</label>
+    <div class="form-row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">
+        <div class="form-group" style="margin:0;min-width:160px">
+            <label for="poi-ai-audience" style="font-size:12px;color:#999">Аудитория</label>
+            <select id="poi-ai-audience" class="form-control">
+                <option value="default">Обычное</option>
+                <option value="children">Детям</option>
+                <option value="academic">Академично</option>
+            </select>
+        </div>
+        <button type="button" class="btn btn-sm btn-primary" id="poi-ai-generate-btn">Сгенерировать описание</button>
+    </div>
+    <small id="poi-ai-msg" style="color:#888;display:block;margin-top:8px"></small>
+</div>
+<div class="form-group" th:if="${poiAiEnabled != true}">
+    <p style="color:#888;font-size:13px;margin:0">Генерация описаний ИИ отключена на сервере (<code>app.ai.enabled=false</code>). Включите и задайте ключ API в конфигурации.</p>
+</div>
+<div class="form-group" th:if="${isEdit and poiAiEnabled == true}">
+    <label>Фото точки</label>
+    <button type="button" class="btn btn-sm" id="poi-image-analyze-btn">Проанализировать изображение</button>
+    <small id="poi-image-ai-msg" style="color:#888;display:block;margin-top:8px"></small>
+</div>
 <div class="form-group"><label>Адрес</label><input type="text" class="form-control" th:field="*{address}"/></div>
 <h3 style="margin:24px 0 16px">Координаты (2GIS)</h3>
 <div class="form-row">
@@ -35,4 +58,78 @@
     <button type="submit" class="btn btn-primary" style="margin-left:auto">💾 Сохранить</button>
     <a th:href="@{/admin/poi}" class="btn btn-ghost">Отмена</a>
 </div>
-</form></div></main></div></body></html>
+</form></div>
+<script th:inline="javascript" th:if="${poiAiEnabled == true}">
+(function () {
+  var AI_DESC_URL = /*[[@{/admin/api/poi/ai-description}]]*/ '/admin/api/poi/ai-description';
+  var AI_IMG_URL = /*[[@{/admin/api/poi/image-analyze}]]*/ '/admin/api/poi/image-analyze';
+  var genBtn = document.getElementById('poi-ai-generate-btn');
+  var imgBtn = document.getElementById('poi-image-analyze-btn');
+  var msg = document.getElementById('poi-ai-msg');
+  var imgMsg = document.getElementById('poi-image-ai-msg');
+  function val(sel) { var el = document.querySelector(sel); return el ? el.value : ''; }
+  if (genBtn) {
+    genBtn.addEventListener('click', function () {
+      var descEl = document.getElementById('poi-description-field');
+      var audienceEl = document.getElementById('poi-ai-audience');
+      if (descEl && descEl.value.trim() && !confirm('Заменить текущее описание результатом ИИ?')) return;
+      msg.textContent = 'Запрос…';
+      genBtn.disabled = true;
+      var fy = val('[name="foundedYear"]');
+      var body = {
+        name: val('[name="name"]'),
+        category: val('[name="category"]'),
+        description: val('[name="description"]'),
+        foundedYear: fy ? parseInt(fy, 10) : null,
+        architect: val('[name="architect"]'),
+        material: val('[name="material"]'),
+        style: val('[name="style"]'),
+        tags: val('[name="tags"]'),
+        audience: audienceEl ? audienceEl.value : 'default'
+      };
+      fetch(AI_DESC_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(body)
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (data.ok && data.text) {
+          if (descEl) descEl.value = data.text;
+          msg.textContent = 'Готово. Проверьте текст и сохраните форму.';
+        } else {
+          msg.textContent = data.error || 'Ошибка генерации';
+        }
+      }).catch(function () {
+        msg.textContent = 'Сеть или сервер недоступны';
+      }).finally(function () { genBtn.disabled = false; });
+    });
+  }
+  if (imgBtn) {
+    imgBtn.addEventListener('click', function () {
+      var idVal = val('[name="id"]');
+      if (!idVal) { if (imgMsg) imgMsg.textContent = 'Сначала сохраните точку с изображением.'; return; }
+      imgBtn.disabled = true;
+      if (imgMsg) imgMsg.textContent = 'Анализ…';
+      fetch(AI_IMG_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ poiId: parseInt(idVal, 10) })
+      }).then(function (r) { return r.json(); }).then(function (data) {
+        if (data.ok) {
+          var tagsEl = document.querySelector('[name="tags"]');
+          if (tagsEl && data.tags && !tagsEl.value.trim()) {
+            tagsEl.value = data.tags;
+          } else if (tagsEl && data.tags && confirm('Подставить предложенные теги? (текущие будут заменены)')) {
+            tagsEl.value = data.tags;
+          }
+          if (imgMsg) imgMsg.textContent = (data.alt ? ('Подпись: ' + data.alt + '. ') : '') + 'Теги можно править в поле выше.';
+        } else if (imgMsg) imgMsg.textContent = data.error || 'Ошибка';
+      }).catch(function () {
+        if (imgMsg) imgMsg.textContent = 'Сеть или сервер недоступны';
+      }).finally(function () { imgBtn.disabled = false; });
+    });
+  }
+})();
+</script>
+</main></div></body></html>
