@@ -7,6 +7,7 @@ import ContactView from '@/views/ContactView.vue'
 import PaymentSuccessView from '@/views/PaymentSuccessView.vue'
 import OrdersView from '@/views/OrdersView.vue'
 import CabinetView from '@/views/CabinetView.vue'
+import ProfileAuthView from '@/views/ProfileAuthView.vue'
 
 const routes = [
   {
@@ -28,10 +29,20 @@ const routes = [
     meta: { title: 'Маршрут' }
   },
   {
-    path: '/cabinet',
-    name: 'cabinet',
+    path: '/profile',
+    name: 'profile',
     component: CabinetView,
-    meta: { title: 'Личный кабинет' }
+    meta: { title: 'Профиль' }
+  },
+  {
+    path: '/profile/auth',
+    name: 'profile-auth',
+    component: ProfileAuthView,
+    meta: { title: 'Вход в профиль' }
+  },
+  {
+    path: '/cabinet',
+    redirect: '/profile'
   },
   {
     path: '/orders',

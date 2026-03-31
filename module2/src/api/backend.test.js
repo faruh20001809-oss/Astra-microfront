@@ -68,4 +68,27 @@ describe('module2 backend api client', () => {
     const status = await javaApi.orders.getPaymentStatus('ORD-X')
     expect(status).toEqual({ paid: false, status: '', orderId: 'ORD-X' })
   })
+
+  it('profile register returns profile payload', async () => {
+    const { javaApi } = await loadApi()
+    globalThis.fetch.mockResolvedValueOnce(
+      jsonResponse({
+        status: 200,
+        body: { status: 'success', data: { username: 'client1', email: 'c@x.ru', role: 'Клиент' } },
+      }),
+    )
+    const profile = await javaApi.profile.register({ login: 'client1', email: 'c@x.ru', password: 'secret12' })
+    expect(profile.username).toBe('client1')
+  })
+
+  it('profile login throws backend message on failure', async () => {
+    const { javaApi } = await loadApi()
+    globalThis.fetch.mockResolvedValueOnce(
+      jsonResponse({
+        status: 400,
+        body: { status: 'error', message: 'Неверный пароль.' },
+      }),
+    )
+    await expect(javaApi.profile.login({ loginOrEmail: 'client1', password: 'bad' })).rejects.toThrow('Неверный пароль.')
+  })
 })

@@ -443,6 +443,32 @@ public class ApiController {
         }
     }
 
+    // ===== Client profile auth =====
+    @PostMapping("/profile/register")
+    public ResponseEntity<Map<String, Object>> registerClientProfile(@RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String login = b.get("login") instanceof String ? (String) b.get("login") : "";
+        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        String password = b.get("password") instanceof String ? (String) b.get("password") : "";
+        try {
+            return okSingle(sharedUserSyncService.registerClient(login, email, password));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/profile/login")
+    public ResponseEntity<Map<String, Object>> loginClientProfile(@RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String loginOrEmail = b.get("loginOrEmail") instanceof String ? (String) b.get("loginOrEmail") : "";
+        String password = b.get("password") instanceof String ? (String) b.get("password") : "";
+        try {
+            return okSingle(sharedUserSyncService.loginClient(loginOrEmail, password));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
     @GetMapping("/user-progress/confirmed")
     public ResponseEntity<Map<String, Object>> getConfirmedProgress(@RequestParam String email) {
         try {

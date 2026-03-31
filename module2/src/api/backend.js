@@ -389,6 +389,38 @@ export const javaApi = {
     },
   },
 
+  profile: {
+    register: async ({ login, email, password } = {}) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/profile/register`, {
+        method: 'POST',
+        body: JSON.stringify({
+          login: String(login || '').trim(),
+          email: String(email || '').trim(),
+          password: String(password || ''),
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || json.status === 'error') {
+        throw new Error(json.message || 'Не удалось зарегистрировать профиль')
+      }
+      return json.data
+    },
+    login: async ({ loginOrEmail, password } = {}) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/profile/login`, {
+        method: 'POST',
+        body: JSON.stringify({
+          loginOrEmail: String(loginOrEmail || '').trim(),
+          password: String(password || ''),
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || json.status === 'error') {
+        throw new Error(json.message || 'Не удалось войти в профиль')
+      }
+      return json.data
+    },
+  },
+
   /** Feedback (Обратная связь) */
   feedback: {
     /** @param {Object} feedbackData */
