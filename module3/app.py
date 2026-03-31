@@ -8,12 +8,59 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from flask_cors import CORS
 from werkzeug.security import check_password_hash as werkzeug_check_password
 import bcrypt
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from functools import wraps
 from sqlalchemy import func, text
 from appl.extensions import db
 from appl.models import Role, User, Visit, Log
 from appl.schemas import ma, user_schema, users_schema, login_schema, user_update_schema, role_schema, roles_schema, role_update_schema
+from metrics_utils import extract_latency_ms, percentile
+
+def _compute_ops_snapshot(hours_window=24):
+    rows = Log.query.filter(
+        Log.timestamp >= datetime.utcnow() - timedelta(hours=hours_window)
+    ).all()
+    actions = [str(r.action or '').lower() for r in rows]
+    total = len(actions) or 1
+    e4xx = sum(1 for a in actions if '4xx' in a or 'warn' in a)
+    e5xx = sum(1 for a in actions if '5xx' in a or 'error' in a or 'exception' in a)
+    error_rate = round(((e4xx + e5xx) / total) * 100, 2)
+
+    latencies = []
+    for r in rows:
+        ms = extract_latency_ms(r.action, r.details)
+        if ms is not None:
+            latencies.append(ms)
+    p50 = percentile(latencies, 50) if latencies else None
+    p95 = percentile(latencies, 95) if latencies else None
+    p99 = percentile(latencies, 99) if latencies else None
+    return {
+        "rows": rows,
+        "error_rate": error_rate,
+        "errors_4xx": e4xx,
+        "errors_5xx": e5xx,
+        "latency": {"p50": p50, "p95": p95, "p99": p99},
+        "latency_samples": len(latencies),
+    }
+
+def _get_telegram_link_by_email(email: str):
+    if not email:
+        return None
+    try:
+        row = db.session.execute(
+            text("""
+                SELECT telegram_chat_id, telegram_username, is_verified, linked_at
+                FROM user_telegram_links
+                WHERE lower(email) = lower(:email) AND is_verified = true
+                ORDER BY linked_at DESC
+                LIMIT 1
+            """),
+            {"email": email},
+        ).mappings().first()
+        return dict(row) if row else None
+    except Exception:
+        # Если таблица еще не создана миграциями Java, считаем, что привязки нет.
+        return None
 
 
 class PrefixMiddleware:
@@ -315,17 +362,21 @@ def api_logout():
 @role_required("Администратор")
 def api_get_users():
     users = User.query.all()
-    return jsonify([
-        {
+    payload = []
+    for u in users:
+        tg = _get_telegram_link_by_email(u.email) or {}
+        payload.append({
             "id": u.id,
             "name": u.name,
             "email": u.email,
             "role": u.role.name if u.role else None,
             "created_at": u.created_at.isoformat() if u.created_at else None,
-            "last_login": u.last_login.isoformat() if u.last_login else None
-        }
-        for u in users
-    ])
+            "last_login": u.last_login.isoformat() if u.last_login else None,
+            "telegram_confirmed": bool(tg.get("is_verified", False)),
+            "telegram_chat_id": tg.get("telegram_chat_id"),
+            "telegram_username": tg.get("telegram_username"),
+        })
+    return jsonify(payload)
 
 @app.route('/api/users/<int:uid>/role', methods=['POST'])
 @role_required("Администратор")
@@ -450,8 +501,40 @@ def api_metrics_daily():
 
     return jsonify({
         "labels": labels,
+        "series": [
+            {"name": "visits", "data": visits},
+            {"name": "activity", "data": activity},
+        ],
         "visits": visits,
         "activity": activity
+    })
+
+@app.route('/api/metrics/activity')
+def api_metrics_activity():
+    role = request.args.get('role')
+    user_id = request.args.get('user_id', type=int)
+    page = request.args.get('page')
+
+    q = db.session.query(
+        func.date(Visit.timestamp).label("day"),
+        func.count(Visit.id).label("count")
+    ).outerjoin(User, Visit.user_id == User.id)
+
+    if role:
+        q = q.outerjoin(Role, User.role_id == Role.id).filter(Role.name == role)
+    if user_id:
+        q = q.filter(Visit.user_id == user_id)
+    if page:
+        q = q.filter(Visit.page.ilike(f"%{page}%"))
+
+    rows = q.group_by("day").order_by("day").all()
+    labels = [str(r.day) for r in rows]
+    counts = [int(r.count) for r in rows]
+
+    return jsonify({
+        "labels": labels,
+        "series": [{"name": "activity", "data": counts}],
+        "counts": counts
     })
 
 @app.route('/api/metrics/heatmap')
@@ -491,6 +574,129 @@ def api_metrics_heatmap():
         matrix[w][h] = int(r.count)
 
     return jsonify(matrix)
+
+@app.route('/api/metrics/ops')
+def api_metrics_ops():
+    ops = _compute_ops_snapshot(hours_window=24)
+    error_rate = ops["error_rate"]
+    e4xx = ops["errors_4xx"]
+    e5xx = ops["errors_5xx"]
+    latency = ops["latency"]
+
+    return jsonify({
+        "error_rate": error_rate,
+        "errors_4xx": e4xx,
+        "errors_5xx": e5xx,
+        "latency": latency,
+        "latency_samples": ops["latency_samples"],
+        "integrations": [
+            {"name": "Java API", "status": "ok"},
+            {"name": "Node API", "status": "ok"},
+            {"name": "SMTP", "status": "ok"},
+            {"name": "AI Provider", "status": "degraded" if e5xx > 0 else "ok"},
+        ],
+        "alerts": [
+            {"level": "critical", "message": "Резкий рост 5xx" if e5xx > 20 else "Нет критичных всплесков 5xx"},
+            {"level": "warning", "message": "Пустые latency-данные" if ops["latency_samples"] < 5 else "Latency-данных достаточно"},
+        ]
+    })
+
+@app.route('/api/metrics/alerts')
+def api_metrics_alerts():
+    ops = _compute_ops_snapshot(hours_window=24)
+    history_rows = db.session.execute(text("""
+        SELECT date_trunc('hour', timestamp) AS hr,
+               SUM(CASE WHEN lower(action) LIKE '%error%' OR lower(action) LIKE '%5xx%' THEN 1 ELSE 0 END) AS err5xx,
+               COUNT(*) AS total
+        FROM logs
+        WHERE timestamp >= NOW() - INTERVAL '24 hours'
+        GROUP BY hr
+        ORDER BY hr DESC
+        LIMIT 24
+    """)).mappings().all()
+
+    alerts = []
+    if ops["errors_5xx"] > 20:
+        alerts.append({"level": "critical", "rule": "high_5xx", "message": "За 24 часа зафиксирован высокий уровень 5xx."})
+    if ops["latency"]["p95"] is not None and ops["latency"]["p95"] > 1200:
+        alerts.append({"level": "warning", "rule": "high_p95", "message": "Latency p95 превышает 1200 ms."})
+    if ops["latency_samples"] < 5:
+        alerts.append({"level": "warning", "rule": "low_latency_samples", "message": "Недостаточно замеров latency для надежной оценки."})
+    if not alerts:
+        alerts.append({"level": "ok", "rule": "stable", "message": "Критичных алертов не обнаружено."})
+
+    history = [
+        {
+            "hour": str(r["hr"]),
+            "errors_5xx_like": int(r["err5xx"] or 0),
+            "total_logs": int(r["total"] or 0),
+        }
+        for r in history_rows
+    ]
+    return jsonify({
+        "current": alerts,
+        "history": history
+    })
+
+@app.route('/api/metrics/funnel')
+def api_metrics_funnel():
+    # Funnel из analytics_events (если таблица недоступна — безопасный fallback).
+    try:
+        rows = db.session.execute(text("""
+            SELECT event_type, COUNT(*) AS cnt
+            FROM analytics_events
+            GROUP BY event_type
+        """)).mappings().all()
+        counts = {str(r["event_type"]): int(r["cnt"]) for r in rows}
+    except Exception:
+        counts = {}
+
+    visits = int(counts.get("visit", 0) or counts.get("page_view", 0) or Visit.query.count())
+    poi_views = int(counts.get("poi_view", 0))
+    route_starts = int(counts.get("route_start", 0) + counts.get("route_started", 0))
+    orders = int(counts.get("order_created", 0))
+    payments = int(counts.get("payment_success", 0) + counts.get("order_paid", 0))
+
+    return jsonify({
+        "labels": ["Визиты", "POI просмотры", "Запуск маршрута", "Заказ", "Оплата"],
+        "series": [{"name": "funnel", "data": [visits, poi_views, route_starts, orders, payments]}],
+        "steps": {
+            "visits": visits,
+            "poi_views": poi_views,
+            "route_starts": route_starts,
+            "orders": orders,
+            "payments": payments,
+        }
+    })
+
+@app.route('/api/metrics/data-quality')
+def api_metrics_data_quality():
+    total_orders = db.session.execute(text("SELECT COUNT(*) AS c FROM orders")).scalar() or 0
+    bad_contacts = db.session.execute(text("""
+        SELECT COUNT(*) AS c
+        FROM orders
+        WHERE (email IS NULL OR trim(email) = '')
+           OR (phone IS NULL OR trim(phone) = '')
+    """)).scalar() or 0
+    stuck_status = db.session.execute(text("""
+        SELECT COUNT(*) AS c
+        FROM orders
+        WHERE status IN ('PROCESSING','CONFIRMED')
+          AND created_at < NOW() - INTERVAL '72 hours'
+    """)).scalar() or 0
+    poi_missing_media = db.session.execute(text("""
+        SELECT COUNT(*) AS c
+        FROM points_of_interest
+        WHERE latitude IS NULL OR longitude IS NULL OR (image_url IS NULL AND image_data IS NULL)
+    """)).scalar() or 0
+
+    return jsonify({
+        "orders_total": int(total_orders),
+        "orders_missing_contacts": int(bad_contacts),
+        "orders_missing_contacts_pct": round((bad_contacts / total_orders) * 100, 2) if total_orders else 0,
+        "orders_stuck_status": int(stuck_status),
+        "poi_missing_coordinates_or_image": int(poi_missing_media),
+    })
 
 # ---------------- REPORTS ----------------
 try:
