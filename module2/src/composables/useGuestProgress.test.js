@@ -20,43 +20,38 @@ describe('useGuestProgress', () => {
     globalThis.localStorage = createLocalStorageMock()
   })
 
-  it('increments paid/free counters once per unique route', async () => {
+  it('increments completedRoutesCount once per unique route', async () => {
     const { useGuestProgress } = await loadComposable()
     const progress = useGuestProgress()
 
-    progress.markRouteCompleted(101, { paid: true })
-    progress.markRouteCompleted(101, { paid: true })
-    progress.markRouteCompleted(202, { paid: false })
+    progress.markRouteCompleted(101)
+    progress.markRouteCompleted(101)
+    progress.markRouteCompleted(202)
 
-    expect(progress.completedPaidRoutesCount.value).toBe(1)
-    expect(progress.completedFreeRoutesCount.value).toBe(1)
     expect(progress.completedRoutesCount.value).toBe(2)
   })
 
-  it('grants one reward after 2 paid and 3 free routes', async () => {
+  it('updates routeTier based on completed routes', async () => {
     const { useGuestProgress } = await loadComposable()
     const progress = useGuestProgress()
 
-    progress.markRouteCompleted(1, { paid: true })
-    progress.markRouteCompleted(2, { paid: true })
-    progress.markRouteCompleted(3, { paid: false })
-    progress.markRouteCompleted(4, { paid: false })
-    progress.markRouteCompleted(5, { paid: false })
+    progress.markRouteCompleted(1)
+    expect(progress.routeTier.value).toBe('bronze')
 
-    expect(progress.rewardsState.value.available).toHaveLength(1)
-    expect(progress.rewardProgress.value.eligible).toBe(true)
+    progress.markRouteCompleted(2)
+    progress.markRouteCompleted(3)
+    progress.markRouteCompleted(4)
+    progress.markRouteCompleted(5)
+    expect(progress.routeTier.value).toBe('silver')
   })
 
-  it('consumes reward and writes usage history', async () => {
+  it('ignores non-numeric POI ids', async () => {
     const { useGuestProgress } = await loadComposable()
     const progress = useGuestProgress()
 
-    progress.syncFromCounters({ paidRoutes: 2, freeRoutes: 3 })
-    const consumed = progress.consumeReward(777)
+    progress.markPoiVisited('abc')
+    progress.markPoiVisited(77)
 
-    expect(consumed).toBe(true)
-    expect(progress.rewardsState.value.available).toHaveLength(0)
-    expect(progress.rewardsState.value.history).toHaveLength(1)
-    expect(progress.rewardsState.value.history[0].usedForRouteId).toBe(777)
+    expect(progress.visitedPoisCount.value).toBe(1)
   })
 })
