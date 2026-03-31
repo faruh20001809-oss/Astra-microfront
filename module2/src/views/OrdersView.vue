@@ -4,121 +4,95 @@
       <section class="orders-hero">
         <p class="text-mono" style="color:var(--accent)">◫ Кабинет гостя</p>
         <h1>Мои заказы</h1>
-        <p class="orders-lead">
-          Укажите email, который вы указывали при оформлении заказа. Мы отправим на него одноразовый код;
-          после ввода кода покажем все ваши заказы с этим адресом.
-        </p>
       </section>
-
       <div class="orders-layout">
         <div class="orders-form-card card">
           <h2 class="section-heading">Вход по email</h2>
-
           <form class="contact-form" @submit.prevent="sendCode">
-            <div class="form-group">
-              <label class="form-label">Email *</label>
-              <input
-                v-model.trim="emailInput"
-                type="email"
-                class="form-input"
-                placeholder="you@example.com"
-                required
-                autocomplete="email"
-                :disabled="verifyLoading"
-              />
-            </div>
-            <button type="submit" class="btn btn-primary btn-lg" :disabled="requestLoading || verifyLoading">
-              <span v-if="requestLoading"><span class="spinner" style="width:14px;height:14px;display:inline-block" /> Отправка…</span>
-              <span v-else>Получить код на почту</span>
-            </button>
+            <div class="form-group"><label class="form-label">Email *</label><input v-model.trim="emailInput" type="email" class="form-input" required /></div>
+            <button type="submit" class="btn btn-primary btn-lg" :disabled="requestLoading || verifyLoading">{{ requestLoading ? 'Отправка…' : 'Получить код' }}</button>
           </form>
-
           <p v-if="codeHint" class="form-success" style="margin-top:1rem">{{ codeHint }}</p>
           <p v-if="formError" class="form-error" style="margin-top:0.75rem">{{ formError }}</p>
-
-          <div v-if="codeRequested" class="divider" style="margin:1.25rem 0" />
-
-          <form v-if="codeRequested" class="contact-form" @submit.prevent="verifyAndLoad">
-            <div class="form-group">
-              <label class="form-label">Код из письма *</label>
-              <input
-                v-model.trim="codeInput"
-                type="text"
-                inputmode="numeric"
-                maxlength="8"
-                class="form-input"
-                placeholder="6 цифр"
-                required
-                autocomplete="one-time-code"
-              />
-            </div>
-            <button type="submit" class="btn btn-accent btn-lg" :disabled="verifyLoading || requestLoading">
-              <span v-if="verifyLoading"><span class="spinner" style="width:14px;height:14px;display:inline-block" /> Загрузка…</span>
-              <span v-else>Показать заказы</span>
-            </button>
+          <form v-if="codeRequested" class="contact-form" style="margin-top:1rem" @submit.prevent="verifyAndLoad">
+            <div class="form-group"><label class="form-label">Код *</label><input v-model.trim="codeInput" type="text" class="form-input" /></div>
+            <button type="submit" class="btn btn-accent btn-lg" :disabled="verifyLoading || requestLoading || !telegramConfirmed">{{ verifyLoading ? 'Загрузка…' : 'Показать заказы' }}</button>
           </form>
+          <div class="divider" style="margin:1.25rem 0" />
+          <div class="telegram-bind-block">
+            <h3 class="section-heading" style="font-size:1rem">Привязка Telegram</h3>
+            <div class="telegram-bind-actions">
+              <button type="button" class="btn btn-ghost btn-sm" :disabled="telegramStatusLoading || !emailInput.trim()" @click="checkTelegramStatus">{{ telegramStatusLoading ? 'Проверка…' : 'Проверить статус' }}</button>
+              <button type="button" class="btn btn-accent btn-sm" :disabled="telegramLoading || !emailInput.trim()" @click="requestTelegramLink">{{ telegramLoading ? 'Генерация…' : 'Получить ссылку' }}</button>
+              <a v-if="telegramDeepLink" class="btn btn-primary btn-sm" :href="telegramDeepLink" target="_blank" rel="noopener noreferrer" @click="startTelegramStatusPolling">Открыть бота</a>
+            </div>
+            <p v-if="telegramStatusText" :class="telegramConfirmed ? 'form-success' : 'form-error'" style="margin-top:0.75rem">{{ telegramStatusText }}</p>
+            <p v-if="telegramHint" class="orders-lead" style="font-size:0.8rem;margin-top:0.5rem">{{ telegramHint }}</p>
+          </div>
 
-          <div v-if="networkError" class="form-error" style="margin-top:1rem">{{ networkError }}</div>
-          <button
-            v-if="networkError"
-            type="button"
-            class="btn btn-ghost"
-            style="margin-top:0.5rem"
-            @click="retryLast"
-          >
-            Попробовать снова
-          </button>
+          <div v-if="orders.length" style="margin-top:1.25rem">
+            <h3 class="section-heading" style="font-size:1rem">История заказов</h3>
+            <div class="order-filters">
+              <select v-model="orderTypeFilter" class="form-input">
+                <option value="all">Все типы</option><option value="free">Бесплатные</option><option value="paid">Платные</option>
+              </select>
+              <select v-model="periodFilter" class="form-input">
+                <option value="all">За всё время</option><option value="30">30 дней</option><option value="90">90 дней</option><option value="365">365 дней</option>
+              </select>
+            </div>
 
-          <div v-if="orders.length" class="orders-list" style="margin-top:1.5rem">
-            <h3 class="section-heading" style="font-size:1rem">Ваши заказы ({{ orders.length }})</h3>
-            <div
-              v-for="(ord, idx) in orders"
-              :key="ord.orderId || ord.id || idx"
-              class="order-result card"
-              style="margin-top:1rem;padding:1rem;border:1px solid var(--gray-700)"
-            >
-              <h4 class="section-heading" style="font-size:0.95rem">Заказ {{ ord.orderId }}</h4>
-              <dl class="order-dl">
-                <div><dt>Дата</dt><dd>{{ formatDate(ord.createdAt) }}</dd></div>
-                <div><dt>Статус</dt><dd>{{ statusLabel(ord.status) }}</dd></div>
-                <div><dt>Сумма</dt><dd>{{ formatMoney(ord.total, ord.currency) }}</dd></div>
-              </dl>
-              <div v-if="orderItems(ord).length" class="order-items">
-                <p class="text-mono" style="color:var(--gray-400);font-size:0.7rem;margin-bottom:0.5rem">Состав заказа</p>
-                <table class="order-items-table">
-                  <thead><tr><th>Товар</th><th>Кол-во</th><th>Цена</th></tr></thead>
-                  <tbody>
-                    <tr v-for="(it, i) in orderItems(ord)" :key="i">
-                      <td>{{ itemName(it) }}</td>
-                      <td>{{ itemQty(it) }}</td>
-                      <td>{{ formatMoney(itemPrice(it), ord.currency) }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+            <div v-for="group in groupedOrders" :key="group.key" class="orders-group">
+              <h4 class="text-mono orders-group-title">{{ group.label }} ({{ group.items.length }})</h4>
+              <div v-for="(ord, idx) in group.items" :key="ord.orderId || ord.id || idx" class="order-result card">
+                <h4 class="section-heading" style="font-size:0.95rem">Заказ {{ ord.orderId }}</h4>
+                <dl class="order-dl">
+                  <div><dt>Дата</dt><dd>{{ formatDate(ord.createdAt) }}</dd></div>
+                  <div><dt>Статус</dt><dd>{{ statusLabel(ord.status) }}</dd></div>
+                  <div><dt>Сумма</dt><dd>{{ formatMoney(ord.total, ord.currency) }}</dd></div>
+                  <div><dt>Тип</dt><dd>{{ orderPricingType(ord) === 'paid' ? 'Платный' : 'Бесплатный' }}</dd></div>
+                </dl>
+                <div class="order-timeline">
+                  <span v-for="s in orderTimelineState(ord.status)" :key="s.key" :class="['timeline-chip', s.state]">{{ s.label }}</span>
+                </div>
               </div>
             </div>
           </div>
-
-          <p v-if="emptyAfterVerify" class="form-error" style="margin-top:1rem">
-            Список пуст. Если заказ оформляли без email, свяжитесь с поддержкой через раздел «Контакты».
-          </p>
+          <p v-if="emptyAfterVerify" class="form-error" style="margin-top:1rem">Заказы не найдены для этого email.</p>
         </div>
 
         <aside class="progress-card card">
           <h2 class="section-heading">Мой прогресс</h2>
-          <p class="orders-lead" style="font-size:0.85rem">
-            Считается локально в браузере: открытые точки на карте и отмеченные маршруты.
-          </p>
           <ul class="progress-stats">
-            <li>Пройдено маршрутов: <strong>{{ completedRoutesCount }}</strong></li>
             <li>Посещено точек: <strong>{{ visitedPoisCount }}</strong></li>
+            <li>Маршрутов (всего): <strong>{{ completedRoutesCount }}</strong></li>
+            <li>Бесплатных: <strong>{{ completedFreeRoutesCount }}</strong></li>
+            <li>Платных: <strong>{{ completedPaidRoutesCount }}</strong></li>
+            <li>Избранные маршруты: <strong>{{ favoriteRoutesList.length }}</strong></li>
+            <li>Избранные точки: <strong>{{ favoritePoisList.length }}</strong></li>
           </ul>
-          <div class="tier-badges">
-            <span :class="['tier-badge', routeTier === 'bronze' ? 'active' : '']">Bronze · от 1 маршрута</span>
-            <span :class="['tier-badge', routeTier === 'silver' ? 'active' : '']">Silver · от 5</span>
-            <span :class="['tier-badge', routeTier === 'gold' ? 'active' : '']">Gold · от 10</span>
+          <div class="reward-progress">
+            <p class="text-mono">Награда за активность: {{ rewardProgress.progressPercent }}%</p>
+            <div class="reward-progress-bar"><div class="reward-progress-fill" :style="{ width: `${rewardProgress.progressPercent}%` }" /></div>
+            <p class="orders-lead" style="font-size:0.8rem">Платные: {{ rewardProgress.paidCompleted }}/2 · Бесплатные: {{ rewardProgress.freeCompleted }}/3</p>
           </div>
-          <router-link to="/routes" class="btn btn-ghost btn-sm" style="margin-top:1rem;display:inline-block">К маршрутам</router-link>
+          <div class="tier-badges"><span :class="['tier-badge', routeTier === 'bronze' ? 'active' : '']">Bronze</span><span :class="['tier-badge', routeTier === 'silver' ? 'active' : '']">Silver</span><span :class="['tier-badge', routeTier === 'gold' ? 'active' : '']">Gold</span></div>
+
+          <h3 class="section-heading" style="font-size:0.95rem;margin-top:1rem">Достижения</h3>
+          <ul class="achievements">
+            <li v-for="a in achievementsView" :key="a.id" :class="a.unlocked ? 'ach-unlocked' : 'ach-locked'">{{ a.title }} — {{ a.progress }}/{{ a.threshold }}</li>
+          </ul>
+
+          <h3 class="section-heading" style="font-size:0.95rem;margin-top:1rem">Награды</h3>
+          <p class="orders-lead" style="font-size:0.82rem">Доступно: {{ rewardsState.available.length }}</p>
+          <button type="button" class="btn btn-primary btn-sm" :disabled="!rewardsState.available.length" @click="consumeSampleReward">Выбрать платный маршрут бесплатно</button>
+          <button type="button" class="btn btn-ghost btn-sm" style="margin-left:0.5rem" :disabled="syncBusy" @click="syncProgressToServer">{{ syncBusy ? 'Синхронизация…' : 'Синхронизировать' }}</button>
+          <p v-if="syncStatus" class="orders-lead" style="font-size:0.78rem;margin-top:0.4rem">{{ syncStatus }}</p>
+
+          <h3 class="section-heading" style="font-size:0.95rem;margin-top:1rem">История активности</h3>
+          <ul class="activity-list">
+            <li v-for="(event, idx) in recentActivity" :key="idx">{{ activityLabel(event) }}</li>
+            <li v-if="!recentActivity.length" class="orders-lead">Пока нет событий</li>
+          </ul>
         </aside>
       </div>
     </div>
@@ -126,9 +100,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { javaApi } from '@/api/backend.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
+import { useFavorites } from '@/composables/useFavorites.js'
 
 const emailInput = ref('')
 const codeInput = ref('')
@@ -140,10 +115,44 @@ const formError = ref('')
 const networkError = ref('')
 const orders = ref([])
 const emptyAfterVerify = ref(false)
+const telegramLoading = ref(false)
+const telegramStatusLoading = ref(false)
+const telegramConfirmed = ref(false)
+const telegramDeepLink = ref('')
+const telegramStatusText = ref('')
+const telegramHint = ref('')
+const orderTypeFilter = ref('all')
+const periodFilter = ref('all')
 
-const { visitedPoisCount, completedRoutesCount, routeTier } = useGuestProgress()
+const {
+  visitedPoisCount,
+  completedRoutesCount,
+  completedFreeRoutesCount,
+  completedPaidRoutesCount,
+  rewardProgress,
+  routeTier,
+  achievements,
+  achievementsState,
+  rewardsState,
+  activityLog,
+  syncFromCounters,
+  consumeReward,
+  getSnapshot,
+  mergeSnapshot,
+} = useGuestProgress()
+const { favoriteRoutesList, favoritePoisList } = useFavorites()
 
 let lastAction = null
+let telegramPollTimer = null
+const syncBusy = ref(false)
+const syncStatus = ref('')
+
+watch(emailInput, () => {
+  telegramConfirmed.value = false
+  telegramDeepLink.value = ''
+  telegramStatusText.value = ''
+  telegramHint.value = ''
+})
 
 function statusLabel(s) {
   const map = {
@@ -176,6 +185,114 @@ function formatMoney(amount, currency) {
 function orderItems(ord) {
   const items = ord?.items
   return Array.isArray(items) ? items : []
+}
+
+function orderPricingType(ord) {
+  const serverType = String(ord?.routeType || ord?.orderType || '').toLowerCase()
+  if (serverType === 'paid' || serverType === 'free') return serverType
+  const amount = Number(ord?.total)
+  return Number.isFinite(amount) && amount > 0 ? 'paid' : 'free'
+}
+
+function isPaidOrder(ord) {
+  return orderPricingType(ord) === 'paid'
+}
+
+const filteredOrders = computed(() => {
+  const now = Date.now()
+  return (orders.value || []).filter((ord) => {
+    if (orderTypeFilter.value === 'free' && isPaidOrder(ord)) return false
+    if (orderTypeFilter.value === 'paid' && !isPaidOrder(ord)) return false
+    if (periodFilter.value !== 'all') {
+      const days = Number(periodFilter.value)
+      const created = new Date(ord?.createdAt || 0).getTime()
+      if (Number.isFinite(days) && created && now - created > days * 24 * 60 * 60 * 1000) return false
+    }
+    return true
+  })
+})
+
+const groupedOrders = computed(() => {
+  const active = []
+  const completed = []
+  const cancelled = []
+  for (const ord of filteredOrders.value) {
+    const st = String(ord?.status || '').toLowerCase()
+    if (st === 'cancelled') cancelled.push(ord)
+    else if (st === 'delivered') completed.push(ord)
+    else active.push(ord)
+  }
+  return [
+    { key: 'active', label: 'Активные', items: active },
+    { key: 'completed', label: 'Завершенные', items: completed },
+    { key: 'cancelled', label: 'Отмененные', items: cancelled },
+  ].filter((g) => g.items.length)
+})
+
+function orderTimelineState(statusRaw) {
+  const status = String(statusRaw || '').toLowerCase()
+  const flow = ['confirmed', 'processing', 'shipped', 'delivered']
+  const currentIndex = flow.indexOf(status)
+  const cancelled = status === 'cancelled'
+  return [
+    { key: 'confirmed', label: 'Подтвержден', state: cancelled ? 'done' : currentIndex >= 0 ? 'done' : 'pending' },
+    { key: 'processing', label: 'В обработке', state: cancelled ? 'done' : currentIndex >= 1 ? 'done' : 'pending' },
+    { key: 'shipped', label: 'Отправлен', state: cancelled ? 'done' : currentIndex >= 2 ? 'done' : 'pending' },
+    { key: 'delivered', label: 'Доставлен', state: cancelled ? 'pending' : currentIndex >= 3 ? 'current' : 'pending' },
+    { key: 'cancelled', label: 'Отменен', state: cancelled ? 'cancelled' : 'hidden' },
+  ].filter((x) => x.state !== 'hidden')
+}
+
+const achievementsView = computed(() =>
+  achievements.value.map((a) => ({
+    ...a,
+    progress: Number(achievementsState.value?.progress?.[a.id]) || 0,
+    unlocked: (achievementsState.value?.unlocked || []).includes(a.id),
+  })),
+)
+
+const recentActivity = computed(() => (activityLog.value || []).slice(0, 8))
+
+function activityLabel(event) {
+  if (!event?.type) return 'Событие'
+  if (event.type === 'achievement_unlocked') return `Ачивка: ${event.title}`
+  if (event.type === 'reward_granted') return 'Получена награда: бесплатный платный маршрут'
+  if (event.type === 'reward_used') return 'Награда использована'
+  if (event.type === 'route_completed') return `Пройден маршрут (${event.paid ? 'платный' : 'бесплатный'})`
+  if (event.type === 'poi_visited') return 'Посещена новая точка'
+  return event.type
+}
+
+function recalcProgressFromOrders() {
+  const delivered = orders.value.filter((o) => String(o?.status || '').toLowerCase() === 'delivered')
+  const paid = delivered.filter((o) => isPaidOrder(o)).length
+  const free = delivered.length - paid
+  syncFromCounters({
+    visitedPois: visitedPoisCount.value,
+    paidRoutes: Math.max(paid, completedPaidRoutesCount.value),
+    freeRoutes: Math.max(free, completedFreeRoutesCount.value),
+    favoritePois: favoritePoisList.value.length,
+  })
+}
+
+function consumeSampleReward() {
+  consumeReward(null)
+  void syncProgressToServer()
+}
+
+async function syncProgressToServer() {
+  const email = emailInput.value.trim()
+  if (!email) return
+  syncBusy.value = true
+  syncStatus.value = ''
+  try {
+    await javaApi.userProgress.syncByEmail(email, getSnapshot())
+    syncStatus.value = 'Прогресс синхронизирован с сервером.'
+  } catch (e) {
+    syncStatus.value = e?.message || 'Не удалось синхронизировать прогресс.'
+  } finally {
+    syncBusy.value = false
+  }
 }
 
 function itemName(it) {
@@ -232,12 +349,25 @@ async function verifyAndLoad() {
     formError.value = 'Укажите email и код'
     return
   }
+  if (!telegramConfirmed.value) {
+    formError.value = 'Сначала подтвердите Telegram-привязку. Без неё доступ к заказам заблокирован.'
+    return
+  }
 
   verifyLoading.value = true
   try {
     const list = await javaApi.orders.verifyLookupCode(email, code)
+    localStorage.setItem('astra_guest_email', email)
     orders.value = Array.isArray(list) ? list : []
     emptyAfterVerify.value = orders.value.length === 0
+    try {
+      const remote = await javaApi.userProgress.getByEmail(email)
+      if (remote?.snapshot) {
+        mergeSnapshot(remote.snapshot)
+      }
+    } catch (_) {}
+    recalcProgressFromOrders()
+    await syncProgressToServer()
   } catch (e) {
     networkError.value = e?.message || 'Не удалось загрузить заказы'
   } finally {
@@ -250,6 +380,66 @@ function retryLast() {
   if (lastAction === 'verify') verifyAndLoad()
   else if (lastAction === 'send') sendCode()
 }
+
+async function checkTelegramStatus() {
+  telegramStatusLoading.value = true
+  telegramStatusText.value = ''
+  telegramHint.value = ''
+  try {
+    const data = await javaApi.telegram.getLinkStatus({ email: emailInput.value.trim() })
+    telegramConfirmed.value = !!data?.linked
+    if (telegramConfirmed.value) {
+      const who = data?.username ? `@${data.username}` : (data?.chatId ? `chat_id ${data.chatId}` : 'подключен')
+      telegramStatusText.value = `Telegram подтвержден (${who}).`
+    } else {
+      telegramStatusText.value = 'Telegram пока не подтвержден.'
+    }
+  } catch (e) {
+    telegramStatusText.value = e?.message || 'Не удалось проверить статус Telegram.'
+    telegramConfirmed.value = false
+  } finally {
+    telegramStatusLoading.value = false
+  }
+}
+
+async function requestTelegramLink() {
+  telegramLoading.value = true
+  telegramStatusText.value = ''
+  telegramHint.value = ''
+  telegramDeepLink.value = ''
+  try {
+    const data = await javaApi.telegram.requestLink({ email: emailInput.value.trim() })
+    telegramDeepLink.value = data?.botDeepLink || ''
+    const ttl = Number(data?.expiresInSec || 0)
+    telegramHint.value = ttl > 0
+      ? `Ссылка активна около ${Math.round(ttl / 60)} мин. После подтверждения нажмите «Проверить статус».`
+      : 'Ссылка создана. Подтвердите привязку в Telegram.'
+    telegramStatusText.value = 'Ссылка для привязки создана.'
+  } catch (e) {
+    telegramStatusText.value = e?.message || 'Не удалось создать ссылку Telegram.'
+  } finally {
+    telegramLoading.value = false
+  }
+}
+
+function startTelegramStatusPolling() {
+  if (telegramPollTimer) clearInterval(telegramPollTimer)
+  telegramPollTimer = setInterval(async () => {
+    await checkTelegramStatus()
+    if (telegramConfirmed.value && telegramPollTimer) {
+      clearInterval(telegramPollTimer)
+      telegramPollTimer = null
+    }
+  }, 5000)
+  setTimeout(async () => { await checkTelegramStatus() }, 1500)
+}
+
+onUnmounted(() => {
+  if (telegramPollTimer) {
+    clearInterval(telegramPollTimer)
+    telegramPollTimer = null
+  }
+})
 </script>
 
 <style scoped>
@@ -289,9 +479,23 @@ function retryLast() {
   text-align: left;
 }
 .order-items-table th { color: var(--gray-400); font-weight: normal; font-family: var(--font-mono); font-size: 0.65rem; }
+.order-filters { display:flex; gap:0.5rem; margin:0.75rem 0 0.25rem; flex-wrap:wrap; }
+.orders-group { margin-top:1rem; }
+.orders-group-title { color: var(--gray-400); font-size: 0.72rem; margin-bottom: 0.4rem; }
+.order-result { margin-top:0.75rem;padding:1rem;border:1px solid var(--gray-700); }
+.order-timeline { display:flex; gap:0.35rem; flex-wrap:wrap; margin-top:0.5rem; }
+.timeline-chip { padding:0.2rem 0.5rem; border:1px solid var(--gray-700); border-radius:999px; font-size:0.65rem; }
+.timeline-chip.done { color:var(--gray-300); }
+.timeline-chip.current { border-color:var(--accent); color:var(--accent); }
+.timeline-chip.cancelled { border-color:#c55; color:#f09; }
 
 .progress-stats { list-style: none; padding: 0; margin: 1rem 0; color: var(--gray-300); font-size: 0.9rem; }
 .progress-stats li { margin-bottom: 0.35rem; }
+.reward-progress-bar { height:8px; background:var(--gray-800); border-radius:999px; overflow:hidden; margin-top:0.5rem; }
+.reward-progress-fill { height:8px; background:var(--accent); }
+.achievements, .activity-list { list-style:none; padding:0; margin:0.5rem 0 0; display:flex; flex-direction:column; gap:0.35rem; font-size:0.8rem; }
+.ach-unlocked { color: var(--accent); }
+.ach-locked { color: var(--gray-400); }
 
 .tier-badges { display: flex; flex-direction: column; gap: 0.35rem; }
 .tier-badge {
@@ -306,6 +510,19 @@ function retryLast() {
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(200, 169, 110, 0.08);
+}
+
+.telegram-bind-block {
+  border: 1px dashed var(--gray-700);
+  border-radius: var(--radius-sm);
+  padding: 0.9rem;
+}
+
+.telegram-bind-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
 }
 
 @media (max-width: 900px) {

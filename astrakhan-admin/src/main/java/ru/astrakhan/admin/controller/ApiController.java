@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import ru.astrakhan.admin.entity.*;
 import ru.astrakhan.admin.repository.ReviewRepository;
@@ -19,6 +20,9 @@ import java.util.stream.Collectors;
 @RestController @RequestMapping("/api/v1") @RequiredArgsConstructor
 @Slf4j
 public class ApiController {
+    @Value("${app.telegram.internal-token:}")
+    private String telegramInternalToken;
+
     private final PoiService poiService;
     private final NewsletterService newsletterService;
     private final RouteService routeService;
@@ -31,6 +35,9 @@ public class ApiController {
     private final OrderEmailService orderEmailService;
     private final PoiSuggestionService poiSuggestionService;
     private final GuestOrderLookupService guestOrderLookupService;
+    private final TelegramLinkService telegramLinkService;
+    private final UserProgressService userProgressService;
+    private final RouteProgressService routeProgressService;
 
     // ===== POIs =====
     @GetMapping("/pois")
@@ -141,6 +148,20 @@ public class ApiController {
                             .body(r.getImageData());
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/routes/{id}/complete")
+    public ResponseEntity<Map<String, Object>> completeRoute(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        try {
+            analyticsService.trackEvent("route_completed", id, "route_" + id);
+            return okSingle(routeProgressService.markCompleted(email, id));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     // ===== Products =====
@@ -366,6 +387,11 @@ public class ApiController {
         Map<String, Object> b = body != null ? body : Collections.emptyMap();
         String email = b.get("email") instanceof String ? (String) b.get("email") : "";
         String code = b.get("code") != null ? String.valueOf(b.get("code")) : "";
+        Map<String, Object> tgStatus = telegramLinkService.status(email, "");
+        if (!Boolean.TRUE.equals(tgStatus.get("linked"))) {
+            return apiError(HttpStatus.FORBIDDEN,
+                    "Требуется подтвержденная привязка Telegram. Подтвердите аккаунт через бота и повторите вход.");
+        }
         try {
             List<Order> orders = guestOrderLookupService.verifyAndListOrders(email, code);
             return ok(orders.stream().map(this::orderDetailMap).collect(Collectors.toList()));
@@ -373,6 +399,108 @@ public class ApiController {
             return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (GuestOrderLookupService.LookupAuthException e) {
             return apiError(HttpStatus.UNAUTHORIZED, e.getMessage());
+        }
+    }
+
+    // ===== Telegram link (deep-link account confirmation / order notifications) =====
+    @PostMapping("/telegram/link/request")
+    public ResponseEntity<Map<String, Object>> requestTelegramLink(@RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        String phone = b.get("phone") instanceof String ? (String) b.get("phone") : "";
+        try {
+            return okSingle(telegramLinkService.requestLink(email, phone));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        } catch (IllegalStateException e) {
+            return apiError(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
+        }
+    }
+
+    // ===== User progress sync (этап 2: серверный профиль прогресса) =====
+    @GetMapping("/user-progress")
+    public ResponseEntity<Map<String, Object>> getUserProgress(@RequestParam String email) {
+        try {
+            return okSingle(userProgressService.getSnapshotByEmail(email));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/user-progress/sync")
+    public ResponseEntity<Map<String, Object>> syncUserProgress(@RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        @SuppressWarnings("unchecked")
+        Map<String, Object> snapshot = b.get("snapshot") instanceof Map ? (Map<String, Object>) b.get("snapshot") : new LinkedHashMap<>();
+        try {
+            return okSingle(userProgressService.upsertSnapshot(email, snapshot));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GetMapping("/user-progress/confirmed")
+    public ResponseEntity<Map<String, Object>> getConfirmedProgress(@RequestParam String email) {
+        try {
+            return okSingle(routeProgressService.getConfirmedStats(email));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @PostMapping("/rewards/redeem")
+    public ResponseEntity<Map<String, Object>> redeemReward(@RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        Long routeId = null;
+        if (b.get("routeId") instanceof Number n) routeId = n.longValue();
+        try {
+            if (routeId == null) throw new IllegalArgumentException("routeId обязателен.");
+            analyticsService.trackEvent("reward_redeemed", routeId, "route_" + routeId);
+            return okSingle(routeProgressService.redeemReward(email, routeId));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @GetMapping("/telegram/link/status")
+    public ResponseEntity<Map<String, Object>> telegramLinkStatus(
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String phone) {
+        return okSingle(telegramLinkService.status(email, phone));
+    }
+
+    @PostMapping("/internal/telegram/link/confirm")
+    public ResponseEntity<Map<String, Object>> confirmTelegramLink(
+            @RequestHeader(value = "X-Service-Token", required = false) String serviceToken,
+            @RequestBody(required = false) Map<String, Object> body) {
+        String expectedToken = System.getenv("TELEGRAM_INTERNAL_TOKEN");
+        if (expectedToken == null || expectedToken.isBlank()) {
+            expectedToken = telegramInternalToken;
+        }
+        if (expectedToken == null || expectedToken.isBlank()) {
+            return apiError(HttpStatus.SERVICE_UNAVAILABLE, "Internal Telegram token is not configured.");
+        }
+        if (serviceToken == null || !expectedToken.equals(serviceToken)) {
+            return apiError(HttpStatus.UNAUTHORIZED, "Invalid service token.");
+        }
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String token = b.get("token") instanceof String ? (String) b.get("token") : "";
+        Long chatId = null;
+        if (b.get("chatId") instanceof Number n) {
+            chatId = n.longValue();
+        } else if (b.get("chatId") != null) {
+            try {
+                chatId = Long.parseLong(String.valueOf(b.get("chatId")));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        String username = b.get("username") instanceof String ? (String) b.get("username") : "";
+        try {
+            return okSingle(telegramLinkService.confirmLink(token, chatId, username));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -550,6 +678,7 @@ public class ApiController {
     }
     private Map<String, Object> orderMap(Order o) {
         Map<String, Object> m = new LinkedHashMap<>();
+        String pricingType = resolveOrderPricingType(o);
         m.put("id", o.getId());
         m.put("orderId", o.getOrderId());
         m.put("customerName", o.getCustomerName());
@@ -562,6 +691,9 @@ public class ApiController {
         m.put("paymentMethod", o.getPaymentMethod());
         m.put("createdAt", o.getCreatedAt() != null ? o.getCreatedAt().toString() : "");
         m.put("paidAt", o.getPaidAt() != null ? o.getPaidAt().toString() : null);
+        // Явный серверный контракт для фильтрации в ЛК.
+        m.put("orderType", pricingType);
+        m.put("routeType", pricingType);
         return m;
     }
 
@@ -570,5 +702,24 @@ public class ApiController {
         Map<String, Object> m = orderMap(o);
         m.put("items", o.getItemsList());
         return m;
+    }
+
+    private String resolveOrderPricingType(Order o) {
+        try {
+            List<Map<String, Object>> items = o.getItemsList();
+            if (items != null && !items.isEmpty()) {
+                double total = 0;
+                for (Map<String, Object> item : items) {
+                    Object p = item.get("price");
+                    if (p instanceof Number n) total += n.doubleValue();
+                    else if (p != null) {
+                        try { total += Double.parseDouble(String.valueOf(p)); } catch (Exception ignored) {}
+                    }
+                }
+                return total > 0 ? "paid" : "free";
+            }
+        } catch (Exception ignored) {
+        }
+        return (o.getTotal() != null && o.getTotal() > 0) ? "paid" : "free";
     }
 }

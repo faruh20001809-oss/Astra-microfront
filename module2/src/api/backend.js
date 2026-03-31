@@ -184,7 +184,14 @@ export const javaApi = {
     getById: async (id) => {
       const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}`)
       return handleJavaResponse(res)
-    }
+    },
+    markCompleted: async (id, email) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}/complete`, {
+        method: 'POST',
+        body: JSON.stringify({ email: String(email || '').trim() }),
+      })
+      return handleJavaResponse(res)
+    },
   },
 
   /** Products (Товары) */
@@ -321,6 +328,65 @@ export const javaApi = {
         return { paid: false, status: '', orderId }
       }
     }
+  },
+
+  /** Telegram link for guest order updates */
+  telegram: {
+    requestLink: async ({ email, phone } = {}) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/telegram/link/request`, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: String(email || '').trim(),
+          phone: String(phone || '').trim(),
+        }),
+      })
+      return handleJavaResponse(res)
+    },
+
+    getLinkStatus: async ({ email, phone } = {}) => {
+      const params = new URLSearchParams()
+      if (email) params.set('email', String(email).trim())
+      if (phone) params.set('phone', String(phone).trim())
+      const q = params.toString()
+      const res = await baseFetch(`${JAVA_API_BASE}/telegram/link/status${q ? `?${q}` : ''}`)
+      return handleJavaResponse(res)
+    },
+  },
+
+  userProgress: {
+    getByEmail: async (email) => {
+      const params = new URLSearchParams({ email: String(email || '').trim() })
+      const res = await baseFetch(`${JAVA_API_BASE}/user-progress?${params}`)
+      return handleJavaResponse(res)
+    },
+    syncByEmail: async (email, snapshot) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/user-progress/sync`, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: String(email || '').trim(),
+          snapshot: snapshot || {},
+        }),
+      })
+      return handleJavaResponse(res)
+    },
+    getConfirmedByEmail: async (email) => {
+      const params = new URLSearchParams({ email: String(email || '').trim() })
+      const res = await baseFetch(`${JAVA_API_BASE}/user-progress/confirmed?${params}`)
+      return handleJavaResponse(res)
+    },
+  },
+
+  rewards: {
+    redeemByEmail: async (email, routeId) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/rewards/redeem`, {
+        method: 'POST',
+        body: JSON.stringify({
+          email: String(email || '').trim(),
+          routeId: Number(routeId),
+        }),
+      })
+      return handleJavaResponse(res)
+    },
   },
 
   /** Feedback (Обратная связь) */

@@ -167,6 +167,51 @@
         </div>
 
         <!-- Grafana Info -->
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="bi bi-speedometer2 me-2 text-primary-500"></i>Эксплуатационные метрики
+            </h3>
+            <div class="grid md:grid-cols-3 gap-4">
+                <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Error rate</p>
+                    <p id="opsErrorRate" class="text-2xl font-bold text-gray-800 dark:text-white">—</p>
+                </div>
+                <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Latency p95</p>
+                    <p id="opsP95" class="text-2xl font-bold text-gray-800 dark:text-white">—</p>
+                </div>
+                <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Latency p50 / p99</p>
+                    <p id="opsP5099" class="text-2xl font-bold text-gray-800 dark:text-white">—</p>
+                </div>
+                <div class="p-4 rounded-xl bg-gray-50 dark:bg-gray-700">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Integrations</p>
+                    <p id="opsIntegrations" class="text-sm font-medium text-gray-700 dark:text-gray-300">—</p>
+                </div>
+            </div>
+            <p id="opsSamples" class="text-xs text-gray-500 dark:text-gray-400 mt-3">—</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="bi bi-diagram-3 me-2 text-primary-500"></i>Business funnel и качество данных
+            </h3>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <p id="funnelSummary" class="text-sm text-gray-700 dark:text-gray-300">—</p>
+                </div>
+                <div>
+                    <p id="dqSummary" class="text-sm text-gray-700 dark:text-gray-300">—</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-200 dark:border-gray-700 animate-fade-in">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
+                <i class="bi bi-bell me-2 text-primary-500"></i>Алерты и история
+            </h3>
+            <p id="alertsNow" class="text-sm text-gray-700 dark:text-gray-300">—</p>
+            <p id="alertsHistory" class="text-sm text-gray-600 dark:text-gray-400 mt-2">—</p>
+        </div>
+
         <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-200 dark:border-gray-700 animate-fade-in">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">
                 <i class="bi bi-bar-chart-steps me-2 text-primary-500"></i>Grafana Dashboard
@@ -224,15 +269,18 @@
         });
 
         async function loadRoles() {
-            const res = await fetch(ROOT + '/api/roles');
-            const roles = await res.json();
-            const select = document.getElementById('roleFilter');
-            roles.forEach(r => {
-                const opt = document.createElement('option');
-                opt.value = r.name;
-                opt.textContent = r.name;
-                select.appendChild(opt);
-            });
+            try {
+                const res = await fetch(ROOT + '/api/roles');
+                if (!res.ok) return;
+                const roles = await res.json();
+                const select = document.getElementById('roleFilter');
+                (Array.isArray(roles) ? roles : []).forEach(r => {
+                    const opt = document.createElement('option');
+                    opt.value = r.name;
+                    opt.textContent = r.name;
+                    select.appendChild(opt);
+                });
+            } catch (_) {}
         }
 
         async function loadActivityChart(role, user_id, page) {
@@ -242,9 +290,21 @@
             if(user_id) params.append('user_id', user_id);
             if(page) params.append('page', page);
             if(params.toString()) url += '?' + params.toString();
-
-            const res = await fetch(url);
-            const data = await res.json();
+            let data = { labels: [], counts: [] };
+            try {
+                const res = await fetch(url);
+                if (res.ok) {
+                    data = await res.json();
+                } else {
+                    const dailyRes = await fetch(ROOT + '/api/metrics/daily');
+                    const daily = await dailyRes.json();
+                    const series = Array.isArray(daily.series) ? daily.series.find(s => s.name === 'activity') : null;
+                    data = {
+                        labels: daily.labels || [],
+                        counts: (series && Array.isArray(series.data)) ? series.data : (daily.activity || daily.visits || []),
+                    };
+                }
+            } catch (_) {}
 
             const isDark = html.classList.contains('dark');
             const textColor = isDark ? '#e5e7eb' : '#1f2937';
@@ -258,7 +318,7 @@
                     labels: data.labels,
                     datasets: [{
                         label: 'Активные пользователи',
-                        data: data.counts,
+                        data: data.counts || [],
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
                         fill: true,
@@ -290,6 +350,52 @@
                     }
                 }
             });
+        }
+
+        async function loadOpsMetrics() {
+            try {
+                const res = await fetch(ROOT + '/api/metrics/ops');
+                if (!res.ok) return;
+                const data = await res.json();
+                document.getElementById('opsErrorRate').textContent = `${data.error_rate ?? 0}%`;
+                document.getElementById('opsP95').textContent = `${data.latency?.p95 ?? '—'} ms`;
+                document.getElementById('opsP5099').textContent = `${data.latency?.p50 ?? '—'} / ${data.latency?.p99 ?? '—'} ms`;
+                document.getElementById('opsSamples').textContent = `Сэмплов latency: ${data.latency_samples ?? 0}`;
+                const integrations = Array.isArray(data.integrations) ? data.integrations : [];
+                document.getElementById('opsIntegrations').textContent = integrations.map(i => `${i.name}: ${i.status}`).join(' · ') || '—';
+            } catch (_) {}
+        }
+
+        async function loadAlerts() {
+            try {
+                const res = await fetch(ROOT + '/api/metrics/alerts');
+                if (!res.ok) return;
+                const data = await res.json();
+                const current = Array.isArray(data.current) ? data.current : [];
+                const history = Array.isArray(data.history) ? data.history : [];
+                document.getElementById('alertsNow').textContent = current.map(a => `[${a.level}] ${a.message}`).join(' | ') || '—';
+                document.getElementById('alertsHistory').textContent = history.slice(0, 5).map(h => `${h.hour}: 5xx~${h.errors_5xx_like}/${h.total_logs}`).join(' · ') || 'История пуста';
+            } catch (_) {}
+        }
+
+        async function loadFunnelAndDataQuality() {
+            try {
+                const [funnelRes, dqRes] = await Promise.all([
+                    fetch(ROOT + '/api/metrics/funnel'),
+                    fetch(ROOT + '/api/metrics/data-quality')
+                ]);
+                if (funnelRes.ok) {
+                    const funnel = await funnelRes.json();
+                    const s = funnel?.steps || {};
+                    document.getElementById('funnelSummary').textContent =
+                        `Визиты: ${s.visits ?? 0} → POI: ${s.poi_views ?? 0} → Маршрут: ${s.route_starts ?? 0} → Заказ: ${s.orders ?? 0} → Оплата: ${s.payments ?? 0}`;
+                }
+                if (dqRes.ok) {
+                    const dq = await dqRes.json();
+                    document.getElementById('dqSummary').textContent =
+                        `Заказы без контактов: ${dq.orders_missing_contacts ?? 0} (${dq.orders_missing_contacts_pct ?? 0}%) · Зависшие статусы: ${dq.orders_stuck_status ?? 0} · POI без координат/изображения: ${dq.poi_missing_coordinates_or_image ?? 0}`;
+                }
+            } catch (_) {}
         }
 
         async function loadHeatmap() {
@@ -326,6 +432,9 @@
         loadRoles();
         loadActivityChart();
         loadHeatmap();
+        loadOpsMetrics();
+        loadAlerts();
+        loadFunnelAndDataQuality();
     </script>
 </body>
 </html>

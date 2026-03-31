@@ -80,6 +80,8 @@
             <span>{{ selected.distance }}</span>
             <span>·</span>
             <span>{{ selected.stops?.length || 0 }} остановок</span>
+            <span v-if="guestEmail">·</span>
+            <span v-if="guestEmail">Наград доступно: {{ confirmedProgress.availableRewards || 0 }}</span>
           </div>
 
           <div class="divider" />
@@ -105,11 +107,12 @@
 
           <div class="route-modal-actions">
             <button v-if="selected.isPaid" type="button" class="btn btn-primary btn-lg" @click="onPaidRoute(selected)">
-              Купить за {{ selected.price }} ₽
+              Использовать награду / Купить за {{ selected.price }} ₽
             </button>
             <button v-else type="button" class="btn btn-accent btn-lg" @click="onStartRoute(selected)">
               Начать маршрут
             </button>
+            <button type="button" class="btn btn-ghost" @click="markCompleted(selected)">Отметить как пройденный</button>
             <button class="btn btn-ghost" @click="selected = null">Закрыть</button>
           </div>
         </div>
@@ -141,11 +144,16 @@ import RouteCard from '@/components/routes/RouteCard.vue'
 import QrModal from '@/components/common/QrModal.vue'
 import { useToastStore, useMapStore } from '@/store/index.js'
 import { useFavorites } from '@/composables/useFavorites.js'
+import { javaApi } from '@/api/backend.js'
+import { useGuestProgress } from '@/composables/useGuestProgress.js'
 
 const toastStore = useToastStore()
 const router = useRouter()
 const mapStore = useMapStore()
 const { isRouteFavorite, toggleRoute, favoriteRoutesList } = useFavorites()
+const { markRouteCompleted } = useGuestProgress()
+const confirmedProgress = ref({ availableRewards: 0, completedPaidRoutes: 0, completedFreeRoutes: 0 })
+const guestEmail = ref(localStorage.getItem('astra_guest_email') || '')
 
 function normalizeRouteFromApi(r) {
   if (!r || typeof r !== 'object') return r
@@ -271,8 +279,41 @@ function onStartRoute(route) {
   toastStore.push('Открываем маршрут на карте…', 'success')
 }
 
-function onPaidRoute() {
-  toastStore.push('Покупка маршрута доступна в развитии каталога', 'info')
+async function markCompleted(route) {
+  const email = guestEmail.value.trim()
+  if (!email) {
+    toastStore.push('Для фиксации прохождения войдите в кабинет заказов (email + код).', 'info')
+    return
+  }
+  try {
+    const stats = await javaApi.routes.markCompleted(route.id, email)
+    confirmedProgress.value = { ...confirmedProgress.value, ...stats }
+    markRouteCompleted(route.id, { paid: !!route.isPaid })
+    toastStore.push('Маршрут отмечен как пройденный', 'success')
+  } catch (e) {
+    toastStore.push(e?.message || 'Не удалось сохранить прогресс', 'error')
+  }
+}
+
+async function onPaidRoute(route) {
+  const email = guestEmail.value.trim()
+  if (!email) {
+    toastStore.push('Покупка маршрута доступна после входа в кабинет заказов', 'info')
+    return
+  }
+  try {
+    const stats = await javaApi.userProgress.getConfirmedByEmail(email)
+    confirmedProgress.value = { ...confirmedProgress.value, ...stats }
+    if (Number(confirmedProgress.value.availableRewards || 0) > 0) {
+      await javaApi.rewards.redeemByEmail(email, route.id)
+      toastStore.push('Награда применена: маршрут открыт бесплатно', 'success')
+      onStartRoute(route)
+      return
+    }
+    toastStore.push('Нет доступных наград. Выполните условие 2 платных + 3 бесплатных.', 'info')
+  } catch (e) {
+    toastStore.push(e?.message || 'Не удалось проверить награды', 'error')
+  }
 }
 
 onMounted(async () => {
@@ -309,6 +350,12 @@ onMounted(async () => {
     routes.value = getMockRoutes().map(normalizeRouteFromApi)
   } finally {
     isLoading.value = false
+  }
+  if (guestEmail.value.trim()) {
+    try {
+      const stats = await javaApi.userProgress.getConfirmedByEmail(guestEmail.value.trim())
+      confirmedProgress.value = { ...confirmedProgress.value, ...stats }
+    } catch {}
   }
 })
 

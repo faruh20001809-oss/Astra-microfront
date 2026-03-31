@@ -103,6 +103,20 @@
             <!-- Правая колонка: Действия + Товары -->
             <div class="card">
                 <div class="card-header"><h3>Обновить статус</h3></div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                    <form th:action="@{'/admin/orders/status/'+${order.id}}" method="post" style="display:inline">
+                        <input type="hidden" name="status" value="CONFIRMED"/>
+                        <button class="btn btn-ghost" type="submit">Подтвердить</button>
+                    </form>
+                    <form th:action="@{'/admin/orders/status/'+${order.id}}" method="post" style="display:inline">
+                        <input type="hidden" name="status" value="SHIPPED"/>
+                        <button class="btn btn-ghost" type="submit">Отправлен</button>
+                    </form>
+                    <form th:action="@{'/admin/orders/status/'+${order.id}}" method="post" style="display:inline">
+                        <input type="hidden" name="status" value="DELIVERED"/>
+                        <button class="btn btn-ghost" type="submit">Доставлен</button>
+                    </form>
+                </div>
                 <form th:action="@{'/admin/orders/status/'+${order.id}}" method="post">
                     <div class="form-group">
                         <label>Статус</label>
@@ -124,6 +138,16 @@
                     </div>
                     <button type="submit" class="btn btn-primary">💾 Обновить</button>
                 </form>
+                <div style="margin-top:12px">
+                    <p class="text-muted" style="margin-bottom:6px;font-size:12px">Timeline статусов</p>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                        <span class="status-badge" th:classappend="${order.status.name() == 'CONFIRMED' or order.status.name() == 'PROCESSING' or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'} ? ' status-approved' : ''">Подтвержден</span>
+                        <span class="status-badge" th:classappend="${order.status.name() == 'PROCESSING' or order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'} ? ' status-approved' : ''">В обработке</span>
+                        <span class="status-badge" th:classappend="${order.status.name() == 'SHIPPED' or order.status.name() == 'DELIVERED'} ? ' status-approved' : ''">Отправлен</span>
+                        <span class="status-badge" th:classappend="${order.status.name() == 'DELIVERED'} ? ' status-approved' : ''">Доставлен</span>
+                        <span class="status-badge" th:classappend="${order.status.name() == 'CANCELLED'} ? ' status-rejected' : ''">Отменен</span>
+                    </div>
+                </div>
                 <div th:if="${order.email}" style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--gray-700, #333);">
                     <p class="text-muted" style="margin-bottom:0.5rem;"><strong>Письма клиенту</strong> (на <span th:text="${order.email}"></span>):</p>
                     <form th:action="@{'/admin/orders/send-confirmation/'+${order.id}}" method="post" style="display:inline-block; margin-right:0.5rem;">

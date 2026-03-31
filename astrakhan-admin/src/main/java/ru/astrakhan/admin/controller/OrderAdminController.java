@@ -10,6 +10,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.astrakhan.admin.entity.Order;
 import ru.astrakhan.admin.service.OrderService;
 import ru.astrakhan.admin.service.OrderEmailService;
+import ru.astrakhan.admin.service.TelegramNotificationService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class OrderAdminController {
     private final OrderService orderService;
     private final OrderEmailService orderEmailService;
+    private final TelegramNotificationService telegramNotificationService;
 
     @GetMapping
     public String list(@RequestParam(required = false) String status,
@@ -80,6 +82,9 @@ public class OrderAdminController {
         if (order.getEmail() != null && !order.getEmail().isBlank()
                 && trackingNumber != null && !trackingNumber.isEmpty()) {
             orderEmailService.sendTrackingUpdate(order);
+        }
+        if (order.getStatus() == Order.OrderStatus.SHIPPED) {
+            telegramNotificationService.notifyOrderStatus(order);
         }
 
         ra.addFlashAttribute("success", "Статус обновлён!");
