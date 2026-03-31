@@ -60,7 +60,14 @@
 ### Технический API (`module3`, `/api`)
 
 - auth/users/roles;
+- staff management: `/api/staff` (создание профилей сотрудников тех-админом);
 - metrics: `/api/metrics`, `/api/metrics/activity`, `/api/metrics/ops`, `/api/metrics/funnel`, `/api/metrics/data-quality`, `/api/metrics/alerts`.
+
+## Единый источник пользователей
+
+- единый источник профилей — общая таблица `users` для модулей;
+- клиентские профили синхронизируются автоматически из клиентского контура (`module2` + `astrakhan-admin`) по email;
+- профили сотрудников создаются только тех-администратором через `module3` endpoint `POST /api/staff`.
 
 ## Технологии
 

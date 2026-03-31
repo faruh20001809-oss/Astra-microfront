@@ -19,12 +19,16 @@
           <p class="orders-lead" :class="telegramLinked ? 'ok' : 'warn'" style="margin:0">
             Telegram: {{ telegramLinked ? 'подтвержден' : 'не подтвержден' }}
           </p>
+          <p v-if="!clientEmail" class="orders-lead" style="margin-top:0.5rem">
+            Email пока не известен. Войдите в заказы, чтобы привязать профиль клиента.
+          </p>
         </div>
         <div class="cabinet-client-actions">
           <button type="button" class="btn btn-ghost btn-sm" :disabled="!clientEmail || statusLoading" @click="reloadClientStatus">
             {{ statusLoading ? 'Проверка…' : 'Обновить статус' }}
           </button>
-          <router-link to="/orders" class="btn btn-accent btn-sm">Управлять профилем</router-link>
+          <router-link v-if="clientEmail" to="/orders" class="btn btn-accent btn-sm">Управлять профилем</router-link>
+          <router-link v-else to="/orders" class="btn btn-primary btn-sm">Войти в заказы</router-link>
         </div>
       </section>
 
@@ -52,7 +56,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { javaApi } from '@/api/backend.js'
 
 const clientEmail = ref(localStorage.getItem('astra_guest_email') || '')
@@ -73,8 +77,34 @@ async function reloadClientStatus() {
   }
 }
 
+function refreshEmailFromStorage() {
+  const nextEmail = localStorage.getItem('astra_guest_email') || ''
+  if (nextEmail !== clientEmail.value) {
+    clientEmail.value = nextEmail
+    void reloadClientStatus()
+  }
+}
+
+function handleGuestEmailUpdated(event) {
+  const nextEmail = String(event?.detail?.email || '').trim()
+  if (!nextEmail) return
+  if (nextEmail !== clientEmail.value) {
+    clientEmail.value = nextEmail
+    void reloadClientStatus()
+  }
+}
+
 onMounted(() => {
+  window.addEventListener('storage', refreshEmailFromStorage)
+  window.addEventListener('focus', refreshEmailFromStorage)
+  window.addEventListener('astra:guest-email-updated', handleGuestEmailUpdated)
   void reloadClientStatus()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('storage', refreshEmailFromStorage)
+  window.removeEventListener('focus', refreshEmailFromStorage)
+  window.removeEventListener('astra:guest-email-updated', handleGuestEmailUpdated)
 })
 </script>
 

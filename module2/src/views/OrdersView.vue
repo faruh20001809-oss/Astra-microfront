@@ -358,6 +358,7 @@ async function verifyAndLoad() {
   try {
     const list = await javaApi.orders.verifyLookupCode(email, code)
     localStorage.setItem('astra_guest_email', email)
+    window.dispatchEvent(new CustomEvent('astra:guest-email-updated', { detail: { email } }))
     orders.value = Array.isArray(list) ? list : []
     emptyAfterVerify.value = orders.value.length === 0
     try {
