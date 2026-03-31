@@ -38,6 +38,7 @@ public class ApiController {
     private final TelegramLinkService telegramLinkService;
     private final UserProgressService userProgressService;
     private final RouteProgressService routeProgressService;
+    private final SharedUserSyncService sharedUserSyncService;
 
     // ===== POIs =====
     @GetMapping("/pois")
@@ -244,6 +245,7 @@ public class ApiController {
                 order.setCustomerName((firstName + " " + lastName).trim());
                 order.setPhone(phone);
                 order.setEmail(email);
+                sharedUserSyncService.ensureCustomerByEmail(email, order.getCustomerName());
             }
 
             // 🔹 4. Сериализуем товары в JSON
@@ -394,6 +396,7 @@ public class ApiController {
         }
         try {
             List<Order> orders = guestOrderLookupService.verifyAndListOrders(email, code);
+            sharedUserSyncService.ensureCustomerByEmail(email, "");
             return ok(orders.stream().map(this::orderDetailMap).collect(Collectors.toList()));
         } catch (IllegalArgumentException e) {
             return apiError(HttpStatus.BAD_REQUEST, e.getMessage());

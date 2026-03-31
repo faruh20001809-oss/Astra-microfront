@@ -216,6 +216,17 @@ def role_required(*roles):
         return decorated
     return wrapper
 
+
+def _user_type_by_role(role_name: str) -> str:
+    name = (role_name or "").strip().lower()
+    if name in {"администратор", "administrator", "admin"}:
+        return "admin"
+    if name in {"сотрудник", "модератор", "редактор", "employee", "staff", "moderator", "editor"}:
+        return "staff"
+    if name in {"клиент", "customer", "client", "guest"}:
+        return "client"
+    return "other"
+
 # ✅ API для дашборда - роль пользователя
 @app.route('/api/user/role', methods=['GET'])
 def api_user_role():
@@ -282,6 +293,10 @@ def roles_page():
 # ---------------- AUTH API ----------------
 @app.route('/api/register', methods=['POST'])
 def register():
+    # Создание профилей сотрудников доступно только тех-админу.
+    if not current_user.is_authenticated or not current_user.role or current_user.role.name != 'Администратор':
+        return jsonify({"error": "Только тех-администратор может создавать профили сотрудников"}), 403
+
     data = request.get_json()
     
     # ✅ Валидация с помощью Marshmallow
@@ -370,6 +385,7 @@ def api_get_users():
             "name": u.name,
             "email": u.email,
             "role": u.role.name if u.role else None,
+            "user_type": _user_type_by_role(u.role.name if u.role else None),
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_login": u.last_login.isoformat() if u.last_login else None,
             "telegram_confirmed": bool(tg.get("is_verified", False)),
@@ -377,6 +393,55 @@ def api_get_users():
             "telegram_username": tg.get("telegram_username"),
         })
     return jsonify(payload)
+
+
+@app.route('/api/staff', methods=['POST'])
+@role_required("Администратор")
+def create_staff_user():
+    data = request.get_json(silent=True) or {}
+    username = str(data.get("username") or "").strip().lower()
+    password = str(data.get("password") or "").strip()
+    name = str(data.get("name") or username).strip()
+    email = str(data.get("email") or "").strip().lower()
+
+    if not username or len(username) < 3:
+        return jsonify({"error": "Логин должен содержать минимум 3 символа"}), 400
+    if len(password) < 6:
+        return jsonify({"error": "Пароль должен содержать минимум 6 символов"}), 400
+
+    if User.query.filter(db.func.lower(User.username) == username).first():
+        return jsonify({"error": "Пользователь с таким логином уже существует"}), 400
+
+    role_name = str(data.get("role") or "Сотрудник").strip()
+    role = Role.query.filter_by(name=role_name).first()
+    if not role:
+        role = Role.query.filter_by(name="Сотрудник").first()
+    if not role:
+        role = Role(name="Сотрудник", permissions={})
+        db.session.add(role)
+        db.session.flush()
+
+    user = User(
+        username=username,
+        name=name if name else username,
+        email=email or None,
+        password=_hash_password(password),
+        role=role,
+    )
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({
+        "message": "Профиль сотрудника создан",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role.name if user.role else None,
+            "user_type": _user_type_by_role(user.role.name if user.role else None),
+        }
+    }), 201
 
 @app.route('/api/users/<int:uid>/role', methods=['POST'])
 @role_required("Администратор")

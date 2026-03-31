@@ -145,12 +145,43 @@
                 </div>
             </div>
 
-            <!-- Search -->
-            <div class="relative mb-6">
-                <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                <input type="text" id="searchInput" 
-                    class="w-full pl-12 pr-4 py-3 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring transition-all"
-                    placeholder="🔍 Поиск по имени или email...">
+            <!-- Search and filters -->
+            <div class="grid md:grid-cols-3 gap-3 mb-6">
+                <div class="relative md:col-span-2">
+                    <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="searchInput"
+                        class="w-full pl-12 pr-4 py-3 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring transition-all"
+                        placeholder="🔍 Поиск по имени или email...">
+                </div>
+                <select id="userTypeFilter"
+                    class="w-full px-4 py-3 rounded-xl bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring transition-all">
+                    <option value="all">Все типы</option>
+                    <option value="client">Клиенты</option>
+                    <option value="staff">Сотрудники</option>
+                    <option value="admin">Администраторы</option>
+                    <option value="other">Прочие</option>
+                </select>
+            </div>
+
+            <!-- Create staff user -->
+            <div class="rounded-xl bg-white/80 dark:bg-gray-900/50 p-4 mb-6 border border-white/30 dark:border-gray-700">
+                <h4 class="text-md font-semibold text-gray-800 dark:text-white mb-3">
+                    <i class="bi bi-person-plus me-1"></i>Создать профиль сотрудника
+                </h4>
+                <form id="createStaffForm" class="grid md:grid-cols-4 gap-3">
+                    <input id="staffUsername" type="text" placeholder="Логин *"
+                        class="px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring" required>
+                    <input id="staffName" type="text" placeholder="Имя"
+                        class="px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring">
+                    <input id="staffEmail" type="email" placeholder="Email"
+                        class="px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring">
+                    <input id="staffPassword" type="password" placeholder="Пароль *"
+                        class="px-3 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus-ring" required>
+                    <button type="submit" id="staffSubmitBtn"
+                        class="md:col-span-4 btn-hover-lift px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white text-sm font-semibold rounded-lg transition-all">
+                        <i class="bi bi-plus-lg"></i> Создать сотрудника
+                    </button>
+                </form>
             </div>
 
             <!-- Table container -->
@@ -214,11 +245,10 @@
                 
                 allUsers = await usersRes.json();
                 allRoles = await rolesRes.json();
-                
-                filteredUsers = [...allUsers];
+                applyFilters();
                 renderUsers();
                 renderStats();
-                setupSearch();
+                setupFilters();
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
                 alert('Ошибка загрузки данных');
@@ -299,6 +329,8 @@
         // Stats
         function renderStats() {
             const adminCount = allUsers.filter(u => u.role === 'Администратор').length;
+            const staffCount = allUsers.filter(u => u.user_type === 'staff').length;
+            const clientCount = allUsers.filter(u => u.user_type === 'client').length;
             const totalCount = allUsers.length;
             const confirmedCount = allUsers.filter(u => !!u.telegram_confirmed).length;
             const unconfirmedCount = totalCount - confirmedCount;
@@ -311,6 +343,14 @@
                 <div class="px-4 py-2 rounded-xl bg-emerald-500/30 backdrop-blur-sm text-white">
                     <span class="font-semibold">${adminCount}</span>
                     <span class="text-white/70 text-sm ml-1">админов</span>
+                </div>
+                <div class="px-4 py-2 rounded-xl bg-primary-500/30 backdrop-blur-sm text-white">
+                    <span class="font-semibold">${staffCount}</span>
+                    <span class="text-white/70 text-sm ml-1">сотрудников</span>
+                </div>
+                <div class="px-4 py-2 rounded-xl bg-indigo-500/30 backdrop-blur-sm text-white">
+                    <span class="font-semibold">${clientCount}</span>
+                    <span class="text-white/70 text-sm ml-1">клиентов</span>
                 </div>
                 <div class="px-4 py-2 rounded-xl bg-gray-500/30 backdrop-blur-sm text-white">
                     <span class="font-semibold">${allUsers.filter(u => !u.role).length}</span>
@@ -327,16 +367,66 @@
             `;
         }
 
-        // Search
-        function setupSearch() {
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                const query = e.target.value.toLowerCase();
-                filteredUsers = allUsers.filter(user => 
-                    (user.name && user.name.toLowerCase().includes(query)) || 
-                    (user.email && user.email.toLowerCase().includes(query))
-                );
+        function applyFilters() {
+            const query = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+            const type = document.getElementById('userTypeFilter')?.value || 'all';
+            filteredUsers = allUsers.filter(user => {
+                const name = (user.name || '').toLowerCase();
+                const email = (user.email || '').toLowerCase();
+                const matchesText =
+                    query === '' || name.includes(query) || email.includes(query);
+                const userType = user.user_type || 'other';
+                const matchesType = type === 'all' ? true : userType === type;
+                return matchesText && matchesType;
+            });
+        }
+
+        // Search/filter
+        function setupFilters() {
+            document.getElementById('searchInput').addEventListener('input', () => {
+                applyFilters();
                 renderUsers();
-                setupEventListeners();
+            });
+            document.getElementById('userTypeFilter').addEventListener('change', () => {
+                applyFilters();
+                renderUsers();
+            });
+        }
+
+        function setupCreateStaffForm() {
+            const form = document.getElementById('createStaffForm');
+            const btn = document.getElementById('staffSubmitBtn');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const payload = {
+                    username: document.getElementById('staffUsername').value.trim(),
+                    name: document.getElementById('staffName').value.trim(),
+                    email: document.getElementById('staffEmail').value.trim(),
+                    password: document.getElementById('staffPassword').value,
+                    role: 'Сотрудник',
+                };
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bi bi-arrow-repeat animate-spin"></i> Создание...';
+                try {
+                    const res = await fetch(ROOT + '/api/staff', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        alert(`❌ ${data.error || 'Не удалось создать сотрудника'}`);
+                    } else {
+                        alert('✅ Профиль сотрудника создан');
+                        form.reset();
+                        await loadData();
+                    }
+                } catch (_) {
+                    alert('❌ Ошибка сети');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-plus-lg"></i> Создать сотрудника';
+                }
             });
         }
 
@@ -387,7 +477,10 @@
         }
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', loadData);
+        document.addEventListener('DOMContentLoaded', () => {
+            setupCreateStaffForm();
+            loadData();
+        });
     </script>
 </body>
 </html>

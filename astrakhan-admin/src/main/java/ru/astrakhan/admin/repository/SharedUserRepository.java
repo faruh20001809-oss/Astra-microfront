@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface SharedUserRepository extends JpaRepository<SharedUser, Long> {
 
     Optional<SharedUser> findByUsernameIgnoreCase(String username);
+
+    Optional<SharedUser> findByEmailIgnoreCase(String email);
 }

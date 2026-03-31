@@ -6,6 +6,7 @@ import ShopView from '@/views/ShopView.vue'
 import ContactView from '@/views/ContactView.vue'
 import PaymentSuccessView from '@/views/PaymentSuccessView.vue'
 import OrdersView from '@/views/OrdersView.vue'
+import CabinetView from '@/views/CabinetView.vue'
 
 const routes = [
   {
@@ -25,6 +26,12 @@ const routes = [
     name: 'route-share',
     component: RouteShareView,
     meta: { title: 'Маршрут' }
+  },
+  {
+    path: '/cabinet',
+    name: 'cabinet',
+    component: CabinetView,
+    meta: { title: 'Личный кабинет' }
   },
   {
     path: '/orders',
