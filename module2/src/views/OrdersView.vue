@@ -6,7 +6,7 @@
         <h1>Мои заказы</h1>
       </section>
       <div class="orders-layout">
-        <div class="orders-form-card card">
+        <div class="orders-form-card card orders-form-card--full">
           <h2 class="section-heading">Вход по email</h2>
           <form class="contact-form" @submit.prevent="sendCode">
             <div class="form-group"><label class="form-label">Email *</label><input v-model.trim="emailInput" type="email" class="form-input" required /></div>
@@ -59,41 +59,6 @@
           </div>
           <p v-if="emptyAfterVerify" class="form-error" style="margin-top:1rem">Заказы не найдены для этого email.</p>
         </div>
-
-        <aside class="progress-card card">
-          <h2 class="section-heading">Мой прогресс</h2>
-          <ul class="progress-stats">
-            <li>Посещено точек: <strong>{{ visitedPoisCount }}</strong></li>
-            <li>Маршрутов (всего): <strong>{{ completedRoutesCount }}</strong></li>
-            <li>Бесплатных: <strong>{{ completedFreeRoutesCount }}</strong></li>
-            <li>Платных: <strong>{{ completedPaidRoutesCount }}</strong></li>
-            <li>Избранные маршруты: <strong>{{ favoriteRoutesList.length }}</strong></li>
-            <li>Избранные точки: <strong>{{ favoritePoisList.length }}</strong></li>
-          </ul>
-          <div class="reward-progress">
-            <p class="text-mono">Награда за активность: {{ rewardProgress.progressPercent }}%</p>
-            <div class="reward-progress-bar"><div class="reward-progress-fill" :style="{ width: `${rewardProgress.progressPercent}%` }" /></div>
-            <p class="orders-lead" style="font-size:0.8rem">Платные: {{ rewardProgress.paidCompleted }}/2 · Бесплатные: {{ rewardProgress.freeCompleted }}/3</p>
-          </div>
-          <div class="tier-badges"><span :class="['tier-badge', routeTier === 'bronze' ? 'active' : '']">Bronze</span><span :class="['tier-badge', routeTier === 'silver' ? 'active' : '']">Silver</span><span :class="['tier-badge', routeTier === 'gold' ? 'active' : '']">Gold</span></div>
-
-          <h3 class="section-heading" style="font-size:0.95rem;margin-top:1rem">Достижения</h3>
-          <ul class="achievements">
-            <li v-for="a in achievementsView" :key="a.id" :class="a.unlocked ? 'ach-unlocked' : 'ach-locked'">{{ a.title }} — {{ a.progress }}/{{ a.threshold }}</li>
-          </ul>
-
-          <h3 class="section-heading" style="font-size:0.95rem;margin-top:1rem">Награды</h3>
-          <p class="orders-lead" style="font-size:0.82rem">Доступно: {{ rewardsState.available.length }}</p>
-          <button type="button" class="btn btn-primary btn-sm" :disabled="!rewardsState.available.length" @click="consumeSampleReward">Выбрать платный маршрут бесплатно</button>
-          <button type="button" class="btn btn-ghost btn-sm" style="margin-left:0.5rem" :disabled="syncBusy" @click="syncProgressToServer">{{ syncBusy ? 'Синхронизация…' : 'Синхронизировать' }}</button>
-          <p v-if="syncStatus" class="orders-lead" style="font-size:0.78rem;margin-top:0.4rem">{{ syncStatus }}</p>
-
-          <h3 class="section-heading" style="font-size:0.95rem;margin-top:1rem">История активности</h3>
-          <ul class="activity-list">
-            <li v-for="(event, idx) in recentActivity" :key="idx">{{ activityLabel(event) }}</li>
-            <li v-if="!recentActivity.length" class="orders-lead">Пока нет событий</li>
-          </ul>
-        </aside>
       </div>
     </div>
   </div>
@@ -126,26 +91,16 @@ const periodFilter = ref('all')
 
 const {
   visitedPoisCount,
-  completedRoutesCount,
-  completedFreeRoutesCount,
   completedPaidRoutesCount,
-  rewardProgress,
-  routeTier,
-  achievements,
-  achievementsState,
-  rewardsState,
-  activityLog,
+  completedFreeRoutesCount,
   syncFromCounters,
-  consumeReward,
   getSnapshot,
   mergeSnapshot,
 } = useGuestProgress()
-const { favoriteRoutesList, favoritePoisList } = useFavorites()
+const { favoritePoisList } = useFavorites()
 
 let lastAction = null
 let telegramPollTimer = null
-const syncBusy = ref(false)
-const syncStatus = ref('')
 
 watch(emailInput, () => {
   telegramConfirmed.value = false
@@ -243,26 +198,6 @@ function orderTimelineState(statusRaw) {
   ].filter((x) => x.state !== 'hidden')
 }
 
-const achievementsView = computed(() =>
-  achievements.value.map((a) => ({
-    ...a,
-    progress: Number(achievementsState.value?.progress?.[a.id]) || 0,
-    unlocked: (achievementsState.value?.unlocked || []).includes(a.id),
-  })),
-)
-
-const recentActivity = computed(() => (activityLog.value || []).slice(0, 8))
-
-function activityLabel(event) {
-  if (!event?.type) return 'Событие'
-  if (event.type === 'achievement_unlocked') return `Ачивка: ${event.title}`
-  if (event.type === 'reward_granted') return 'Получена награда: бесплатный платный маршрут'
-  if (event.type === 'reward_used') return 'Награда использована'
-  if (event.type === 'route_completed') return `Пройден маршрут (${event.paid ? 'платный' : 'бесплатный'})`
-  if (event.type === 'poi_visited') return 'Посещена новая точка'
-  return event.type
-}
-
 function recalcProgressFromOrders() {
   const delivered = orders.value.filter((o) => String(o?.status || '').toLowerCase() === 'delivered')
   const paid = delivered.filter((o) => isPaidOrder(o)).length
@@ -275,24 +210,12 @@ function recalcProgressFromOrders() {
   })
 }
 
-function consumeSampleReward() {
-  consumeReward(null)
-  void syncProgressToServer()
-}
-
 async function syncProgressToServer() {
   const email = emailInput.value.trim()
   if (!email) return
-  syncBusy.value = true
-  syncStatus.value = ''
   try {
     await javaApi.userProgress.syncByEmail(email, getSnapshot())
-    syncStatus.value = 'Прогресс синхронизирован с сервером.'
-  } catch (e) {
-    syncStatus.value = e?.message || 'Не удалось синхронизировать прогресс.'
-  } finally {
-    syncBusy.value = false
-  }
+  } catch (_) {}
 }
 
 function itemName(it) {
@@ -450,13 +373,14 @@ onUnmounted(() => {
 
 .orders-layout {
   display: grid;
-  grid-template-columns: 1fr 280px;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--spacing-xl);
   align-items: start;
+  max-width: min(42rem, 100%);
 }
 
 .orders-form-card { padding: var(--spacing-xl); }
-.progress-card { padding: var(--spacing-xl); }
+.orders-form-card--full { width: 100%; }
 
 .order-dl {
   display: grid;
@@ -490,29 +414,6 @@ onUnmounted(() => {
 .timeline-chip.current { border-color:var(--accent); color:var(--accent); }
 .timeline-chip.cancelled { border-color:#c55; color:#f09; }
 
-.progress-stats { list-style: none; padding: 0; margin: 1rem 0; color: var(--gray-300); font-size: 0.9rem; }
-.progress-stats li { margin-bottom: 0.35rem; }
-.reward-progress-bar { height:8px; background:var(--gray-800); border-radius:999px; overflow:hidden; margin-top:0.5rem; }
-.reward-progress-fill { height:8px; background:var(--accent); }
-.achievements, .activity-list { list-style:none; padding:0; margin:0.5rem 0 0; display:flex; flex-direction:column; gap:0.35rem; font-size:0.8rem; }
-.ach-unlocked { color: var(--accent); }
-.ach-locked { color: var(--gray-400); }
-
-.tier-badges { display: flex; flex-direction: column; gap: 0.35rem; }
-.tier-badge {
-  font-size: 0.7rem;
-  font-family: var(--font-mono);
-  padding: 0.35rem 0.5rem;
-  border: 1px solid var(--gray-700);
-  border-radius: var(--radius-sm);
-  color: var(--gray-500);
-}
-.tier-badge.active {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: rgba(200, 169, 110, 0.08);
-}
-
 .telegram-bind-block {
   border: 1px dashed var(--gray-700);
   border-radius: var(--radius-sm);
@@ -526,7 +427,4 @@ onUnmounted(() => {
   margin-top: 0.75rem;
 }
 
-@media (max-width: 900px) {
-  .orders-layout { grid-template-columns: 1fr; }
-}
 </style>

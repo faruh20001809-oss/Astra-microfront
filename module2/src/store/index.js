@@ -220,6 +220,17 @@ export const useToastStore = defineStore('toast', {
       this.toasts.push({ id, msg, type })
       setTimeout(() => this.remove(id), duration)
     },
+    /** Всплывашка «достижение» — фиксированный угол, см. App.vue + .toast--achievement */
+    pushAchievement(achievementTitle, duration = 5200) {
+      const id = Date.now() + Math.random()
+      this.toasts.push({
+        id,
+        type: 'achievement',
+        achievementTitle: String(achievementTitle || ''),
+        msg: '',
+      })
+      setTimeout(() => this.remove(id), duration)
+    },
     remove(id) {
       this.toasts = this.toasts.filter(t => t.id !== id)
     }

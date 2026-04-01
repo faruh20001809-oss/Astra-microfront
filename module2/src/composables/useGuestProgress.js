@@ -119,6 +119,13 @@ function syncAchievementProgress({ visitedPois, freeRoutes, paidRoutes, favorite
     if (value >= ach.threshold && !unlocked.has(ach.id)) {
       unlocked.add(ach.id)
       pushActivity('achievement_unlocked', { achievementId: ach.id, title: ach.title })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('astra:achievement-unlocked', {
+            detail: { id: ach.id, title: ach.title },
+          }),
+        )
+      }
     }
   }
 
