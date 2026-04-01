@@ -38,7 +38,8 @@ npm run build
 
 ```bash
 # Клонирование и первичная настройка (Java, Nginx, Node, сборка, systemd)
-export GIT_REPO="https://github.com/YOUR_USER/Astra-microfront.git"
+export GIT_REPO="https://github.com/SileverTM/Astra-microfront.git"
+# по SSH: export GIT_REPO="git@github.com:SileverTM/Astra-microfront.git"
 export APP_DIR="/opt/astramicro"
 export BRANCH="main"
 
@@ -58,6 +59,14 @@ cd /opt/astramicro
 sudo bash deploy/setup.sh
 ```
 
+Одной строкой — между `cd` и следующей командой нужен **`&&`**, иначе shell выдаст `cd: too many arguments`:
+
+```bash
+cd /opt/astramicro && sudo bash deploy/setup.sh
+```
+
+**Почему на сервере «не как в репозитории»:** до правки `setup.sh` повторный запуск на уже клонированном каталоге **не подтягивал** коммиты с GitHub — дерево оставалось на старом `HEAD`. Сейчас `setup.sh` при наличии `.git` делает `fetch` и жёсткий сброс к `origin/main` (как `deploy/update.sh`). Дополнительно: каждые 5 минут cron может вызывать `auto-update.sh` и снова выравнивать код с `origin`; вне Git остаются артефакты сборки (`module2/dist`, JAR), секреты (`/etc/astrakhan-admin.env`, при необходимости `module2/.env`), сгенерированный Nginx-фрагмент `deploy/nginx-ai-key.conf`.
+
 После установки:
 - Бэкенд: systemd-сервис `astrakhan-admin` (порт 8080).
 - Nginx: раздаёт `module2/dist`, проксирует `/workflow/`, `/admin/`, `/java-api/`.
@@ -74,7 +83,7 @@ cd /opt/astramicro
 bash deploy/update.sh
 ```
 
-Скрипт делает: `git pull`, сборка astrakhan-admin, сборка module2, перезапуск `astrakhan-admin`.  
+Скрипт делает: `git fetch` и сброс к `origin/main`, сборка astrakhan-admin, сборка module2, перезапуск сервисов.  
 Nginx перезагружать не нужно (статику берёт из обновлённого `module2/dist`).
 
 Ручной вариант по шагам:

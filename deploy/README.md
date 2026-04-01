@@ -5,19 +5,19 @@
 1. На сервере задайте переменные и запустите первичную установку:
 
 ```bash
-export GIT_REPO="https://github.com/YOUR_USER/Astra-microfront.git"
-sudo bash -c 'curl -sL https://raw.githubusercontent.com/YOUR_USER/Astra-microfront/main/deploy/setup.sh | bash'
+export GIT_REPO="https://github.com/SileverTM/Astra-microfront.git"
+sudo bash -c 'curl -sL https://raw.githubusercontent.com/SileverTM/Astra-microfront/main/deploy/setup.sh | bash'
 ```
 
 Или склонируйте репозиторий вручную и запустите из папки проекта:
 
 ```bash
-git clone https://github.com/YOUR_USER/Astra-microfront.git /opt/astramicro
+git clone https://github.com/SileverTM/Astra-microfront.git /opt/astramicro
 cd /opt/astramicro
 sudo GIT_REPO="" APP_DIR=/opt/astramicro bash deploy/setup.sh
 ```
 
-Перед запуском отредактируйте `deploy/setup.sh`: укажите свой `GIT_REPO` (URL репозитория).
+При другом форке задайте `GIT_REPO` вручную; по умолчанию в `setup.sh` указан этот репозиторий.
 
 ## Обновление из Git
 

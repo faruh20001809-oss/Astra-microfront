@@ -6,7 +6,7 @@
 set -e
 
 # --- Настройки (измените под себя) ---
-GIT_REPO="${GIT_REPO:-https://github.com/YOUR_USER/Astra-microfront.git}"
+GIT_REPO="${GIT_REPO:-https://github.com/SileverTM/Astra-microfront.git}"
 APP_DIR="${APP_DIR:-/opt/astramicro}"
 BRANCH="${BRANCH:-main}"
 # Адрес приложения (пока IP; после покупки домена задайте APP_DOMAIN). Маршруты: / — фронт, /workflow — сотрудники, /admin — админка
@@ -42,7 +42,14 @@ mkdir -p "$APP_DIR"
 cd "$APP_DIR"
 
 if [ -d ".git" ]; then
-  echo "  Репозиторий уже клонирован, пропуск clone."
+  echo "  Репозиторий уже есть: синхронизация с origin/$BRANCH (как при deploy/update.sh)..."
+  git fetch origin
+  if git rev-parse "origin/$BRANCH" >/dev/null 2>&1; then
+    git reset --hard "origin/$BRANCH"
+    git checkout -B "$BRANCH" "origin/$BRANCH"
+  else
+    echo "  Предупреждение: origin/$BRANCH не найден — оставляем текущий HEAD."
+  fi
 else
   echo "  Клонирование репозитория..."
   git clone -b "$BRANCH" "$GIT_REPO" .

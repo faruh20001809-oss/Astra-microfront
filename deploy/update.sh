@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 # Обновление приложения на сервере: синхронизация с origin, пересборка, перезапуск
 # Запуск: sudo bash /opt/astramicro/deploy/update.sh
 # Переменные: BRANCH=main (по умолчанию)
