@@ -12,6 +12,31 @@ echo " Диагностика Astra-microfront ($APP_DIR)"
 echo "=============================================="
 
 echo ""
+echo "--- 0. Git (совпадает ли с GitHub) ---"
+cd "$APP_DIR" || true
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  BRANCH="$(git branch --show-current 2>/dev/null || echo main)"
+  echo "  origin: $(git remote get-url origin 2>/dev/null || echo '?')"
+  echo "  ветка:  $BRANCH"
+  echo "  HEAD:   $(git rev-parse --short HEAD) — $(git log -1 --format=%s 2>/dev/null)"
+  if git fetch origin -q 2>/dev/null && git rev-parse "origin/$BRANCH" >/dev/null 2>&1; then
+    L="$(git rev-parse HEAD)"
+    R="$(git rev-parse "origin/$BRANCH")"
+    if [ "$L" = "$R" ]; then
+      echo "  с origin/$BRANCH: ОК (тот же коммит, что на GitHub после fetch)"
+    else
+      echo "  ВНИМАНИЕ: HEAD != origin/$BRANCH — на сервере другой код, чем на GitHub."
+      echo "  origin/$BRANCH: $(git rev-parse --short "$R")"
+      echo "  Выполните: cd $APP_DIR && bash deploy/update.sh"
+    fi
+  else
+    echo "  (не удалось сравнить с origin — сеть или нет origin/$BRANCH)"
+  fi
+else
+  echo "  $APP_DIR не git-репозиторий"
+fi
+
+echo ""
 echo "--- 1. Сервисы ---"
 for s in astrakhan-admin astramicro-admin astramicro-node nginx; do
   if systemctl is-active --quiet "$s" 2>/dev/null; then

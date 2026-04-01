@@ -29,22 +29,30 @@ git reset --hard "origin/$BRANCH"
 git checkout -B "$BRANCH" "origin/$BRANCH"
 git clean -fd astrakhan-admin/target module2/dist 2>/dev/null || true
 
-echo "[1/4] Сборка бэкенда (Maven)..."
+echo "[1/5] Сборка бэкенда (Maven)..."
 cd "$APP_DIR/astrakhan-admin"
 mvn -q clean package -DskipTests
 
-echo "[2/4] Сборка фронта (npm)..."
+echo "[2/5] Сборка фронта (npm)..."
 cd "$APP_DIR/module2"
 npm ci
 npm run build
 
-echo "[3/4] Перезапуск astrakhan-admin (Java)..."
+echo "[3/5] Перезапуск astrakhan-admin (Java)..."
 systemctl restart astrakhan-admin
 
-echo "[4/4] Перезапуск astramicro-admin (Flask)..."
+echo "[4/5] Перезапуск astramicro-admin (Flask)..."
 # Сначала остановка, пауза (чтобы порт 5000 успел освободиться), затем старт — иначе «Address already in use»
 systemctl stop astramicro-admin 2>/dev/null || true
 sleep 2
 systemctl start astramicro-admin
+
+echo "[5/5] Перезапуск astramicro-node (Node API /api, если unit есть)..."
+if [ -f /etc/systemd/system/astramicro-node.service ]; then
+  systemctl restart astramicro-node
+  echo "  astramicro-node перезапущен."
+else
+  echo "  unit не установлен — пропуск (см. README-DEPLOY п. 5.1)."
+fi
 
 echo "Готово. Статика из module2/dist, Nginx перезагружать не нужно."
