@@ -83,8 +83,20 @@ cd /opt/astramicro
 bash deploy/update.sh
 ```
 
-Скрипт делает: `git fetch` и сброс к `origin/main`, сборка astrakhan-admin, сборка module2, перезапуск сервисов.  
+Скрипт делает: `git fetch` и сброс к `origin/main`, сборка astrakhan-admin, сборка module2, перезапуск Java, Flask и (если установлен) **astramicro-node**.  
 Nginx перезагружать не нужно (статику берёт из обновлённого `module2/dist`).
+
+### Если «всё равно не совпадает» с тем, что у вас локально или в GitHub
+
+1. **Коммит не запушен** — на сервере будет старый `main`. Локально: `git push origin main`, затем на сервере `bash deploy/update.sh`.
+2. **Сверка хеша** — на ПК и на сервере должны совпасть:
+   ```bash
+   git rev-parse HEAD
+   ```
+   После пуша и `update.sh` на сервере выведите то же в `/opt/astramicro`.
+3. **Кэш браузера** — жёсткое обновление: Ctrl+Shift+R (или очистка кэша для сайта). Старый `index.html` может подтягивать старые чанки с другими именами файлов.
+4. **Node API** — карта/AI идут через `astramicro-node` (порт 3001). Раньше `update.sh` его не перезапускал; сейчас перезапуск включён, если есть `/etc/systemd/system/astramicro-node.service`. Иначе: `systemctl restart astramicro-node`.
+5. **Проверка на сервере:** `sudo bash deploy/diagnose.sh` — блок **«0. Git»** покажет, совпадает ли `HEAD` с `origin/main`.
 
 Ручной вариант по шагам:
 
