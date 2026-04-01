@@ -86,6 +86,8 @@ bash deploy/update.sh
 Скрипт делает: `git fetch` и сброс к `origin/main`, сборка astrakhan-admin, сборка module2, перезапуск Java, Flask и (если установлен) **astramicro-node**.  
 Nginx перезагружать не нужно (статику берёт из обновлённого `module2/dist`).
 
+**Не используйте на сервере связку `git pull && …`.** `git pull` делает merge и может остановиться с ошибкой «local changes would be overwritten» из‑за артефактов сборки (`astrakhan-admin/target/`), если они когда‑то попали в репозиторий или пересобирались локально. `update.sh` использует **`git reset --hard origin/main`**, а не merge — обновление проходит стабильно.
+
 ### Если «всё равно не совпадает» с тем, что у вас локально или в GitHub
 
 1. **Коммит не запушен** — на сервере будет старый `main`. Локально: `git push origin main`, затем на сервере `bash deploy/update.sh`.
@@ -95,27 +97,26 @@ Nginx перезагружать не нужно (статику берёт из
    ```
    После пуша и `update.sh` на сервере выведите то же в `/opt/astramicro`.
 3. **Кэш браузера** — жёсткое обновление: Ctrl+Shift+R (или очистка кэша для сайта). Старый `index.html` может подтягивать старые чанки с другими именами файлов.
-4. **Node API** — карта/AI идут через `astramicro-node` (порт 3001). Раньше `update.sh` его не перезапускал; сейчас перезапуск включён, если есть `/etc/systemd/system/astramicro-node.service`. Иначе: `systemctl restart astramicro-node`.
+4. **Node API** — карта/AI идут через `astramicro-node` (порт 3001). `update.sh` перезапускает его, если есть unit `astramicro-node.service`; иначе вручную: `systemctl restart astramicro-node`.
 5. **Проверка на сервере:** `sudo bash deploy/diagnose.sh` — блок **«0. Git»** покажет, совпадает ли `HEAD` с `origin/main`.
 
-Ручной вариант по шагам:
+Ручной вариант по шагам (аналог `update.sh`, **без `git pull`**):
 
 ```bash
 cd /opt/astramicro
 git fetch origin
-git pull origin main
+git reset --hard origin/main
 
-# Сборка бэкенда
 cd /opt/astramicro/astrakhan-admin
-sudo mvn -q package -DskipTests
+sudo mvn -q clean package -DskipTests
 
-# Сборка фронта (при необходимости задать VITE_AI_API_KEY в module2/.env)
 cd /opt/astramicro/module2
 sudo npm ci
 sudo npm run build
 
-# Перезапуск Java
 sudo systemctl restart astrakhan-admin
+sudo systemctl restart astramicro-admin 2>/dev/null || true
+sudo systemctl restart astramicro-node 2>/dev/null || true
 ```
 
 ---

@@ -4,7 +4,7 @@ venv/
 **/venv/
 **/.venv/
 
-# Build outputs
+# Build outputs (never git add these — Maven/npm regenerate them)
 astrakhan-admin/target/
 **/target/
 module2/node_modules/

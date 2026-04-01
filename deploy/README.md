@@ -27,7 +27,7 @@ sudo GIT_REPO="" APP_DIR=/opt/astramicro bash deploy/setup.sh
 sudo /opt/astramicro/deploy/update.sh
 ```
 
-Скрипт делает: `git pull`, сборку бэкенда (Maven), сборку фронта (npm run build), перезапуск `astrakhan-admin.service`. Статика уже в `dist/`, Nginx перезагружать не нужно.
+Скрипт делает: `git fetch` и сброс к `origin/main`, сборку бэкенда (Maven), сборку фронта (npm run build), перезапуск сервисов. Статика уже в `dist/`, Nginx перезагружать не нужно. На сервере не используйте `git pull` перед обновлением — см. `README-DEPLOY.md`.
 
 **Автоматически** — при первом запуске `setup.sh` в cron добавляется задача: каждые 5 минут проверяется наличие новых коммитов на `origin/main`; если есть — выполняется `update.sh`. Лог: `/var/log/astramicro-auto-update.log`. Отключить при установке: `NO_CRON=1 bash deploy/setup.sh`.
 
@@ -82,7 +82,7 @@ echo '*/5 * * * * root /opt/astramicro/deploy/auto-update.sh >> /var/log/astrami
 | Файл | Назначение |
 |------|------------|
 | `setup.sh` | Первичная установка: пакеты, клон, сборка, systemd, nginx |
-| `update.sh` | Обновление: git pull, сборка, перезапуск сервиса |
+| `update.sh` | Обновление: синхронизация с origin, сборка, перезапуск сервисов |
 | `astrakhan-admin.service` | Пример unit для systemd |
 | `nginx-astramicro.conf` | Пример конфига Nginx |
 | `auto-update.sh` | Проверка Git и запуск `update.sh` при новых коммитах (для cron) |
