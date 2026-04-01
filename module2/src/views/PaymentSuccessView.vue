@@ -1,7 +1,6 @@
 <template>
   <div class="page-wrapper payment-success-page">
     <div class="success-container">
-      <!-- Иконка успеха -->
       <div class="success-icon-wrap" :class="{ done: iconDone }">
         <svg class="success-icon" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle class="circle" cx="40" cy="40" r="36" stroke-width="3" />
@@ -13,7 +12,6 @@
       <h1 class="success-title">Спасибо за заказ</h1>
       <p class="success-lead">Ваш платёж принят. Заказ передан в обработку.</p>
 
-      <!-- Карточка с номером заказа -->
       <div v-if="orderId" class="order-card">
         <span class="order-card-label text-mono">Номер заказа</span>
         <span class="order-id">{{ orderId }}</span>
@@ -22,14 +20,12 @@
         </button>
       </div>
 
-      <!-- Статус заказа (обновляется по данным с сервера: подтверждён / оплачено / обрабатывается) -->
       <div v-if="orderId" class="status-row">
         <span v-if="orderStatus === 'confirmed'" class="status-badge confirmed">Подтверждён</span>
         <span v-else-if="paid" class="status-badge paid">Оплачено</span>
         <span v-else class="status-badge processing">Обрабатывается</span>
       </div>
 
-      <!-- Что дальше -->
       <div class="next-steps">
         <p class="text-mono next-steps-label">Что дальше?</p>
         <ul class="next-steps-list">
@@ -38,7 +34,6 @@
         </ul>
       </div>
 
-      <!-- Кнопки -->
       <div class="actions">
         <router-link to="/shop" class="btn btn-primary btn-lg">Вернуться в магазин</router-link>
         <router-link to="/" class="btn btn-secondary">На карту</router-link>
@@ -55,7 +50,7 @@ import { javaApi } from '@/api/backend.js'
 const route = useRoute()
 const orderId = ref(route.query.orderId || '')
 const paid = ref(false)
-const orderStatus = ref('') // processing | confirmed — с сервера
+const orderStatus = ref('')
 const iconDone = ref(false)
 const copied = ref(false)
 
@@ -80,7 +75,7 @@ onMounted(async () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: orderId.value, success: true })
       })
-    } catch (_) { /* ignore */ }
+    } catch (_) {}
   }
   try {
     const data = await javaApi.orders.getPaymentStatus(orderId.value)
@@ -88,16 +83,17 @@ onMounted(async () => {
       paid.value = data.paid === true
       orderStatus.value = (data.status || '').toLowerCase()
     }
-  } catch (_) {
-    // getPaymentStatus при ошибке возвращает безопасный объект — статус остаётся «Обрабатывается»
-  }
+  } catch (_) {}
 })
 </script>
 
 <style scoped>
 .payment-success-page {
-  min-height: calc(100dvh - var(--nav-h, 64px));
-  padding: var(--spacing-2xl) var(--spacing-md);
+  --page-pad-top-extra: var(--spacing-2xl);
+  min-height: 100dvh;
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+  padding-bottom: var(--spacing-2xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,7 +106,6 @@ onMounted(async () => {
   text-align: center;
 }
 
-/* Иконка */
 .success-icon-wrap {
   margin: 0 auto var(--spacing-xl);
   width: 88px;
@@ -168,7 +163,6 @@ onMounted(async () => {
   line-height: 1.5;
 }
 
-/* Карточка заказа */
 .order-card {
   background: var(--white);
   border: 1px solid var(--gray-200);
@@ -209,7 +203,6 @@ onMounted(async () => {
   text-decoration: underline;
 }
 
-/* Статус */
 .status-row {
   margin-bottom: var(--spacing-xl);
 }
@@ -237,7 +230,6 @@ onMounted(async () => {
   color: var(--success, #1a6b3a);
 }
 
-/* Что дальше */
 .next-steps {
   text-align: left;
   background: var(--gray-50);
@@ -275,7 +267,6 @@ onMounted(async () => {
   background: var(--accent);
 }
 
-/* Кнопки */
 .actions {
   display: flex;
   flex-direction: column;
@@ -287,7 +278,6 @@ onMounted(async () => {
   min-width: 220px;
 }
 
-/* Вторичная кнопка на светлом фоне — не сливается с фоном */
 .actions .btn-secondary {
   background: transparent;
   color: var(--ink);
@@ -300,7 +290,12 @@ onMounted(async () => {
 }
 
 @media (max-width: 480px) {
-  .payment-success-page { padding: var(--spacing-lg) var(--spacing-md); padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0)); }
+  .payment-success-page {
+    --page-pad-top-extra: var(--spacing-lg);
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0));
+  }
   .success-container { width: 100%; padding: 0; }
   .success-icon-wrap { width: 72px; height: 72px; margin-bottom: var(--spacing-lg); }
   .success-title { font-size: 1.5rem; }

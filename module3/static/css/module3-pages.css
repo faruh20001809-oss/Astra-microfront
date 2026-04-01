@@ -1,0 +1,382 @@
+/* Module3 — дополнение к astra.css (Coffeehouse Editorial, neversight UI skill) */
+
+.m3-skip-link {
+  position: absolute;
+  left: -9999px;
+  z-index: 9999;
+  padding: 0.75rem 1rem;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}
+.m3-skip-link:focus {
+  left: 0.75rem;
+  top: 0.75rem;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.m3-db-layout {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.m3-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: min(280px, 92vw);
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  z-index: 110;
+  padding: 1.25rem 1rem 1.5rem;
+  background: linear-gradient(180deg, var(--gray-950) 0%, var(--ink) 100%);
+  border-right: 1px solid rgba(212, 184, 150, 0.1);
+  -webkit-overflow-scrolling: touch;
+}
+
+.m3-sidebar-brand {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cream);
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.m3-sidebar-nav {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.m3-sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.25rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid transparent;
+  color: var(--paper);
+  font-size: 0.9rem;
+  min-height: 44px;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.m3-sidebar-nav a:hover,
+.m3-sidebar-nav a:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--accent);
+  border-left-color: var(--accent);
+  outline: none;
+}
+
+.m3-sidebar-nav a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.m3-sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(212, 184, 150, 0.1);
+}
+
+.m3-main {
+  flex: 1;
+  margin-left: 280px;
+  padding: 1.5rem 2rem 3rem;
+  min-height: 100vh;
+  min-height: 100dvh;
+  max-width: 100%;
+}
+
+.m3-sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+body.m3-sidebar-open .m3-sidebar-overlay {
+  display: block;
+}
+
+.m3-mobile-bar {
+  display: none;
+  align-items: center;
+  gap: 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: 0.75rem 1rem;
+  margin: -1.5rem -2rem 1.25rem;
+  background: rgba(42, 35, 30, 0.97);
+  border-bottom: 1px solid rgba(212, 184, 150, 0.1);
+}
+
+.m3-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid rgba(212, 184, 150, 0.22);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.m3-menu-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 1024px) {
+  .m3-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  }
+  body.m3-sidebar-open .m3-sidebar {
+    transform: translateX(0);
+  }
+  .m3-main {
+    margin-left: 0;
+    padding: 1rem;
+  }
+  .m3-mobile-bar {
+    display: flex;
+    margin: -1rem -1rem 1rem;
+  }
+}
+
+.m3-page-head {
+  margin-bottom: 1.5rem;
+}
+
+.m3-page-head h1 {
+  font-size: clamp(1.35rem, 3vw, 1.75rem);
+  margin-bottom: 0.35rem;
+}
+
+.m3-page-head p {
+  color: var(--gray-400);
+  font-size: 0.95rem;
+}
+
+.m3-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.m3-stat-card {
+  text-align: center;
+  padding: 1.25rem;
+}
+
+.m3-stat-card .stat-icon {
+  font-size: 1.5rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+.m3-stat-card .stat-value {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--cream);
+}
+
+.m3-stat-card .stat-label {
+  font-size: 0.8rem;
+  color: var(--gray-400);
+  margin-top: 0.25rem;
+}
+
+.m3-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Широкие таблицы (метрики): без горизонтального срыва вёрстки */
+.m3-main .table-responsive {
+  max-width: 100%;
+}
+
+.m3-toolbar-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.m3-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(212, 184, 150, 0.2);
+  font-size: 0.8rem;
+  color: var(--paper);
+  background: rgba(46, 38, 32, 0.6);
+}
+
+.m3-stat-pill strong {
+  font-family: var(--font-display);
+  color: var(--cream);
+}
+
+.m3-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.m3-avatar {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  background: rgba(212, 184, 150, 0.15);
+  border: 1px solid rgba(212, 184, 150, 0.25);
+  color: var(--cream);
+}
+
+.m3-role-pill {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(212, 184, 150, 0.35);
+}
+
+.m3-role-admin {
+  border-color: var(--success);
+  color: #6ecf8f;
+}
+.m3-role-mod {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+.m3-role-editor {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.m3-role-staff {
+  border-color: var(--gray-400);
+  color: var(--gray-300);
+}
+.m3-role-none {
+  border-color: var(--gray-600);
+  color: var(--gray-500);
+}
+
+.m3-tg-ok {
+  border-color: var(--success);
+  color: #6ecf8f;
+}
+.m3-tg-no {
+  border-color: var(--danger);
+  color: #e8a598;
+}
+
+.m3-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.m3-search-wrap .bi {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--gray-500);
+  pointer-events: none;
+}
+
+.m3-search-wrap .form-control {
+  padding-left: 2.5rem;
+}
+
+.m3-form-inline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.m3-hidden {
+  display: none !important;
+}
+
+.m3-nav-blocked {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.m3-spinner {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--gray-600);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: m3-spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes m3-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3-spinner {
+    animation: none;
+    border-top-color: var(--accent);
+  }
+}
+
+.astra-app .text-mono,
+.text-mono {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3-sidebar {
+    transition: none;
+  }
+}

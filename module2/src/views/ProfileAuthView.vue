@@ -1,48 +1,129 @@
 <template>
-  <div class="page-wrapper profile-auth-page">
-    <div class="container">
-      <section class="auth-shell card">
-        <div class="auth-head">
-          <p class="text-mono auth-kicker">◫ Client Identity</p>
-          <h1>Профиль клиента</h1>
-          <p class="auth-lead">Создайте профиль или войдите, чтобы сохранять персональные данные и быстрее работать с заказами.</p>
+  <div class="page-wrapper auth-page">
+    <div class="container auth-container">
+      <section class="auth-shell" aria-labelledby="auth-page-title">
+        <header class="auth-head">
+          <p class="auth-eyebrow text-mono">Вход в сервис</p>
+          <h1 id="auth-page-title" class="auth-title">Профиль клиента</h1>
+          <p class="auth-lead">
+            Войдите или зарегистрируйтесь, чтобы сохранять данные и быстрее оформлять заказы в «Астрахань. Живая история».
+          </p>
+        </header>
+
+        <div
+          class="auth-segmented"
+          role="tablist"
+          aria-label="Режим"
+        >
+          <button
+            type="button"
+            role="tab"
+            class="auth-tab"
+            :class="{ active: mode === 'login' }"
+            :aria-selected="mode === 'login'"
+            id="tab-login"
+            aria-controls="panel-login"
+            @click="mode = 'login'"
+          >
+            Вход
+          </button>
+          <button
+            type="button"
+            role="tab"
+            class="auth-tab"
+            :class="{ active: mode === 'register' }"
+            :aria-selected="mode === 'register'"
+            id="tab-register"
+            aria-controls="panel-register"
+            @click="mode = 'register'"
+          >
+            Регистрация
+          </button>
         </div>
 
-        <div class="auth-tabs">
-          <button type="button" class="auth-tab" :class="{ active: mode === 'login' }" @click="mode = 'login'">Вход</button>
-          <button type="button" class="auth-tab" :class="{ active: mode === 'register' }" @click="mode = 'register'">Регистрация</button>
-        </div>
-
-        <form v-if="mode === 'login'" class="auth-form" @submit.prevent="submitLogin">
+        <form
+          v-if="mode === 'login'"
+          id="panel-login"
+          class="auth-form"
+          role="tabpanel"
+          aria-labelledby="tab-login"
+          @submit.prevent="submitLogin"
+        >
           <div class="form-group">
-            <label class="form-label">Логин или email</label>
-            <input v-model.trim="loginForm.loginOrEmail" class="form-input" required />
+            <label class="form-label" for="auth-login-email">Логин или email</label>
+            <input
+              id="auth-login-email"
+              v-model.trim="loginForm.loginOrEmail"
+              class="form-input"
+              autocomplete="username"
+              required
+            />
           </div>
           <div class="form-group">
-            <label class="form-label">Пароль</label>
-            <input v-model="loginForm.password" type="password" class="form-input" required />
+            <label class="form-label" for="auth-login-pass">Пароль</label>
+            <input
+              id="auth-login-pass"
+              v-model="loginForm.password"
+              class="form-input"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
           </div>
-          <button type="submit" class="btn btn-primary btn-lg" :disabled="busy">{{ busy ? 'Вход...' : 'Войти' }}</button>
+          <button type="submit" class="btn btn-primary btn-lg auth-submit" :disabled="busy">
+            {{ busy ? 'Вход…' : 'Войти' }}
+          </button>
         </form>
 
-        <form v-else class="auth-form" @submit.prevent="submitRegister">
+        <form
+          v-else
+          id="panel-register"
+          class="auth-form"
+          role="tabpanel"
+          aria-labelledby="tab-register"
+          @submit.prevent="submitRegister"
+        >
           <div class="form-group">
-            <label class="form-label">Логин</label>
-            <input v-model.trim="registerForm.login" class="form-input" minlength="3" required />
+            <label class="form-label" for="auth-reg-login">Логин</label>
+            <input
+              id="auth-reg-login"
+              v-model.trim="registerForm.login"
+              class="form-input"
+              minlength="3"
+              autocomplete="username"
+              required
+            />
           </div>
           <div class="form-group">
-            <label class="form-label">Email</label>
-            <input v-model.trim="registerForm.email" type="email" class="form-input" required />
+            <label class="form-label" for="auth-reg-email">Email</label>
+            <input
+              id="auth-reg-email"
+              v-model.trim="registerForm.email"
+              class="form-input"
+              type="email"
+              autocomplete="email"
+              required
+            />
           </div>
           <div class="form-group">
-            <label class="form-label">Пароль</label>
-            <input v-model="registerForm.password" type="password" class="form-input" minlength="6" required />
+            <label class="form-label" for="auth-reg-pass">Пароль</label>
+            <input
+              id="auth-reg-pass"
+              v-model="registerForm.password"
+              class="form-input"
+              type="password"
+              minlength="6"
+              autocomplete="new-password"
+              required
+            />
           </div>
-          <button type="submit" class="btn btn-accent btn-lg" :disabled="busy">{{ busy ? 'Создание...' : 'Создать профиль' }}</button>
+          <button type="submit" class="btn btn-accent btn-lg auth-submit" :disabled="busy">
+            {{ busy ? 'Создание…' : 'Создать профиль' }}
+          </button>
         </form>
 
-        <p v-if="errorText" class="form-error" style="margin-top:0.75rem">{{ errorText }}</p>
-        <p v-if="okText" class="form-success" style="margin-top:0.75rem">{{ okText }}</p>
+        <p v-if="errorText" class="form-error auth-feedback" role="alert">{{ errorText }}</p>
+        <p v-if="okText" class="form-success auth-feedback" role="status">{{ okText }}</p>
       </section>
     </div>
   </div>
@@ -104,34 +185,106 @@ async function submitRegister() {
 </script>
 
 <style scoped>
-.profile-auth-page { padding-top: 2rem; }
+.auth-page {
+  --page-pad-top-extra: clamp(1.25rem, 3vw, 2rem);
+}
+
+.auth-container {
+  max-width: 520px;
+}
+
 .auth-shell {
-  max-width: 680px;
-  margin: 0 auto;
-  background: linear-gradient(145deg, rgba(245, 240, 232, 0.06), rgba(245, 240, 232, 0.02));
-  border: 1px solid rgba(200, 169, 110, 0.25);
-  border-radius: 20px;
-  padding: 1.25rem;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  padding: clamp(1.35rem, 3vw, 2rem);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(212, 184, 150, 0.22);
+  background:
+    linear-gradient(165deg, rgba(46, 38, 32, 0.97) 0%, rgba(18, 15, 12, 0.95) 100%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.05) inset,
+    0 24px 56px rgba(0, 0, 0, 0.42);
 }
-.auth-kicker { color: var(--accent); margin-bottom: 0.4rem; }
-.auth-lead { color: var(--gray-300); margin-top: 0.5rem; }
-.auth-tabs { display: flex; gap: 0.5rem; margin: 1rem 0; }
-.auth-tab {
-  border: 1px solid var(--gray-700);
-  background: var(--gray-900);
-  color: var(--gray-300);
+
+.auth-eyebrow {
+  color: var(--accent);
+  margin: 0 0 0.5rem;
+  letter-spacing: 0.1em;
+}
+
+.auth-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 4vw, 1.85rem);
+  font-weight: 700;
+  color: var(--cream);
+  margin: 0 0 0.65rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.auth-lead {
+  margin: 0;
+  color: var(--gray-400);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  max-width: 38rem;
+}
+
+.auth-segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem;
+  margin: clamp(1.15rem, 3vw, 1.5rem) 0;
+  padding: 0.35rem;
   border-radius: 999px;
-  padding: 0.45rem 0.9rem;
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(212, 184, 150, 0.12);
 }
+
+.auth-tab {
+  min-height: 44px;
+  border: none;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--gray-400);
+  background: transparent;
+  transition:
+    color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition);
+}
+
+.auth-tab:hover {
+  color: var(--paper);
+}
+
 .auth-tab.active {
   color: var(--ink);
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent) 0%, #c9a66b 100%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
-.auth-form { display: grid; gap: 0.5rem; }
+
+.auth-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.auth-submit {
+  margin-top: 0.35rem;
+  width: 100%;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.auth-feedback {
+  margin: 1rem 0 0;
+}
 </style>

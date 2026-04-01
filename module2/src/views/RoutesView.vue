@@ -1,39 +1,56 @@
 <template>
   <div class="page-wrapper routes-page">
-    <div class="container">
+    <div class="container routes-page__inner">
 
       <!-- Hero -->
-      <section class="routes-hero">
-        <p class="text-mono" style="color:var(--accent)">◈ Исследование города</p>
-        <h1>Исторические<br />маршруты</h1>
-        <p class="routes-subtitle">Готовые экскурсионные маршруты по историческим местам Астрахани — пешеходные, автомобильные и тематические.</p>
+      <section class="routes-hero" aria-labelledby="routes-hero-title">
+        <div class="routes-hero__accent" aria-hidden="true" />
+        <p class="routes-eyebrow text-mono">Исследование города</p>
+        <h1 id="routes-hero-title" class="routes-hero-title">Исторические маршруты</h1>
+        <p class="routes-subtitle">
+          Готовые экскурсионные маршруты по историческим местам Астрахани — пешеходные, автомобильные и тематические.
+        </p>
       </section>
 
       <!-- Filter bar -->
-      <div class="routes-filter-bar">
-        <div class="filter-group">
-          <button
-            v-for="cat in categories"
-            :key="cat"
-            :class="['filter-chip', { active: activeCategory === cat }]"
-            @click="activeCategory = activeCategory === cat ? null : cat"
-          >
-            {{ cat }}
-          </button>
+      <div class="routes-filter-bar" role="region" aria-label="Фильтры маршрутов">
+        <div class="routes-filter-bar__row routes-filter-bar__row--scroll">
+          <div class="filter-group">
+            <button
+              v-for="cat in categories"
+              :key="cat"
+              type="button"
+              :class="['filter-chip', { active: activeCategory === cat }]"
+              @click="activeCategory = activeCategory === cat ? null : cat"
+            >
+              {{ cat }}
+            </button>
+          </div>
         </div>
-        <div class="filter-group">
-          <button
-            :class="['filter-chip', { active: showFree }]"
-            @click="showFree = !showFree"
-          >Бесплатные</button>
-          <button
-            :class="['filter-chip', { active: showPaid }]"
-            @click="showPaid = !showPaid"
-          >Платные</button>
-          <button
-            :class="['filter-chip', { active: showFavoritesOnly }]"
-            @click="showFavoritesOnly = !showFavoritesOnly"
-          >Только избранные</button>
+        <div class="routes-filter-bar__row">
+          <div class="filter-group filter-group--toggles">
+            <button
+              type="button"
+              :class="['filter-chip', { active: showFree }]"
+              @click="showFree = !showFree"
+            >
+              Бесплатные
+            </button>
+            <button
+              type="button"
+              :class="['filter-chip', { active: showPaid }]"
+              @click="showPaid = !showPaid"
+            >
+              Платные
+            </button>
+            <button
+              type="button"
+              :class="['filter-chip', { active: showFavoritesOnly }]"
+              @click="showFavoritesOnly = !showFavoritesOnly"
+            >
+              Только избранные
+            </button>
+          </div>
         </div>
       </div>
 
@@ -64,14 +81,26 @@
 
     <!-- Route detail modal -->
     <transition name="fade">
-      <div v-if="selected" class="modal-backdrop" @click.self="selected = null">
-        <div class="modal-box route-modal">
-          <button class="modal-close-btn" @click="selected = null">✕</button>
+      <div
+        v-if="selected"
+        class="modal-backdrop"
+        role="presentation"
+        @click.self="selected = null"
+      >
+        <div
+          class="modal-box route-modal"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="`route-modal-${selected.id}`"
+        >
+          <button type="button" class="modal-close-btn" aria-label="Закрыть" @click="selected = null">
+            ✕
+          </button>
 
           <span :class="['tag', selected.isPaid ? '' : 'tag-accent']">
             {{ selected.isPaid ? `${selected.price} ₽` : 'Бесплатно' }}
           </span>
-          <h2 style="margin: 0.75rem 0 0.5rem">{{ selected.title }}</h2>
+          <h2 :id="`route-modal-${selected.id}`" class="route-modal__title">{{ selected.title }}</h2>
           <div class="route-meta-row">
             <span>{{ selected.category }}</span>
             <span>·</span>
@@ -89,7 +118,7 @@
 
           <!-- Stops list -->
           <div v-if="selected.stops?.length" class="stops-list">
-            <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.75rem">Остановки маршрута</p>
+            <p class="stops-list__label text-mono">Остановки маршрута</p>
             <div class="stops-timeline">
               <div
                 v-for="(stop, i) in selected.stops"
@@ -120,11 +149,22 @@
     </transition>
 
     <transition name="fade">
-      <div v-if="shareModalOpen" class="modal-backdrop" @click.self="closeShareModalFromBackdrop">
-        <div class="modal-box route-modal" style="max-width: 420px">
-          <button type="button" class="modal-close-btn" @click="shareModalOpen = false">✕</button>
-          <h2 style="margin: 0 0 0.75rem; font-size: 1.1rem">Поделиться маршрутом</h2>
-          <input :value="shareUrl" readonly class="form-input" style="margin-bottom: 1rem" @focus="$event.target.select()" />
+      <div
+        v-if="shareModalOpen"
+        class="modal-backdrop"
+        role="presentation"
+        @click.self="closeShareModalFromBackdrop"
+      >
+        <div class="modal-box route-modal route-modal--share" role="dialog" aria-modal="true" aria-labelledby="share-route-title">
+          <button type="button" class="modal-close-btn" aria-label="Закрыть" @click="shareModalOpen = false">✕</button>
+          <h2 id="share-route-title" class="route-modal__title route-modal__title--sm">Поделиться маршрутом</h2>
+          <input
+            :value="shareUrl"
+            readonly
+            class="form-input route-share-input"
+            aria-label="Ссылка на маршрут"
+            @focus="$event.target.select()"
+          />
           <div class="route-modal-actions">
             <button type="button" class="btn btn-primary" @click="copyShareUrl">Скопировать ссылку</button>
             <button type="button" class="btn btn-ghost" @click="qrOpen = true">Показать QR</button>
@@ -475,55 +515,137 @@ function getMockRoutes() {
 </script>
 
 <style scoped>
-.routes-page { padding-bottom: var(--spacing-2xl); }
+.routes-page {
+  padding-bottom: var(--spacing-2xl);
+  container-type: inline-size;
+  container-name: routes;
+}
+
+.routes-page__inner {
+  max-width: 1200px;
+}
 
 .routes-hero {
-  padding: var(--spacing-2xl) 0 var(--spacing-xl);
-  max-width: 640px;
+  position: relative;
+  padding: clamp(1.5rem, 4vw, 2.5rem) 0 clamp(1.25rem, 3vw, 2rem);
+  max-width: 40rem;
+}
+
+.routes-hero__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3rem;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 2px;
+}
+
+.routes-eyebrow {
+  color: var(--accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: clamp(0.65rem, 0.5cqi + 0.55rem, 0.75rem);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.routes-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 3.5cqi + 1rem, 2.65rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--cream);
 }
 
 .routes-subtitle {
   margin-top: var(--spacing-md);
   color: var(--gray-400);
-  font-size: 0.9rem;
-  line-height: 1.8;
+  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 0.95rem);
+  line-height: 1.75;
+  max-width: 48ch;
 }
 
 /* Filter bar */
 .routes-filter-bar {
   display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--spacing-md);
   padding: var(--spacing-lg) 0;
-  border-top: 1px solid var(--gray-800);
-  border-bottom: 1px solid var(--gray-800);
+  border-top: 1px solid rgba(212, 184, 150, 0.12);
+  border-bottom: 1px solid rgba(212, 184, 150, 0.12);
   margin-bottom: var(--spacing-xl);
 }
 
-.filter-group { display: flex; flex-wrap: wrap; gap: var(--spacing-xs); }
+.routes-filter-bar__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.routes-filter-bar__row--scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+  mask-image: linear-gradient(to right, black calc(100% - 1.5rem), transparent);
+}
+
+@container routes (min-width: 640px) {
+  .routes-filter-bar__row--scroll {
+    mask-image: none;
+    overflow: visible;
+  }
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  min-width: min-content;
+}
+
+.filter-group--toggles {
+  width: 100%;
+}
 
 .filter-chip {
-  padding: 0.35rem 0.8rem;
+  padding: 0.4rem 0.85rem;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   border: 1px solid var(--gray-600);
-  border-radius: var(--radius-sm);
-  background: transparent;
+  border-radius: 999px;
+  background: rgba(20, 16, 13, 0.35);
   color: var(--gray-400);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+  white-space: nowrap;
 }
 
-.filter-chip:hover { border-color: var(--gray-400); color: var(--paper); }
-.filter-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(200,169,110,0.08); }
+.filter-chip:hover {
+  border-color: var(--gray-400);
+  color: var(--paper);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.filter-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(200, 169, 110, 0.1);
+}
 
 /* Grid */
 .routes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: clamp(1rem, 2cqi, 1.5rem);
 }
 
 .routes-loading {
@@ -541,23 +663,65 @@ function getMockRoutes() {
 }
 
 /* Route modal */
-.route-modal { max-width: 660px; position: relative; }
+.route-modal {
+  max-width: 660px;
+  position: relative;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(212, 184, 150, 0.14);
+  box-shadow: var(--shadow-modal);
+  background: linear-gradient(165deg, rgba(42, 35, 30, 0.98) 0%, rgba(20, 16, 13, 0.99) 100%);
+  backdrop-filter: blur(12px);
+}
+
+.route-modal--share {
+  max-width: 420px;
+}
+
+.route-modal__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 2vw + 0.5rem, 1.75rem);
+  margin: 0.75rem 0 0.5rem;
+  line-height: 1.2;
+  color: var(--cream);
+}
+
+.route-modal__title--sm {
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem;
+}
+
+.route-share-input {
+  margin-bottom: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
 
 .modal-close-btn {
   position: absolute;
   top: var(--spacing-md);
   right: var(--spacing-md);
-  background: transparent;
+  z-index: 2;
+  background: rgba(20, 16, 13, 0.75);
   border: 1px solid var(--gray-600);
   color: var(--paper);
-  width: 30px; height: 30px;
-  display: flex; align-items: center; justify-content: center;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: all var(--transition);
+  border-radius: 999px;
+  transition: border-color var(--transition), background var(--transition);
 }
 
-.modal-close-btn:hover { border-color: var(--paper); }
+.modal-close-btn:hover {
+  border-color: var(--paper);
+}
+
+.modal-close-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
 .route-meta-row {
   display: flex;
@@ -575,15 +739,47 @@ function getMockRoutes() {
 }
 
 /* Stops timeline */
-.stops-list { margin-bottom: var(--spacing-xl); }
+.stops-list {
+  margin-bottom: var(--spacing-xl);
+}
 
-.stops-timeline { display: flex; flex-direction: column; gap: 0; }
+.stops-list__label {
+  color: var(--gray-400);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+}
+
+.stops-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  padding-left: 0.25rem;
+}
+
+.stops-timeline::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    rgba(212, 184, 150, 0.15),
+    rgba(212, 184, 150, 0.45),
+    rgba(212, 184, 150, 0.15)
+  );
+  border-radius: 1px;
+}
 
 .stop-item {
   display: flex;
   gap: var(--spacing-md);
   padding: var(--spacing-md) 0;
-  border-bottom: 1px solid var(--gray-800);
+  border-bottom: 1px solid rgba(212, 184, 150, 0.08);
   position: relative;
 }
 
@@ -591,15 +787,16 @@ function getMockRoutes() {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--gray-800);
-  border: 1px solid var(--accent);
+  background: var(--gray-900);
+  border: 2px solid rgba(212, 184, 150, 0.55);
   color: var(--accent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-mono);
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   flex-shrink: 0;
+  box-shadow: 0 0 0 4px rgba(20, 16, 13, 0.9);
 }
 
 .stop-name { font-weight: 500; font-size: 0.875rem; margin-bottom: 2px; }
@@ -624,5 +821,11 @@ function getMockRoutes() {
   .route-card { padding: var(--spacing-lg); }
   .route-modal { margin: var(--spacing-sm); padding: var(--spacing-md); }
   .stops-timeline .stop-item { padding: var(--spacing-sm) 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-chip {
+    transition: none;
+  }
 }
 </style>

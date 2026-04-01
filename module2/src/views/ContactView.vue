@@ -1,18 +1,24 @@
 <template>
   <div class="page-wrapper contact-page">
-    <div class="container">
+    <div class="container contact-page__inner">
 
-      <section class="contact-hero">
-        <p class="text-mono" style="color:var(--accent)">◇ Связь с нами</p>
-        <h1>Контакты</h1>
+      <section class="contact-hero" aria-labelledby="contact-hero-title">
+        <div class="contact-hero__accent" aria-hidden="true" />
+        <p class="contact-eyebrow text-mono">Связь с нами</p>
+        <h1 id="contact-hero-title" class="contact-hero-title">Контакты</h1>
+        <p class="contact-hero-lead">
+          Вопросы по карте, предложения объектов и сотрудничество — мы читаем каждое сообщение.
+        </p>
       </section>
 
-      <div class="contact-layout">
+      <div class="contact-bento">
 
         <!-- Contact form -->
-        <div class="contact-form-section">
+        <div class="contact-panel contact-panel--form">
           <h2 class="section-heading">Написать нам</h2>
-          <p class="section-desc">Если вы хотите предложить новый объект на карту, сообщить об ошибке или просто поделиться мыслями — мы рады вашему письму.</p>
+          <p class="section-desc">
+            Если вы хотите предложить новый объект на карту, сообщить об ошибке или просто поделиться мыслями — мы рады вашему письму.
+          </p>
 
           <form class="contact-form" @submit.prevent="submitForm">
             <div class="form-group">
@@ -50,8 +56,8 @@
             </button>
 
             <transition name="fade">
-              <div v-if="submitted" class="form-success">
-                <span style="color:var(--accent)">✦</span>
+              <div v-if="submitted" class="form-success" role="status">
+                <span class="form-success__mark" aria-hidden="true" />
                 Сообщение отправлено! Мы ответим вам в течение 1–2 рабочих дней.
               </div>
             </transition>
@@ -59,11 +65,11 @@
         </div>
 
         <!-- Info column -->
-        <div class="contact-info-section">
+        <aside class="contact-panel contact-panel--aside" aria-label="Контакты и поддержка">
 
           <!-- Social / contacts -->
           <div class="info-card">
-            <h3>Наши контакты</h3>
+            <h3 class="info-card__title">Наши контакты</h3>
             <div class="divider" />
             <div class="contact-links">
               <a href="mailto:info@astrakhan-history.ru" class="contact-link">
@@ -92,8 +98,8 @@
 
           <!-- Donation -->
           <div class="info-card donation-card">
-            <p class="text-mono" style="color:var(--accent);margin-bottom:0.5rem">◈ Поддержать проект</p>
-            <h3>Пожертвование</h3>
+            <p class="donation-eyebrow text-mono">Поддержать проект</p>
+            <h3 class="info-card__title">Пожертвование</h3>
             <p class="donation-desc">
               Проект существует благодаря поддержке неравнодушных горожан. Ваш вклад помогает оцифровывать исторические архивы, добавлять новые объекты и развивать платформу.
             </p>
@@ -102,6 +108,7 @@
               <button
                 v-for="amount in donationAmounts"
                 :key="amount"
+                type="button"
                 :class="['donation-btn', { active: selectedDonation === amount }]"
                 @click="selectedDonation = amount; customDonation = ''"
               >
@@ -122,7 +129,7 @@
             </div>
 
             <div class="donation-methods">
-              <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Способы перевода</p>
+              <p class="donation-methods__label text-mono">Способы перевода</p>
               <div class="method-list">
                 <div class="method-item">
                   <span>Сбербанк Онлайн</span>
@@ -139,12 +146,12 @@
               </div>
             </div>
 
-            <button class="btn btn-accent btn-lg" @click="donate">
+            <button type="button" class="btn btn-accent btn-lg" @click="donate">
               Поддержать — {{ activeDonationAmount || '…' }} ₽
             </button>
           </div>
 
-        </div>
+        </aside>
       </div>
     </div>
   </div>
@@ -203,33 +210,103 @@ function donate() {
 </script>
 
 <style scoped>
-.contact-page { padding-bottom: var(--spacing-2xl); }
-
-.contact-hero {
-  padding: var(--spacing-2xl) 0 var(--spacing-xl);
+.contact-page {
+  padding-bottom: var(--spacing-2xl);
+  container-type: inline-size;
+  container-name: contact;
 }
 
-.contact-layout {
+.contact-page__inner {
+  max-width: 1120px;
+}
+
+.contact-hero {
+  position: relative;
+  padding: clamp(1.5rem, 4vw, 2.5rem) 0 clamp(1rem, 2.5vw, 1.75rem);
+  max-width: 38rem;
+}
+
+.contact-hero__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3rem;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 2px;
+}
+
+.contact-eyebrow {
+  color: var(--accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: clamp(0.65rem, 0.45cqi + 0.55rem, 0.75rem);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.contact-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4cqi + 1rem, 2.75rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--cream);
+}
+
+.contact-hero-lead {
+  margin: var(--spacing-md) 0 0;
+  color: var(--gray-400);
+  font-size: clamp(0.875rem, 0.8rem + 0.3vw, 0.95rem);
+  line-height: 1.7;
+  max-width: 42ch;
+}
+
+.contact-bento {
   display: grid;
-  grid-template-columns: 1fr 420px;
-  gap: var(--spacing-2xl);
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 400px);
+  gap: clamp(1.25rem, 3cqi, 2.5rem);
   align-items: start;
+}
+
+.contact-panel {
+  min-width: 0;
+}
+
+.contact-panel--form {
+  padding: clamp(1.25rem, 2.5cqi, 2rem);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(212, 184, 150, 0.12);
+  background: linear-gradient(160deg, rgba(42, 35, 30, 0.55) 0%, rgba(20, 16, 13, 0.65) 100%);
+  box-shadow: var(--shadow-card);
+}
+
+.contact-panel--aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
 }
 
 .section-heading {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 1.5cqi + 0.9rem, 1.5rem);
   margin-bottom: var(--spacing-sm);
+  color: var(--cream);
 }
 
 .section-desc {
   color: var(--gray-400);
   font-size: 0.875rem;
-  line-height: 1.7;
+  line-height: 1.75;
   margin-bottom: var(--spacing-xl);
+  max-width: 52ch;
 }
 
-.contact-form { display: flex; flex-direction: column; gap: var(--spacing-lg); }
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
 
 .form-error {
   color: var(--danger);
@@ -244,22 +321,51 @@ function donate() {
   align-items: flex-start;
   gap: var(--spacing-sm);
   color: var(--paper);
-  background: rgba(26, 107, 58, 0.15);
-  border: 1px solid var(--success);
+  background: rgba(45, 107, 69, 0.18);
+  border: 1px solid rgba(45, 107, 69, 0.55);
   padding: var(--spacing-md);
   border-radius: var(--radius-sm);
   font-size: 0.85rem;
   line-height: 1.6;
 }
 
-/* Info section */
-.contact-info-section { display: flex; flex-direction: column; gap: var(--spacing-xl); }
+.form-success__mark {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 0.35rem;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
 
 .info-card {
-  background: var(--gray-800);
-  border: 1px solid var(--gray-600);
+  position: relative;
+  background: linear-gradient(180deg, rgba(42, 35, 30, 0.85) 0%, rgba(30, 25, 21, 0.92) 100%);
+  border: 1px solid rgba(212, 184, 150, 0.14);
   border-radius: var(--radius-md);
   padding: var(--spacing-xl);
+  box-shadow: var(--shadow-subtle);
+}
+
+.info-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: linear-gradient(90deg, transparent, rgba(212, 184, 150, 0.45), transparent);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.info-card__title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  margin: 0 0 var(--spacing-sm);
+  color: var(--cream);
 }
 
 .contact-links { display: flex; flex-direction: column; gap: var(--spacing-md); }
@@ -275,6 +381,11 @@ function donate() {
 }
 
 .contact-link:hover { background: rgba(255,255,255,0.04); }
+
+.contact-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
 .contact-link-icon {
   width: 36px; height: 36px;
@@ -295,8 +406,20 @@ function donate() {
   margin-bottom: 2px;
 }
 
+.donation-eyebrow {
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+}
+
 /* Donation */
-.donation-card { display: flex; flex-direction: column; gap: var(--spacing-md); }
+.donation-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
 
 .donation-desc {
   font-size: 0.8rem;
@@ -327,9 +450,18 @@ function donate() {
 .donation-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(200,169,110,0.08); }
 
 .donation-methods {
-  background: var(--ink);
+  background: rgba(20, 16, 13, 0.55);
+  border: 1px solid rgba(212, 184, 150, 0.1);
   border-radius: var(--radius-sm);
   padding: var(--spacing-md);
+}
+
+.donation-methods__label {
+  color: var(--gray-400);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
 }
 
 .method-list { display: flex; flex-direction: column; gap: var(--spacing-sm); }
@@ -350,7 +482,9 @@ function donate() {
 }
 
 @media (max-width: 900px) {
-  .contact-layout { grid-template-columns: 1fr; }
+  .contact-bento {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {

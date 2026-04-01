@@ -86,7 +86,6 @@ async function submitForm() {
 <style scoped>
 .suggest-poi-page {
   padding-bottom: var(--spacing-2xl);
-  padding-top: 0;
 }
 
 .suggest-container {

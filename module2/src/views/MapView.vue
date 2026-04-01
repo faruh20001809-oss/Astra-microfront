@@ -314,19 +314,22 @@
                 </dl>
               </header>
 
-              <!-- Вкладки: Описание | Фото | Панорама -->
-              <div class="poi-tabs" role="tablist" aria-label="Разделы карточки">
-                <button
-                  v-for="tab in tabs"
-                  :key="tab.key"
-                  :class="['poi-tab-btn', { active: activeTab === tab.key }]"
-                  @click="activeTab = tab.key"
-                  role="tab"
-                  :aria-selected="activeTab === tab.key"
-                  :id="`tab-${tab.key}`"
-                >
-                  {{ tab.label }}
-                </button>
+              <!-- Вкладки: сегментированный контрол -->
+              <div class="poi-tabs-shell">
+                <div class="poi-tabs" role="tablist" aria-label="Разделы карточки">
+                  <button
+                    v-for="tab in tabs"
+                    :key="tab.key"
+                    type="button"
+                    :class="['poi-tab-btn', { active: activeTab === tab.key }]"
+                    @click="activeTab = tab.key"
+                    role="tab"
+                    :aria-selected="activeTab === tab.key"
+                    :id="`tab-${tab.key}`"
+                  >
+                    {{ tab.label }}
+                  </button>
+                </div>
               </div>
 
               <!-- Вкладка: Описание -->
@@ -1128,12 +1131,11 @@ function categoryIcon(cat) {
 </script>
 
 <style scoped>
-/* ===== Page layout ===== */
 .map-page {
   display: flex;
   flex-direction: row;
-  height: calc(100dvh - var(--nav-h, 64px));
-  margin-top: var(--nav-h, 64px);
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--nav-h, 64px));
+  margin-top: calc(env(safe-area-inset-top, 0px) + var(--nav-h, 64px));
   width: 100%;
   max-width: 100vw;
   position: relative;
@@ -1491,30 +1493,65 @@ function categoryIcon(cat) {
 .new-poi-dialog-desc { font-size: 0.9rem; color: var(--gray-300); margin: 0 0 1rem; line-height: 1.45; }
 .new-poi-dialog-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
 
-/* ===== Connector line from marker to card ===== */
+/* Тёмное «тело» линии — читается на светлом фоне карты; лёгкий тёплый акцент в центре */
 .poi-connector {
   position: absolute;
-  height: 2px;
-  background: rgba(200, 169, 110, 0.7);
+  height: 5px;
   transform-origin: 0 50%;
   pointer-events: none;
-  z-index: 140;
+  z-index: 165;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(20, 16, 13, 0.12) 0%,
+    rgba(42, 35, 30, 0.88) 18%,
+    rgba(62, 52, 44, 0.96) 50%,
+    rgba(42, 35, 30, 0.88) 82%,
+    rgba(20, 16, 13, 0.12) 100%
+  );
+  box-shadow:
+    0 0 0 1px rgba(20, 16, 13, 0.5),
+    0 1px 3px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(255, 252, 248, 0.12) inset,
+    0 0 10px rgba(212, 184, 150, 0.22);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poi-connector {
+    filter: none;
+    box-shadow:
+      0 0 0 2px rgba(42, 35, 30, 0.9),
+      0 1px 2px rgba(0, 0, 0, 0.3);
+  }
 }
 
 /* ===== Floating modal: горизонтальная карточка на десктопе ===== */
 .poi-modal.floating {
   position: absolute;
+  z-index: 220;
   width: 100%;
-  max-width: 660px;
-  min-width: 540px;
+  max-width: min(660px, 96vw);
+  min-width: min(540px, 96vw);
   max-height: 78vh;
   overflow: visible;
   display: flex;
   flex-direction: column;
-  background: rgba(18, 16, 14, 0.96);
-  border-radius: 8px;
-  padding: 44px 44px 0 14px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(200, 169, 110, 0.12);
+  background: linear-gradient(
+    155deg,
+    rgba(30, 25, 21, 0.97) 0%,
+    rgba(18, 16, 14, 0.98) 45%,
+    rgba(14, 12, 10, 0.99) 100%
+  );
+  border-radius: 12px;
+  padding: clamp(2.25rem, 3vw, 2.75rem) clamp(2.5rem, 3vw, 2.75rem) 0 clamp(0.75rem, 1.5vw, 1rem);
+  border: 1px solid rgba(212, 184, 150, 0.14);
+  box-shadow:
+    var(--shadow-modal),
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 252, 248, 0.04);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   pointer-events: auto;
 }
 
@@ -1540,7 +1577,7 @@ function categoryIcon(cat) {
   height: 100%;
   min-height: 240px;
   object-fit: cover;
-  border-radius: 8px 0 0 0;
+  border-radius: 12px 0 0 0;
 }
 
 .poi-photo-placeholder {
@@ -1552,7 +1589,7 @@ function categoryIcon(cat) {
   font-size: 0.8rem;
   color: var(--gray-500);
   background: var(--gray-800);
-  border-radius: 8px 0 0 0;
+  border-radius: 12px 0 0 0;
 }
 
 /* Разделительная линия между фото и контентом */
@@ -1576,44 +1613,45 @@ function categoryIcon(cat) {
   padding: var(--spacing-lg);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.poi-modal.floating::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 40px;
-  border-width: 10px 10px 0 10px;
-  border-style: solid;
-  border-color: rgba(10, 10, 10, 0.92) transparent transparent transparent;
-}
 .modal-close {
   position: absolute;
-  top: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.85);
-  border: 1px solid var(--gray-600);
+  top: var(--spacing-sm);
+  right: var(--spacing-sm);
+  background: rgba(20, 16, 13, 0.88);
+  border: 1px solid rgba(212, 184, 150, 0.22);
   color: var(--paper);
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   border-radius: 999px;
   font-size: 0.9rem;
-  transition: all var(--transition);
+  transition: border-color var(--transition), background var(--transition), color var(--transition);
   z-index: 20;
 }
 
 .modal-close:hover {
-  border-color: var(--paper);
+  border-color: var(--accent);
+  color: var(--cream);
+}
+
+.modal-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .poi-modal-header {
   margin-bottom: var(--spacing-md);
   position: relative;
   padding-right: 0;
+  flex-shrink: 0;
 }
 
 .poi-modal-title-row {
@@ -1749,40 +1787,75 @@ function categoryIcon(cat) {
   color: var(--gray-400);
 }
 
-/* ===== Tabs ===== */
-.poi-tabs {
-  display: flex;
-  gap: 2px;
-  border-bottom: 1px solid var(--gray-800);
+/* ===== Tabs: сегмент в «дорожке» ===== */
+.poi-tabs-shell {
+  width: 100%;
+  flex-shrink: 0;
   margin-bottom: var(--spacing-lg);
+  margin-top: 0;
+}
+
+.poi-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  width: 100%;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(20, 16, 13, 0.65);
+  border: 1px solid rgba(212, 184, 150, 0.12);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 
 .poi-tab-btn {
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 0.35rem;
   font-family: var(--font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
+  font-size: clamp(0.58rem, 0.45vw + 0.52rem, 0.72rem);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   background: transparent;
   border: none;
+  border-radius: 7px;
   color: var(--gray-400);
   cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all var(--transition);
-  margin-bottom: -1px;
+  transition:
+    color var(--transition),
+    background var(--transition),
+    box-shadow var(--transition);
+  min-width: 0;
+  text-align: center;
+  line-height: 1.25;
 }
 
 .poi-tab-btn:hover {
   color: var(--paper);
 }
 
+.poi-tab-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .poi-tab-btn.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
+  color: var(--ink);
+  background: linear-gradient(180deg, rgba(242, 232, 220, 0.98) 0%, rgba(212, 184, 150, 0.55) 100%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
 .poi-tab-content {
   animation: fadeIn 0.2s ease;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poi-tab-content {
+    animation: none;
+  }
+  .poi-tab-btn {
+    transition: none;
+  }
 }
 
 @keyframes fadeIn {
@@ -2045,8 +2118,8 @@ function categoryIcon(cat) {
 @media (max-width: 768px) {
   .map-page {
     flex-direction: row;
-    height: calc(100dvh - var(--nav-h, 64px));
-    margin-top: var(--nav-h, 64px);
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - var(--nav-h, 64px));
+    margin-top: calc(env(safe-area-inset-top, 0px) + var(--nav-h, 64px));
   }
 
   .map-sidebar {
@@ -2105,29 +2178,35 @@ function categoryIcon(cat) {
   /* Карточка POI: bottom sheet с ручкой и плавной прокруткой */
   .poi-modal.floating {
     position: fixed !important;
+    z-index: 320 !important;
     left: 0 !important;
     right: 0 !important;
     top: auto !important;
     bottom: 0 !important;
     max-width: none !important;
+    min-width: 0 !important;
     width: 100% !important;
     /* Карточка занимает нижнюю часть экрана, сверху остаётся карта */
     max-height: 70vh;
     min-height: 40vh;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4);
+    border-radius: 16px 16px 0 0;
+    border: 1px solid rgba(212, 184, 150, 0.14);
+    border-bottom: none;
+    box-shadow:
+      0 -12px 40px rgba(0, 0, 0, 0.45),
+      inset 0 1px 0 rgba(255, 252, 248, 0.05);
     padding-top: 0;
+    padding-left: 0;
+    padding-right: 0;
     padding-bottom: env(safe-area-inset-bottom, 0);
     transform: none !important;
     overflow: hidden;
     display: flex;
     flex-direction: column;
   }
-  .poi-modal.floating {
-    min-width: 0;
-    max-width: none;
+  .poi-tabs .poi-tab-btn.active {
+    color: var(--ink);
   }
-  .poi-modal.floating::after { display: none; }
   .poi-card-divider {
     width: 100%;
     height: 1px;
@@ -2150,8 +2229,8 @@ function categoryIcon(cat) {
   .poi-type-badge { position: static; margin-top: 0.25rem; display: inline-block; }
   .poi-tabs .poi-tab-btn {
     min-height: 44px;
-    min-width: 44px;
-    padding: 0.6rem 1rem;
+    min-width: 0;
+    padding: 0.5rem 0.25rem;
     touch-action: manipulation;
   }
   .modal-close {

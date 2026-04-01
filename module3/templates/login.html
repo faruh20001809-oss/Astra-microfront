@@ -1,219 +1,77 @@
 <!DOCTYPE html>
-<html lang="ru" class="light">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard • Вход</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-out',
-                        'slide-up': 'slideUp 0.5s ease-out',
-                        'scale-in': 'scaleIn 0.3s ease-out',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { opacity: '0', transform: 'translateY(20px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        },
-                        scaleIn: {
-                            '0%': { opacity: '0', transform: 'scale(0.95)' },
-                            '100%': { opacity: '1', transform: 'scale(1)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        /* Smooth transitions */
-        * {
-            transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 200ms;
-        }
-        
-        /* Input focus */
-        input:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px #3b82f6;
-            border-color: #3b82f6;
-        }
-        
-        /* Button hover lift */
-        .btn-hover-lift:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Background patterns */
-        .bg-pattern {
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.1) 0%, transparent 40%);
-        }
-        
-        .dark .bg-pattern {
-            background-image: 
-                radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
-                radial-gradient(circle at 40% 40%, rgba(16, 185, 129, 0.15) 0%, transparent 40%);
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Вход — Астрахань. Живая История</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/astra.css') }}">
 </head>
-<body class="min-h-screen bg-gray-50 dark:bg-gray-900 bg-pattern flex items-center justify-center p-4">
-    
-    <!-- Theme Toggle (top right) -->
-    <button id="themeToggle" class="absolute top-4 right-4 p-3 rounded-xl bg-white/20 dark:bg-gray-800/50 hover:bg-white/30 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300 transition-all backdrop-blur-sm">
-        <i class="bi bi-sun-fill dark:hidden text-yellow-500"></i>
-        <i class="bi bi-moon-fill hidden dark:inline"></i>
-    </button>
+<body class="astra-app">
+<div class="login-page">
+    <div class="login-box">
+        <h1>Вход</h1>
+        <p class="subtitle">Астрахань. Живая История</p>
 
-    <!-- Login Panel -->
-    <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-200 dark:border-gray-700 animate-scale-in">
-        
-        <div class="text-center mb-8">
-            <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center text-white text-2xl shadow-lg">
-                <i class="bi bi-shield-lock-fill"></i>
+        <div id="msg" class="login-error m3-hidden" role="alert" aria-live="polite"></div>
+
+        <form id="loginForm" novalidate>
+            <div class="form-group">
+                <label for="username">Логин</label>
+                <input id="username" name="username" type="text" class="form-control" autocomplete="username" required autofocus />
             </div>
-            <h1 class="text-2xl font-extrabold text-gray-800 dark:text-white">Admin Dashboard</h1>
-            <p class="text-gray-500 dark:text-gray-400 mt-1">Авторизация</p>
-        </div>
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input id="password" name="password" type="password" class="form-control" autocomplete="current-password" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Войти</button>
+        </form>
 
-        <!-- Username -->
-        <div class="mb-5">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <i class="bi bi-person me-2"></i>Логин
-            </label>
-            <input id="username" type="text" 
-                class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="Введите логин">
-        </div>
-
-        <!-- Password -->
-        <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <i class="bi bi-key me-2"></i>Пароль
-            </label>
-            <input id="password" type="password" 
-                class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                placeholder="Введите пароль">
-        </div>
-
-        <!-- Login Button -->
-        <button onclick="login()" 
-            class="btn-hover-lift w-full py-3 bg-gradient-to-r from-primary-500 to-purple-600 hover:from-primary-600 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg">
-            <i class="bi bi-box-arrow-in-right me-2"></i>Войти
-        </button>
-
-        <!-- Message -->
-        <p id="msg" class="text-center mt-5 text-sm"></p>
-
-        <!-- Register Link -->
-        <div class="text-center mt-5">
-            <a href="{{ root }}/register" class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium transition-colors">
-                <i class="bi bi-person-plus me-1"></i>Создать аккаунт
-            </a>
-        </div>
+        <p style="margin-top:1.25rem;text-align:center;font-size:0.85rem;color:var(--gray-400);">
+            Нет аккаунта? <a href="{{ root }}/register" style="color:var(--accent);text-decoration:underline;">Регистрация</a>
+        </p>
     </div>
-
-    <script>
-        const ROOT = '{{ root }}';
-        // Theme Toggle
-        const html = document.documentElement;
-        const savedTheme = localStorage.getItem('theme');
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-            html.classList.add('dark');
+</div>
+<style>.m3-hidden{display:none!important}</style>
+<script>
+    const ROOT = '{{ root }}';
+    document.getElementById('loginForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const msg = document.getElementById('msg');
+        msg.classList.add('m3-hidden');
+        if (!username || !password) {
+            msg.textContent = 'Заполните логин и пароль.';
+            msg.classList.remove('m3-hidden');
+            return;
         }
-        
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            html.classList.toggle('dark');
-            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
-        });
-
-        // Enter key support
-        document.getElementById('password').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') login();
-        });
-
-        async function login() {
-            const username = document.getElementById("username").value.trim();
-            const password = document.getElementById("password").value.trim();
-            const msg = document.getElementById("msg");
-
-            if (!username || !password) {
-                msg.textContent = "Пожалуйста, заполните все поля";
-                msg.className = "text-center mt-5 text-sm text-red-500";
+        msg.textContent = 'Выполняется вход…';
+        msg.className = 'login-error';
+        msg.classList.remove('m3-hidden');
+        try {
+            const res = await fetch(ROOT + '/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json().catch(function () { return {}; });
+            if (!res.ok) {
+                msg.textContent = (data.error || 'Ошибка входа') + ' Проверьте данные и попробуйте снова.';
+                msg.className = 'login-error';
                 return;
             }
-
-            msg.textContent = "Выполняется вход...";
-            msg.className = "text-center mt-5 text-sm text-gray-500 dark:text-gray-400";
-
-            try {
-                const res = await fetch(ROOT + "/api/login", {
-                    method: "POST",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({username, password})
-                });
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    msg.textContent = data.error || "Ошибка входа";
-                    msg.className = "text-center mt-5 text-sm text-red-500";
-                    return;
-                }
-
-                msg.textContent = "Добро пожаловать!";
-                msg.className = "text-center mt-5 text-sm text-green-500";
-
-                setTimeout(() => {
-                    window.location.href = ROOT + "/";
-                }, 600);
-            } catch (error) {
-                msg.textContent = "Ошибка соединения с сервером";
-                msg.className = "text-center mt-5 text-sm text-red-500";
-            }
+            msg.textContent = 'Успешно. Переход…';
+            msg.className = 'login-logout';
+            setTimeout(function () { window.location.href = ROOT + '/'; }, 400);
+        } catch (err) {
+            msg.textContent = 'Нет соединения с сервером. Проверьте сеть и обновите страницу.';
+            msg.className = 'login-error';
         }
-    </script>
+    });
+    document.getElementById('password').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') document.getElementById('loginForm').requestSubmit();
+    });
+</script>
 </body>
 </html>

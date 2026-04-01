@@ -1,38 +1,42 @@
-<!-- src/components/AppHeader.vue -->
+<!-- src/components/layout/AppHeader.vue -->
 <template>
   <header class="app-header" :class="{ visible: headerVisible, hovered: headerHovered }">
     <div class="header-inner">
-      <router-link to="/" class="logo">
-        <span class="logo-icon">⬡</span>
+      <router-link
+        to="/"
+        class="logo"
+        aria-label="Астрахань. Живая история — на главную"
+      >
+        <NavIcon name="logo" :size="22" class="logo-mark" />
         <span class="logo-text">
           <span class="logo-title">Астрахань</span>
           <span class="logo-sub">Живая история</span>
         </span>
       </router-link>
 
-      <nav class="main-nav">
+      <nav class="main-nav" aria-label="Основное меню">
         <template v-for="item in navItems" :key="item.to">
           <a
             v-if="item.external"
             :href="item.to"
             class="nav-link"
           >
-            <span class="nav-icon">{{ item.icon }}</span>
+            <NavIcon :name="item.icon" :size="18" class="nav-icon-el" />
             {{ item.label }}
           </a>
           <router-link
             v-else
             :to="item.to"
             class="nav-link"
+            :aria-current="isNavCurrent(item.to) ? 'page' : undefined"
           >
-            <span class="nav-icon">{{ item.icon }}</span>
+            <NavIcon :name="item.icon" :size="18" class="nav-icon-el" />
             {{ item.label }}
           </router-link>
         </template>
       </nav>
 
       <div class="header-actions">
-        <!-- Кнопка корзины показывается только когда в корзине есть товары (на мобилках иначе непонятный пустой квадрат) -->
         <Button
             v-if="cartStore.totalCount > 0"
             class="p-button-text p-button-secondary cart-btn"
@@ -46,12 +50,13 @@
             icon="pi pi-bars"
             class="p-button-text p-button-secondary burger-btn"
             @click="menuOpen = true"
-            aria-label="Меню"
+            aria-label="Открыть меню"
+            aria-haspopup="dialog"
+            :aria-expanded="menuOpen"
         />
       </div>
     </div>
 
-    <!-- Мобильное меню: PrimeVue Drawer -->
     <Drawer
         v-model:visible="menuOpen"
         position="right"
@@ -62,27 +67,28 @@
         @hide="menuOpen = false"
     >
       <template #header>
-        <span class="nav-drawer-title">Меню</span>
+        <h2 class="nav-drawer-title" id="nav-drawer-heading">Меню</h2>
       </template>
-      <nav class="nav-drawer-list">
+      <nav class="nav-drawer-list" aria-labelledby="nav-drawer-heading">
         <template v-for="item in navItems" :key="item.to">
           <a
             v-if="item.external"
             :href="item.to"
             class="nav-drawer-link"
-            @click="menuOpen = false"
+            @click="closeDrawer"
           >
-            <span class="nav-icon">{{ item.icon }}</span>
+            <NavIcon :name="item.icon" :size="22" class="nav-icon-el" />
             {{ item.label }}
           </a>
           <router-link
             v-else
             :to="item.to"
             class="nav-drawer-link"
-            :class="{ 'router-link-active': $route.path === item.to }"
-            @click="menuOpen = false"
+            :class="{ 'router-link-active': isNavCurrent(item.to) }"
+            :aria-current="isNavCurrent(item.to) ? 'page' : undefined"
+            @click="closeDrawer"
           >
-            <span class="nav-icon">{{ item.icon }}</span>
+            <NavIcon :name="item.icon" :size="22" class="nav-icon-el" />
             {{ item.label }}
           </router-link>
         </template>
@@ -92,9 +98,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useCartStore } from '@/store/index.js'
+import NavIcon from '@/components/common/NavIcon.vue'
 
+const route = useRoute()
 const cartStore = useCartStore()
 const menuOpen = ref(false)
 const headerVisible = ref(true)
@@ -103,12 +112,26 @@ let lastScrollY = 0
 let hoverTimeout = null
 
 const navItems = [
-  { to: '/', label: 'Карта', icon: '◎' },
-  { to: '/routes', label: 'Маршруты', icon: '⊹' },
-  { to: '/shop', label: 'Магазин', icon: '◻' },
-  { to: '/profile', label: 'Профиль', icon: '◫' },
-  { to: '/contact', label: 'Контакты', icon: '◇' }
+  { to: '/', label: 'Карта', icon: 'map' },
+  { to: '/routes', label: 'Маршруты', icon: 'routes' },
+  { to: '/shop', label: 'Магазин', icon: 'shop' },
+  { to: '/profile', label: 'Профиль', icon: 'profile' },
+  { to: '/contact', label: 'Контакты', icon: 'contact' },
 ]
+
+function isNavCurrent(path) {
+  if (path === '/') return route.path === '/'
+  return route.path === path || route.path.startsWith(`${path}/`)
+}
+
+function closeDrawer() {
+  menuOpen.value = false
+}
+
+watch(menuOpen, (open) => {
+  if (typeof document === 'undefined') return
+  document.body.classList.toggle('nav-drawer-open', open)
+})
 
 const handleScroll = () => {
   const currentScrollY = window.scrollY
@@ -116,12 +139,10 @@ const handleScroll = () => {
 
   if (topZone) {
     headerVisible.value = true
+  } else if (currentScrollY > lastScrollY) {
+    headerVisible.value = false
   } else {
-    if (currentScrollY > lastScrollY) {
-      headerVisible.value = false
-    } else {
-      headerVisible.value = true
-    }
+    headerVisible.value = true
   }
   lastScrollY = currentScrollY
 }
@@ -137,15 +158,24 @@ const handleMouseMove = (e) => {
   }
 }
 
-onMounted(() => {
+const attachMotionListeners = () => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    headerVisible.value = true
+    return
+  }
   window.addEventListener('scroll', handleScroll, { passive: true })
   window.addEventListener('mousemove', handleMouseMove)
+}
+
+onMounted(() => {
+  attachMotionListeners()
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   window.removeEventListener('mousemove', handleMouseMove)
   if (hoverTimeout) clearTimeout(hoverTimeout)
+  document.body.classList.remove('nav-drawer-open')
 })
 </script>
 
@@ -160,11 +190,17 @@ onUnmounted(() => {
   padding-left: env(safe-area-inset-left, 0);
   padding-right: env(safe-area-inset-right, 0);
   z-index: 1000;
-  background: var(--header-bg, rgba(73, 62, 62, 0.98));
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--gray-800);
+  background: var(--header-bg);
+  backdrop-filter: blur(14px) saturate(1.05);
+  border-bottom: 1px solid rgba(212, 184, 150, 0.1);
   transform: translateY(0);
   transition: transform 0.3s ease, background 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header {
+    transition: none;
+  }
 }
 
 .app-header.visible {
@@ -175,7 +211,6 @@ onUnmounted(() => {
   transform: translateY(-100%);
 }
 
-/* На мобильных хедер всегда виден — удобнее навигация */
 @media (max-width: 768px) {
   .app-header:not(.visible):not(.hovered) {
     transform: translateY(0);
@@ -184,7 +219,7 @@ onUnmounted(() => {
 
 .app-header.hovered {
   transform: translateY(0);
-  background: var(--header-bg, rgba(73, 62, 62, 0.98));
+  background: var(--header-bg);
 }
 
 .header-inner {
@@ -198,19 +233,18 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-/* Logo */
 .logo {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   text-decoration: none;
   flex-shrink: 0;
+  cursor: pointer;
+  color: inherit;
 }
 
-.logo-icon {
-  font-size: 1.5rem;
+.logo-mark {
   color: var(--accent);
-  line-height: 1;
 }
 
 .logo-text {
@@ -235,7 +269,6 @@ onUnmounted(() => {
   color: var(--gray-400);
 }
 
-/* Nav */
 .main-nav {
   display: flex;
   align-items: center;
@@ -254,20 +287,29 @@ onUnmounted(() => {
   text-transform: uppercase;
   color: var(--gray-400);
   border-radius: var(--radius-sm);
-  transition: all var(--transition);
+  transition: color var(--transition), background var(--transition);
   text-decoration: none;
+  cursor: pointer;
 }
 
-.nav-link:hover { color: var(--paper); background: var(--gray-800); }
-.nav-link.router-link-active { color: var(--paper); }
+.nav-link:hover {
+  color: var(--paper);
+  background: var(--gray-800);
+}
+
+.nav-link.router-link-active {
+  color: var(--paper);
+}
+
 .nav-link.router-link-exact-active {
   color: var(--accent);
-  background: rgba(200, 169, 110, 0.08);
+  background: var(--accent-soft, rgba(212, 184, 150, 0.18));
 }
 
-.nav-icon { font-size: 0.85rem; }
+.nav-icon-el {
+  color: currentColor;
+}
 
-/* Actions */
 .header-actions {
   display: flex;
   align-items: center;
@@ -279,6 +321,7 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-xs);
   position: relative;
+  cursor: pointer;
 }
 
 .cart-btn-text { margin-right: 0.25rem; }
@@ -286,22 +329,46 @@ onUnmounted(() => {
 
 .burger-btn {
   display: none;
+  cursor: pointer;
 }
 
-/* Drawer меню */
-.nav-drawer-title { font-family: var(--font-display); font-size: 1.125rem; }
-.nav-drawer-list { display: flex; flex-direction: column; gap: 0; }
+.nav-drawer-title {
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--cream);
+}
+
+.nav-drawer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
 .nav-drawer-link {
-  display: flex; align-items: center; gap: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   padding: 0.875rem 1.25rem;
-  font-family: var(--font-mono); font-size: 1rem;
-  color: var(--gray-400); text-decoration: none;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--gray-400);
+  text-decoration: none;
   border-bottom: 1px solid var(--gray-800);
   transition: background var(--transition), color var(--transition);
+  cursor: pointer;
 }
-.nav-drawer-link:hover { background: var(--gray-800); color: var(--paper); }
-.nav-drawer-link.router-link-active { color: var(--accent); background: rgba(200,169,110,0.08); }
-.nav-drawer-link .nav-icon { font-size: 1.1rem; }
+
+.nav-drawer-link:hover {
+  background: var(--gray-800);
+  color: var(--paper);
+}
+
+.nav-drawer-link.router-link-active {
+  color: var(--accent);
+  background: var(--accent-soft, rgba(212, 184, 150, 0.18));
+}
 
 @media (max-width: 768px) {
   .header-inner {

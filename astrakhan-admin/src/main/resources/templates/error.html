@@ -26,12 +26,12 @@
                 <div th:if="${path}">
                     <strong>Адрес:</strong> <span th:text="${path}">—</span>
                 </div>
-                <p style="margin-top:8px;font-size:13px;color:var(--text-light);">
+                <p class="text-muted-admin error-hint">
                     Сообщите этот идентификатор разработчикам, чтобы мы смогли быстрее найти причину.
                 </p>
             </div>
 
-            <div class="form-actions" style="margin-top:24px;">
+            <div class="form-actions">
                 <a th:href="@{/admin}" class="btn btn-primary">Вернуться в панель</a>
                 <button type="button" class="btn btn-ghost" onclick="window.history.back();">
                     Назад

@@ -304,6 +304,11 @@ body.astra-app {
 }
 
 .astra-app .card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm) var(--spacing-md);
   padding-bottom: var(--spacing-sm);
   margin-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--gray-600);
@@ -312,6 +317,14 @@ body.astra-app {
 .astra-app .card-header h3 {
   font-size: 1rem;
   font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.astra-app .card-header .btn-group {
+  flex: 0 1 auto;
+  justify-content: flex-end;
 }
 
 /* ---- Tables ---- */

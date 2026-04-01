@@ -1,694 +1,355 @@
-<!DOCTYPE html>
-<html lang="ru" class="light">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админка — Виртуальный музей</title>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
-                    },
-                    animation: {
-                        'fade-in': 'fadeIn 0.5s ease-out',
-                        'slide-up': 'slideUp 0.5s ease-out',
-                        'scale-in': 'scaleIn 0.3s ease-out',
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    },
-                    keyframes: {
-                        fadeIn: {
-                            '0%': { opacity: '0' },
-                            '100%': { opacity: '1' },
-                        },
-                        slideUp: {
-                            '0%': { opacity: '0', transform: 'translateY(20px)' },
-                            '100%': { opacity: '1', transform: 'translateY(0)' },
-                        },
-                        scaleIn: {
-                            '0%': { opacity: '0', transform: 'scale(0.9)' },
-                            '100%': { opacity: '1', transform: 'scale(1)' },
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.js"></script>
-    
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        /* Glass morphism */
-        .glass {
-            background: rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        }
-        
-        .dark .glass {
-            background: rgba(31, 41, 55, 0.5);
-            border: 1px solid rgba(55, 65, 81, 0.5);
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            position: fixed;
-            left: 0;
-            top: 0;
-            height: 100vh;
-            width: 280px;
-            z-index: 1000;
-            transition: transform 0.3s ease;
-        }
-        
-        .main-content {
-            margin-left: 280px;
-            padding: 2rem;
-            min-height: 100vh;
-        }
-        
-        @media (max-width: 1024px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-            }
-        }
-        
-        /* Smooth transitions */
-        * {
-            transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
-            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-            transition-duration: 200ms;
-        }
-        
-        /* Card hover */
-        .metric-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        
-        /* Button hover */
-        .btn-modern:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
-        }
-        
-        /* Focus ring */
-        .focus-ring:focus {
-            outline: none;
-            ring: 2px;
-            ring-offset: 2px;
-        }
-        
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 4px;
-        }
-        .dark ::-webkit-scrollbar-track {
-            background: #374151;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-            background: #6b7280;
-        }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-primary-500 via-primary-600 to-purple-700 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen">
-    <!-- Sidebar -->
-    <nav class="sidebar glass" id="sidebar">
-        <div class="p-6">
-            <div class="text-2xl font-extrabold text-white mb-8 flex items-center gap-2">
-                <i class="bi bi-building"></i>
-                <span>Виртуальный музей</span>
-                <div id="roleBadge" class="hidden ml-auto px-2 py-1 rounded-lg text-xs font-bold"></div>
-            </div>
-            
-            <div class="space-y-2">
-                <a href="{{ root }}/" class="nav-link block px-5 py-3 rounded-xl text-white/80 hover:bg-white/20 hover:text-white transition-all">
-                    <i class="bi bi-speedometer2 me-2"></i>Главная
-                </a>
-                
-                <a href="{{ root }}/users" class="nav-users block px-5 py-3 rounded-xl text-white/80 hover:bg-white/20 hover:text-white transition-all">
-                    <i class="bi bi-people me-2"></i>Пользователи
-                </a>
-                
-                <a href="{{ root }}/roles" class="nav-roles block px-5 py-3 rounded-xl text-white/80 hover:bg-white/20 hover:text-white transition-all">
-                    <i class="bi bi-person-badge me-2"></i>Роли
-                </a>
-                
-                <a href="{{ root }}/logout" class="block px-5 py-3 rounded-xl text-red-300 hover:bg-red-500/30 hover:text-red-200 transition-all mt-4">
-                    <i class="bi bi-box-arrow-right me-2"></i>Выйти из аккаунта
-                </a>
+{% extends "layout_dashboard.html" %}
+{% block title %}Панель управления{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.js"></script>
+{% endblock %}
+{% block content %}
+<div class="m3-page-head">
+    <h1><i class="bi bi-speedometer2" aria-hidden="true"></i> Панель управления</h1>
+    <p>Сводка посещений и активности (единый стиль с основным приложением).</p>
+</div>
+
+<div class="m3-toolbar card" style="padding:1rem 1.25rem;margin-bottom:1.5rem;">
+    <div class="m3-toolbar-tools">
+        <label class="form-label" for="periodSelect" style="margin:0;">Период</label>
+        <select id="periodSelect" class="form-control form-select" style="width:auto;min-width:140px;">
+            <option value="day">Сегодня</option>
+            <option value="week" selected>Неделя</option>
+            <option value="month">Месяц</option>
+            <option value="custom">Произвольный</option>
+        </select>
+        <input type="date" id="startDate" class="form-control m3-hidden" aria-label="Дата начала">
+        <input type="date" id="endDate" class="form-control m3-hidden" aria-label="Дата окончания">
+        <button type="button" id="applyPeriod" class="btn btn-accent btn-sm"><i class="bi bi-arrow-clockwise" aria-hidden="true"></i> Обновить</button>
+    </div>
+</div>
+
+<div class="m3-stat-grid">
+    <div class="card m3-stat-card">
+        <div class="stat-icon"><i class="bi bi-people" aria-hidden="true"></i></div>
+        <div class="stat-value" id="totalUsers">0</div>
+        <div class="stat-label">Всего пользователей</div>
+    </div>
+    <div class="card m3-stat-card">
+        <div class="stat-icon"><i class="bi bi-eye" aria-hidden="true"></i></div>
+        <div class="stat-value" id="totalVisits">0</div>
+        <div class="stat-label">Всего посещений</div>
+    </div>
+    <div class="card m3-stat-card">
+        <div class="stat-icon"><i class="bi bi-clock" aria-hidden="true"></i></div>
+        <div class="stat-value" id="activeToday">0</div>
+        <div class="stat-label">Активны сегодня</div>
+    </div>
+    <div class="card m3-stat-card">
+        <div class="stat-icon"><i class="bi bi-list-task" aria-hidden="true"></i></div>
+        <div class="stat-value" id="totalLogs">0</div>
+        <div class="stat-label">Действий в логах</div>
+    </div>
+</div>
+
+<div id="adminCharts" class="m3-hidden">
+    <div class="grid-2" style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem;">
+        <div class="card">
+            <div class="card-header"><h3>Посещения по дням</h3></div>
+            <div style="height:320px;position:relative;">
+                <div id="visitsLoading" class="table-responsive" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--gray-400);">
+                    <span class="m3-spinner" style="margin-right:0.5rem;" aria-hidden="true"></span> Загрузка…
+                </div>
+                <canvas id="visitsChart" class="m3-hidden"></canvas>
             </div>
         </div>
-        
-        <!-- Mobile close button -->
-        <button id="closeSidebar" class="lg:hidden absolute top-4 right-4 text-white/70 hover:text-white p-2">
-            <i class="bi bi-x-lg text-xl"></i>
-        </button>
-    </nav>
-
-    <!-- Mobile overlay -->
-    <div id="sidebarOverlay" class="lg:hidden fixed inset-0 bg-black/50 z-50 hidden" onclick="toggleSidebar()"></div>
-
-    <div class="main-content">
-        <!-- Header -->
-        <div class="glass rounded-2xl p-6 mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <!-- Mobile menu button -->
-                <button id="menuBtn" class="lg:hidden p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white" onclick="toggleSidebar()">
-                    <i class="bi bi-list text-xl"></i>
-                </button>
-                <h1 class="text-2xl lg:text-3xl font-extrabold text-white">
-                    <i class="bi bi-speedometer2 me-2"></i>Панель управления
-                </h1>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-3">
-                <!-- Theme Toggle -->
-                <button id="themeToggle" class="p-2 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-all" title="Переключить тему">
-                    <i class="bi bi-sun-fill dark:hidden"></i>
-                    <i class="bi bi-moon-fill hidden dark:inline"></i>
-                </button>
-                
-                <select id="periodSelect" class="px-4 py-2 rounded-xl bg-white/20 border border-white/30 text-white focus-ring appearance-none cursor-pointer">
-                    <option value="day" class="text-gray-800">Сегодня</option>
-                    <option value="week" selected class="text-gray-800">Неделя</option>
-                    <option value="month" class="text-gray-800">Месяц</option>
-                    <option value="custom" class="text-gray-800">Произвольный</option>
-                </select>
-                
-                <input type="date" id="startDate" class="hidden px-3 py-2 rounded-xl bg-white/20 border border-white/30 text-white focus-ring">
-                <input type="date" id="endDate" class="hidden px-3 py-2 rounded-xl bg-white/20 border border-white/30 text-white focus-ring">
-                
-                <button id="applyPeriod" class="btn-modern px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl transition-all">
-                    <i class="bi bi-arrow-clockwise me-1"></i>Обновить
-                </button>
-                
-                <form method="post" action="{{ root }}/api/logout">
-                    <button type="submit" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-semibold rounded-xl transition-all">
-                        <i class="bi bi-box-arrow-right me-1"></i>Выйти
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Metrics - available to all -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="metric-card glass rounded-2xl p-6 text-center transition-all cursor-default">
-                <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xl">
-                    <i class="bi bi-people"></i>
+        <div class="card">
+            <div class="card-header"><h3>Активность пользователей</h3></div>
+            <div style="height:320px;position:relative;">
+                <div id="activityLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--gray-400);">
+                    <span class="m3-spinner" style="margin-right:0.5rem;" aria-hidden="true"></span> Загрузка…
                 </div>
-                <div class="text-3xl font-extrabold text-white" id="totalUsers">0</div>
-                <div class="text-white/70 font-medium">Всего пользователей</div>
-            </div>
-            
-            <div class="metric-card glass rounded-2xl p-6 text-center transition-all cursor-default">
-                <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white text-xl">
-                    <i class="bi bi-eye"></i>
-                </div>
-                <div class="text-3xl font-extrabold text-white" id="totalVisits">0</div>
-                <div class="text-white/70 font-medium">Всего посещений</div>
-            </div>
-            
-            <div class="metric-card glass rounded-2xl p-6 text-center transition-all cursor-default">
-                <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white text-xl">
-                    <i class="bi bi-clock"></i>
-                </div>
-                <div class="text-3xl font-extrabold text-white" id="activeToday">0</div>
-                <div class="text-white/70 font-medium">Активны сегодня</div>
-            </div>
-            
-            <div class="metric-card glass rounded-2xl p-6 text-center transition-all cursor-default">
-                <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center text-white text-xl">
-                    <i class="bi bi-list-task"></i>
-                </div>
-                <div class="text-3xl font-extrabold text-white" id="totalLogs">0</div>
-                <div class="text-white/70 font-medium">Действий в логах</div>
-            </div>
-        </div>
-
-        <!-- Admin: Charts + PDF -->
-        <div id="adminCharts" class="admin-only space-y-6">
-            <!-- Charts Row 1 -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="glass rounded-2xl p-6">
-                    <h5 class="text-white font-bold text-lg mb-4">
-                        <i class="bi bi-bar-chart me-2"></i>Посещения по дням
-                    </h5>
-                    <div class="h-80 relative">
-                        <div id="visitsLoading" class="absolute inset-0 flex items-center justify-center text-white/70">
-                            <i class="bi bi-arrow-repeat animate-spin text-2xl me-2"></i>Загрузка...
-                        </div>
-                        <canvas id="visitsChart" class="hidden"></canvas>
-                    </div>
-                </div>
-                
-                <div class="glass rounded-2xl p-6">
-                    <h5 class="text-white font-bold text-lg mb-4">
-                        <i class="bi bi-graph-up me-2"></i>Активность пользователей
-                    </h5>
-                    <div class="h-80 relative">
-                        <div id="activityLoading" class="absolute inset-0 flex items-center justify-center text-white/70">
-                            <i class="bi bi-arrow-repeat animate-spin text-2xl me-2"></i>Загрузка...
-                        </div>
-                        <canvas id="activityChart" class="hidden"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Heatmap -->
-            <div class="glass rounded-2xl p-6">
-                <h5 class="text-white font-bold text-lg mb-4">
-                    <i class="bi bi-grid-3x3 me-2"></i>Активность по часам
-                </h5>
-                <div class="h-64 relative">
-                    <div id="heatmapLoading" class="absolute inset-0 flex items-center justify-center text-white/70">
-                        <i class="bi bi-arrow-repeat animate-spin text-2xl me-2"></i>Загрузка...
-                    </div>
-                    <canvas id="heatmapChart" class="hidden"></canvas>
-                </div>
-            </div>
-            
-            <!-- Grafana Dashboard -->
-            <div class="glass rounded-2xl p-6">
-                <h5 class="text-white font-bold text-lg mb-4">
-                    <i class="bi bi-bar-chart-steps me-2"></i>Grafana Dashboard
-                </h5>
-                <div class="bg-white/10 rounded-xl p-4 text-white">
-                    <h6 class="font-semibold mb-2"><i class="bi bi-info-circle me-2"></i>Интеграция с Grafana</h6>
-                    <p class="text-sm text-white/80 mb-3">Для подключения своего Grafana Dashboard:</p>
-                    <div class="grid md:grid-cols-2 gap-4 text-sm">
-                        <div>
-                            <h6 class="font-medium mb-1">Шаг 1: Установка Grafana</h6>
-                            <ul class="text-white/70 text-xs space-y-1">
-                                <li>Windows: скачайте с <a href="https://grafana.com/grafana/download" target="_blank" class="text-primary-300 hover:underline">grafana.com</a></li>
-                                <li>Запустите: <code class="bg-white/20 px-1 rounded">grafana-server.exe</code></li>
-                                <li>Откройте: <code class="bg-white/20 px-1 rounded">http://localhost:3000</code></li>
-                            </ul>
-                            <h6 class="font-medium mt-3 mb-1">Шаг 2: Настройка Data Source</h6>
-                            <ul class="text-white/70 text-xs">
-                                <li>Configuration → Data Sources</li>
-                                <li>Добавьте источник (Prometheus, InfluxDB, PostgreSQL)</li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h6 class="font-medium mb-1">Шаг 3: Создание Dashboard</h6>
-                            <ul class="text-white/70 text-xs space-y-1">
-                                <li>Create → Dashboard</li>
-                                <li>Добавьте панели с метриками</li>
-                                <li>Сохраните dashboard</li>
-                            </ul>
-                            <h6 class="font-medium mt-3 mb-1">Шаг 4: Разрешить iframe</h6>
-                            <ul class="text-white/70 text-xs">
-                                <li>Настройки → Security → Grafana instance URL</li>
-                                <li>Или добавьте в grafana.ini:<br><code class="bg-white/20 px-1 rounded">allow_embedding = true</code></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <h6 class="font-medium mt-3 mb-2">Шаг 5: Добавьте iframe в код</h6>
-                    <pre class="bg-black/30 p-2 rounded text-xs overflow-x-auto"><code><iframe src="http://localhost:3000/d-solo/YOUR_DASHBOARD_ID?panelId=1&theme=dark" width="100%" height="400" frameborder="0"></iframe></code></pre>
-                </div>
-            </div>
-            
-            <!-- PDF Report -->
-            <div class="glass rounded-2xl p-6">
-                <h5 class="text-white font-bold text-lg mb-4">
-                    <i class="bi bi-file-earmark-pdf me-2"></i>PDF-отчет
-                </h5>
-                <form action="{{ root }}/api/reports/generate-report" method="post" target="_blank" class="flex flex-wrap items-end gap-3">
-                    <div>
-                        <label class="block text-white/70 text-sm mb-1">Дата начала</label>
-                        <input type="date" name="start" class="px-4 py-2 rounded-xl bg-white/20 border border-white/30 text-white focus-ring" required>
-                    </div>
-                    <div>
-                        <label class="block text-white/70 text-sm mb-1">Дата окончания</label>
-                        <input type="date" name="end" class="px-4 py-2 rounded-xl bg-white/20 border border-white/30 text-white focus-ring" required>
-                    </div>
-                    <button type="submit" class="btn-modern px-6 py-2 bg-primary-500 hover:bg-primary-600 text-white font-semibold rounded-xl">
-                        <i class="bi bi-download me-1"></i>Скачать
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Non-admin: message -->
-        <div id="userMessage" class="user-only">
-            <div class="glass rounded-2xl p-8 lg:p-12 text-center animate-scale-in">
-                <i class="bi bi-bar-chart text-6xl text-white/30 mb-4"></i>
-                <h3 class="text-2xl font-bold text-white mb-3">📊 Базовая аналитика</h3>
-                <p class="text-white/70 max-w-lg mx-auto text-lg">
-                    Вы можете просматривать общую статистику посещений. 
-                    <strong class="text-white">Детальная аналитика, управление пользователями и ролями доступны только администраторам.</strong>
-                </p>
+                <canvas id="activityChart" class="m3-hidden"></canvas>
             </div>
         </div>
     </div>
+    <div class="card" style="margin-bottom:1.25rem;">
+        <div class="card-header"><h3>Активность по часам</h3></div>
+        <div style="height:260px;position:relative;">
+            <div id="heatmapLoading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--gray-400);">
+                <span class="m3-spinner" style="margin-right:0.5rem;" aria-hidden="true"></span> Загрузка…
+            </div>
+            <canvas id="heatmapChart" class="m3-hidden"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>Grafana</h3></div>
+        <p style="color:var(--gray-400);font-size:0.9rem;margin-bottom:0.75rem;">Подключите свой Grafana и вставьте iframe в шаблон при необходимости.</p>
+        <pre style="background:var(--gray-950);padding:1rem;border-radius:var(--radius-sm);overflow:auto;font-size:0.75rem;"><code>&lt;iframe src="http://localhost:3000/d-solo/..." width="100%" height="400"&gt;&lt;/iframe&gt;</code></pre>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>PDF-отчёт</h3></div>
+        <form action="{{ root }}/api/reports/generate-report" method="post" target="_blank" class="form-row" style="align-items:flex-end;">
+            <div class="form-group" style="margin-bottom:0;">
+                <label for="pdfStart">Дата начала</label>
+                <input type="date" id="pdfStart" name="start" class="form-control" required>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+                <label for="pdfEnd">Дата окончания</label>
+                <input type="date" id="pdfEnd" name="end" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-download" aria-hidden="true"></i> Скачать</button>
+        </form>
+    </div>
+</div>
 
-    <script>
-        let visitsChart = null, activityChart = null, heatmapChart = null;
-        let isAdmin = false;
+<div id="userMessage" class="m3-hidden">
+    <div class="card" style="text-align:center;padding:2rem 1.5rem;">
+        <i class="bi bi-bar-chart" style="font-size:3rem;color:var(--gray-600);" aria-hidden="true"></i>
+        <h2 style="margin:1rem 0 0.5rem;font-size:1.35rem;">Базовая аналитика</h2>
+        <p style="color:var(--gray-400);max-width:32rem;margin:0 auto;line-height:1.6;">
+            Доступна общая статистика. Детальные графики и отчёты — только для администраторов.
+        </p>
+    </div>
+</div>
+<style>
+@media (max-width:900px){ .grid-2{ grid-template-columns:1fr !important; } }
+</style>
+{% endblock %}
+{% block scripts %}
+<script>
+    let visitsChart = null, activityChart = null, heatmapChart = null;
+    let isAdmin = false;
+    const CHART_TEXT = '#f2e8dc';
+    const CHART_GRID = 'rgba(212, 184, 150, 0.12)';
+    const ACCENT = 'rgba(212, 184, 150, 0.85)';
+    const ACCENT_LINE = '#d4b896';
+    const SUCCESS = '#2d6b45';
 
-        // Theme Toggle
-        const html = document.documentElement;
-        const savedTheme = localStorage.getItem('theme');
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-            html.classList.add('dark');
+    const ROOT = '{{ root }}';
+
+    function showLoading(id, show) {
+        const chartEl = document.getElementById(id + 'Chart');
+        const loadingEl = document.getElementById(id + 'Loading');
+        if (chartEl && loadingEl) {
+            chartEl.classList.toggle('m3-hidden', show);
+            loadingEl.classList.toggle('m3-hidden', !show);
         }
-        
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            html.classList.toggle('dark');
-            localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+    }
+
+    async function checkUserRole() {
+        try {
+            const response = await fetch(ROOT + '/api/user/role', {
+                method: 'GET',
+                credentials: 'same-origin',
+                headers: { 'Accept': 'application/json' }
+            });
+            const data = await response.json();
+            const role = data.role || data.user_role || 'guest';
+            initDashboard(role);
+        } catch (error) {
+            console.error('Ошибка API роли:', error);
+            initDashboard('guest');
+        }
+    }
+
+    function initDashboard(role) {
+        isAdmin = role === 'admin' || role === 'administrator' || role === 'Администратор';
+        const roleBadge = document.getElementById('roleBadge');
+        roleBadge.textContent = isAdmin ? 'Администратор' : String(role).toUpperCase();
+        roleBadge.className = 'tag ' + (isAdmin ? 'tag-accent' : '');
+        roleBadge.classList.remove('m3-hidden');
+
+        if (isAdmin) {
+            document.getElementById('adminCharts').classList.remove('m3-hidden');
+            document.getElementById('userMessage').classList.add('m3-hidden');
+            startAdminDashboard();
+        } else {
+            document.getElementById('adminCharts').classList.add('m3-hidden');
+            document.getElementById('userMessage').classList.remove('m3-hidden');
+            blockNavigation();
+            startUserDashboard();
+        }
+    }
+
+    function blockNavigation() {
+        document.querySelectorAll('.nav-users, .nav-roles').forEach(function (el) {
+            el.classList.add('m3-nav-blocked');
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('Доступ запрещён. Нужна роль администратора.');
+            });
         });
+    }
 
-        // Sidebar Toggle
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('hidden');
+    function startAdminDashboard() {
+        loadMetrics();
+        loadDailyCharts();
+        loadHeatmap();
+        setupFilters();
+        setInterval(loadMetrics, 30000);
+    }
+
+    function startUserDashboard() {
+        loadMetrics();
+        setInterval(loadMetrics, 30000);
+    }
+
+    async function loadMetrics() {
+        try {
+            const res = await fetch(ROOT + '/api/metrics');
+            const data = await res.json();
+            animateValue('totalUsers', data.users || 0);
+            animateValue('totalVisits', data.visits || 0);
+            animateValue('activeToday', data.active_today || 0);
+            animateValue('totalLogs', data.logs || 0);
+        } catch (e) { console.error('Метрики:', e); }
+    }
+
+    function animateValue(id, end) {
+        const el = document.getElementById(id);
+        const start = 0;
+        const duration = 800;
+        const t0 = performance.now();
+        function update(t) {
+            const p = Math.min((t - t0) / duration, 1);
+            el.textContent = Math.floor(start + (end - start) * p).toLocaleString();
+            if (p < 1) requestAnimationFrame(update);
         }
+        requestAnimationFrame(update);
+    }
 
-        document.getElementById('closeSidebar')?.addEventListener('click', toggleSidebar);
-        document.getElementById('menuBtn')?.addEventListener('click', toggleSidebar);
+    function destroyChart(chart) {
+        if (chart) chart.destroy();
+        return null;
+    }
 
-        const ROOT = '{{ root }}';
-        // API Check Role
-        async function checkUserRole() {
-            try {
-                const response = await fetch(ROOT + '/api/user/role', { 
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    headers: { 'Accept': 'application/json' }
-                });
-                
-                const data = await response.json();
-                const role = data.role || data.user_role || 'guest';
-                initDashboard(role);
-                
-            } catch (error) {
-                console.error('❌ Ошибка API роли:', error);
-                initDashboard('guest');
-            }
-        }
+    async function loadDailyCharts(start, end) {
+        if (!isAdmin) return;
+        let url = ROOT + '/api/metrics/daily';
+        if (start && end) url += '?start=' + start + '&end=' + end;
+        showLoading('visits', true);
+        showLoading('activity', true);
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            const labels = data.labels || data.dates || Array(7).fill('День');
+            const visits = data.visits || data.hits || Array(7).fill(0);
+            const activity = data.activity || data.users || Array(7).fill(0);
 
-        function initDashboard(role) {
-            isAdmin = role === 'admin' || role === 'administrator' || role === 'Администратор';
-            
-            // Badge роли
-            const roleBadge = document.getElementById('roleBadge');
-            roleBadge.textContent = isAdmin ? 'АДМИН' : role.toUpperCase();
-            roleBadge.className = `ml-auto px-2 py-1 rounded-lg text-xs font-bold ${isAdmin ? 'bg-emerald-500' : 'bg-amber-500'}`;
-            roleBadge.classList.remove('hidden');
-
-            if (isAdmin) {
-                document.getElementById('adminCharts').classList.remove('hidden');
-                document.getElementById('userMessage').classList.add('hidden');
-                setupNavigation();
-                startAdminDashboard();
-            } else {
-                document.getElementById('adminCharts').classList.add('hidden');
-                document.getElementById('userMessage').classList.remove('hidden');
-                blockNavigation();
-                startUserDashboard();
-            }
-        }
-
-        // Block navigation for non-admins
-        function blockNavigation() {
-            const navUsers = document.querySelector('.nav-users');
-            const navRoles = document.querySelector('.nav-roles');
-            
-            navUsers.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-            navRoles.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-            
-            navUsers.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert('🚫 Доступ запрещен. Требуется роль администратора.');
-            });
-            
-            navRoles.addEventListener('click', (e) => {
-                e.preventDefault();
-                alert('🚫 Доступ запрещен. Требуется роль администратора.');
-            });
-        }
-
-        function setupNavigation() {}
-
-        // Admin dashboard
-        function startAdminDashboard() {
-            loadMetrics();
-            loadDailyCharts();
-            loadHeatmap();
-            setupFilters();
-            setInterval(loadMetrics, 30000);
-        }
-
-        // User dashboard
-        function startUserDashboard() {
-            loadMetrics();
-            setInterval(loadMetrics, 30000);
-        }
-
-        async function loadMetrics() {
-            try {
-                const res = await fetch(ROOT + '/api/metrics');
-                const data = await res.json();
-                animateValue('totalUsers', data.users || 0);
-                animateValue('totalVisits', data.visits || 0);
-                animateValue('activeToday', data.active_today || 0);
-                animateValue('totalLogs', data.logs || 0);
-            } catch(e) { console.error('Метрики:', e); }
-        }
-
-        function animateValue(id, end) {
-            const el = document.getElementById(id);
-            const start = 0;
-            const duration = 1000;
-            const startTime = performance.now();
-            
-            function update(currentTime) {
-                const elapsed = currentTime - startTime;
-                const progress = Math.min(elapsed / duration, 1);
-                const value = Math.floor(start + (end - start) * progress);
-                el.textContent = value.toLocaleString();
-                
-                if (progress < 1) {
-                    requestAnimationFrame(update);
+            const visitsCtx = document.getElementById('visitsChart').getContext('2d');
+            visitsChart = destroyChart(visitsChart);
+            visitsChart = new Chart(visitsCtx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Посещения',
+                        data: visits,
+                        backgroundColor: ACCENT,
+                        borderColor: ACCENT_LINE,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: CHART_TEXT } } },
+                    scales: {
+                        x: { ticks: { color: CHART_TEXT }, grid: { color: CHART_GRID } },
+                        y: { beginAtZero: true, ticks: { color: CHART_TEXT }, grid: { color: CHART_GRID } }
+                    }
                 }
-            }
-            requestAnimationFrame(update);
-        }
+            });
 
-        function showLoading(id, show) {
-            const chartEl = document.getElementById(id + 'Chart');
-            const loadingEl = document.getElementById(id + 'Loading');
-            if (chartEl && loadingEl) {
-                chartEl.classList.toggle('hidden', show);
-                loadingEl.classList.toggle('hidden', !show);
-            }
-        }
-
-        function destroyChart(chart) {
-            if (chart) {
-                chart.destroy();
-            }
-            return null;
-        }
-
-        async function loadDailyCharts(start = null, end = null) {
-            if (!isAdmin) return;
-            
-            let url = ROOT + '/api/metrics/daily';
-            if (start && end) url += `?start=${start}&end=${end}`;
-
-            showLoading('visits', true);
-            showLoading('activity', true);
-
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                const labels = data.labels || data.dates || Array(7).fill('День');
-                const visits = data.visits || data.hits || Array(7).fill(0);
-                const activity = data.activity || data.users || Array(7).fill(0);
-
-                const isDark = html.classList.contains('dark');
-                const textColor = isDark ? '#e5e7eb' : '#1f2937';
-                const gridColor = isDark ? '#374151' : '#e5e7eb';
-
-                // Visits
-                const visitsCtx = document.getElementById('visitsChart').getContext('2d');
-                visitsChart = destroyChart(visitsChart);
-                visitsChart = new Chart(visitsCtx, {
-                    type: 'bar',
-                    data: { 
-                        labels, 
-                        datasets: [{ 
-                            label: 'Посещения', 
-                            data: visits, 
-                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                            borderColor: '#3b82f6',
-                            borderRadius: 8 
-                        }] 
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        plugins: { legend: { labels: { color: textColor } } }, 
-                        scales: { 
-                            x: { ticks: { color: textColor }, grid: { color: gridColor } }, 
-                            y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } } 
-                        } 
+            const activityCtx = document.getElementById('activityChart').getContext('2d');
+            activityChart = destroyChart(activityChart);
+            activityChart = new Chart(activityCtx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Активность',
+                        data: activity,
+                        borderColor: SUCCESS,
+                        backgroundColor: 'rgba(45, 107, 69, 0.25)',
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: SUCCESS
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: CHART_TEXT } } },
+                    scales: {
+                        x: { ticks: { color: CHART_TEXT }, grid: { color: CHART_GRID } },
+                        y: { beginAtZero: true, ticks: { color: CHART_TEXT }, grid: { color: CHART_GRID } }
                     }
-                });
+                }
+            });
+        } catch (e) { console.error('Daily:', e); }
+        showLoading('visits', false);
+        showLoading('activity', false);
+    }
 
-                // Activity
-                const activityCtx = document.getElementById('activityChart').getContext('2d');
-                activityChart = destroyChart(activityChart);
-                activityChart = new Chart(activityCtx, {
-                    type: 'line',
-                    data: { 
-                        labels, 
-                        datasets: [{ 
-                            label: 'Активность', 
-                            data: activity, 
-                            borderColor: '#10b981',
-                            backgroundColor: 'rgba(16, 185, 129, 0.2)', 
-                            fill: true, 
-                            tension: 0.4,
-                            pointBackgroundColor: '#10b981'
-                        }] 
-                    },
-                    options: { 
-                        responsive: true, 
-                        maintainAspectRatio: false,
-                        plugins: { legend: { labels: { color: textColor } } }, 
-                        scales: { 
-                            x: { ticks: { color: textColor }, grid: { color: gridColor } }, 
-                            y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } } 
-                        } 
-                    }
-                });
-
-            } catch(e) { console.error('Daily:', e); }
-            showLoading('visits', false);
-            showLoading('activity', false);
-        }
-
-        async function loadHeatmap(start = null, end = null) {
-            if (!isAdmin) return;
-            
-            let url = ROOT + '/api/metrics/heatmap';
-            if (start && end) url += `?start=${start}&end=${end}`;
-
-            showLoading('heatmap', true);
-            try {
-                const res = await fetch(url);
-                const matrix = await res.json();
-                const ctx = document.getElementById('heatmapChart').getContext('2d');
-                heatmapChart = destroyChart(heatmapChart);
-
-                const weekdays = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
-                const hours = Array.from({length: 24}, (_, i) => `${i}:00`);
-                const datasets = weekdays.map((day, i) => ({
+    async function loadHeatmap(start, end) {
+        if (!isAdmin) return;
+        let url = ROOT + '/api/metrics/heatmap';
+        if (start && end) url += '?start=' + start + '&end=' + end;
+        showLoading('heatmap', true);
+        try {
+            const res = await fetch(url);
+            const matrix = await res.json();
+            const ctx = document.getElementById('heatmapChart').getContext('2d');
+            heatmapChart = destroyChart(heatmapChart);
+            const weekdays = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+            const hours = Array.from({ length: 24 }, function (_, i) { return i + ':00'; });
+            const datasets = weekdays.map(function (day, i) {
+                return {
                     label: day,
-                    data: Array(24).fill(0).map((_, h) => matrix[i]?.[h] || 0),
-                    backgroundColor: `rgba(59, 130, 246, ${0.9 - i * 0.1})`,
+                    data: Array(24).fill(0).map(function (_, h) { return matrix[i] && matrix[i][h] != null ? matrix[i][h] : 0; }),
+                    backgroundColor: 'rgba(212, 184, 150, ' + (0.25 + i * 0.08) + ')',
                     borderWidth: 0
-                }));
-
-                const isDark = html.classList.contains('dark');
-                const textColor = isDark ? '#e5e7eb' : '#1f2937';
-                const gridColor = isDark ? '#374151' : '#e5e7eb';
-
-                heatmapChart = new Chart(ctx, {
-                    type: 'bar',
-                    data: { labels: hours, datasets },
-                    options: { 
-                        responsive: true, 
-                        indexAxis: 'y',
-                        plugins: { legend: { labels: { color: textColor } } }, 
-                        scales: { 
-                            x: { stacked: true, ticks: { color: textColor }, grid: { color: gridColor } }, 
-                            y: { stacked: true, ticks: { color: textColor } } 
-                        } 
+                };
+            });
+            heatmapChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: hours, datasets: datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { labels: { color: CHART_TEXT } } },
+                    scales: {
+                        x: { stacked: true, ticks: { color: CHART_TEXT }, grid: { color: CHART_GRID } },
+                        y: { stacked: true, ticks: { color: CHART_TEXT } }
                     }
-                });
-            } catch(e) { console.error('Heatmap:', e); }
-            showLoading('heatmap', false);
-        }
-
-        function setupFilters() {
-            document.getElementById('periodSelect').addEventListener('change', e => {
-                const custom = e.target.value === 'custom';
-                document.getElementById('startDate').classList.toggle('hidden', !custom);
-                document.getElementById('endDate').classList.toggle('hidden', !custom);
-            });
-
-            document.getElementById('applyPeriod').addEventListener('click', () => {
-                const period = document.getElementById('periodSelect').value;
-                const today = new Date();
-                const iso = d => d.toISOString().slice(0,10);
-                let start, end;
-
-                if (period === 'day') { start = end = iso(today); }
-                else if (period === 'week') { end = iso(today); const ws = new Date(today); ws.setDate(today.getDate() - 6); start = iso(ws); }
-                else if (period === 'month') { end = iso(today); const ms = new Date(today); ms.setMonth(today.getMonth() - 1); start = iso(ms); }
-                else { 
-                    start = document.getElementById('startDate').value; 
-                    end = document.getElementById('endDate').value; 
-                    if (!start || !end) return alert('Выберите даты'); 
                 }
-
-                loadDailyCharts(start, end);
-                loadHeatmap(start, end);
             });
-        }
+        } catch (e) { console.error('Heatmap:', e); }
+        showLoading('heatmap', false);
+    }
 
-        // START
-        document.addEventListener('DOMContentLoaded', checkUserRole);
-    </script>
-</body>
-</html>
+    function setupFilters() {
+        document.getElementById('periodSelect').addEventListener('change', function (e) {
+            var custom = e.target.value === 'custom';
+            document.getElementById('startDate').classList.toggle('m3-hidden', !custom);
+            document.getElementById('endDate').classList.toggle('m3-hidden', !custom);
+        });
+        document.getElementById('applyPeriod').addEventListener('click', function () {
+            var period = document.getElementById('periodSelect').value;
+            var today = new Date();
+            var iso = function (d) { return d.toISOString().slice(0, 10); };
+            var start, end;
+            if (period === 'day') { start = end = iso(today); }
+            else if (period === 'week') { end = iso(today); var ws = new Date(today); ws.setDate(today.getDate() - 6); start = iso(ws); }
+            else if (period === 'month') { end = iso(today); var ms = new Date(today); ms.setMonth(today.getMonth() - 1); start = iso(ms); }
+            else {
+                start = document.getElementById('startDate').value;
+                end = document.getElementById('endDate').value;
+                if (!start || !end) { alert('Выберите обе даты'); return; }
+            }
+            loadDailyCharts(start, end);
+            loadHeatmap(start, end);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', checkUserRole);
+</script>
+{% endblock %}

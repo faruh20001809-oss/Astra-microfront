@@ -7,38 +7,52 @@
 <main class="main-content">
 <div class="page-header"><h1>Дашборд</h1></div>
 <div class="stats-grid">
-    <div class="stat-card"><div class="stat-icon">📍</div><div class="stat-value" th:text="${totalPois}">0</div><div class="stat-label">Точек интереса</div></div>
-    <div class="stat-card"><div class="stat-icon">✅</div><div class="stat-value" th:text="${publishedPois}">0</div><div class="stat-label">Опубликовано</div></div>
-    <div class="stat-card"><div class="stat-icon">🚶</div><div class="stat-value" th:text="${totalRoutes}">0</div><div class="stat-label">Маршрутов</div></div>
-    <div class="stat-card"><div class="stat-icon">🛒</div><div class="stat-value" th:text="${totalProducts}">0</div><div class="stat-label">Товаров</div></div>
-    <div class="stat-card"><div class="stat-icon">📦</div><div class="stat-value" th:text="${totalOrders}">0</div><div class="stat-label">Заказов</div></div>
-    <div class="stat-card"><div class="stat-icon">💬</div><div class="stat-value" th:text="${newFeedback}">0</div><div class="stat-label">Новых обращений</div></div>
-    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-value" th:text="${#numbers.formatDecimal(revenue, 0, 0)} + ' ₽'">0 ₽</div><div class="stat-label">Выручка</div></div>
+    <div class="stat-card">
+        <div class="stat-icon-svg" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"/></svg></div>
+        <div class="stat-value" th:text="${totalPois}">0</div><div class="stat-label">Точек интереса</div></div>
+    <div class="stat-card">
+        <div class="stat-icon-svg" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></div>
+        <div class="stat-value" th:text="${publishedPois}">0</div><div class="stat-label">Опубликовано</div></div>
+    <div class="stat-card">
+        <div class="stat-icon-svg" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg></div>
+        <div class="stat-value" th:text="${totalRoutes}">0</div><div class="stat-label">Маршрутов</div></div>
+    <div class="stat-card">
+        <div class="stat-icon-svg" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007Z"/></svg></div>
+        <div class="stat-value" th:text="${totalProducts}">0</div><div class="stat-label">Товаров</div></div>
+    <div class="stat-card">
+        <div class="stat-icon-svg" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"/></svg></div>
+        <div class="stat-value" th:text="${totalOrders}">0</div><div class="stat-label">Заказов</div></div>
+    <div class="stat-card">
+        <div class="stat-icon-svg" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51v0a9 9 0 0 1 9-9h.75a9 9 0 0 1 9 9v.75a9 9 0 0 1-9 9h-3.75a3 3 0 0 1-3-3v-.75A9 9 0 0 1 7.5 13.26Z"/></svg></div>
+        <div class="stat-value" th:text="${newFeedback}">0</div><div class="stat-label">Новых обращений</div></div>
+    <div class="stat-card">
+        <div class="stat-icon-svg" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75a.75.75 0 0 1-.75.75H3a.75.75 0 0 1-.75-.75V6h18.75Z"/></svg></div>
+        <div class="stat-value" th:text="${#numbers.formatDecimal(revenue, 0, 0)} + ' ₽'">0 ₽</div><div class="stat-label">Выручка</div></div>
 </div>
 
-<div class="grid-2" style="margin-top:1.5rem">
+<div class="grid-2 dashboard-grid-below">
     <div class="card">
         <div class="card-header"><h3>Прогресс команды</h3></div>
-        <p style="color:#888;font-size:0.9rem;margin:0 0 1rem">Сводные показатели по данным в системе (общие для команды).</p>
-        <table style="width:100%;font-size:0.9rem;color:#ccc">
-            <tr><td>Опубликованные точки</td><td style="text-align:right"><strong th:text="${employeeStats.publishedPois}">0</strong></td></tr>
-            <tr><td>Опубликованные маршруты</td><td style="text-align:right"><strong th:text="${employeeStats.publishedRoutes}">0</strong></td></tr>
-            <tr><td>Товары в магазине</td><td style="text-align:right"><strong th:text="${employeeStats.products}">0</strong></td></tr>
-            <tr><td>Заказы (всего)</td><td style="text-align:right"><strong th:text="${employeeStats.orders}">0</strong></td></tr>
-            <tr><td>Обращения / предложения POI</td><td style="text-align:right"><strong th:text="|${employeeStats.feedbackCount} / ${employeeStats.poiSuggestionsCount}|">0 / 0</strong></td></tr>
+        <p class="dashboard-lead">Сводные показатели по данным в системе (общие для команды).</p>
+        <table class="dashboard-mini-table">
+            <tr><td>Опубликованные точки</td><td><strong th:text="${employeeStats.publishedPois}">0</strong></td></tr>
+            <tr><td>Опубликованные маршруты</td><td><strong th:text="${employeeStats.publishedRoutes}">0</strong></td></tr>
+            <tr><td>Товары в магазине</td><td><strong th:text="${employeeStats.products}">0</strong></td></tr>
+            <tr><td>Заказы (всего)</td><td><strong th:text="${employeeStats.orders}">0</strong></td></tr>
+            <tr><td>Обращения / предложения POI</td><td><strong th:text="|${employeeStats.feedbackCount} / ${employeeStats.poiSuggestionsCount}|">0 / 0</strong></td></tr>
         </table>
     </div>
     <div class="card">
         <div class="card-header"><h3>Достижения</h3></div>
-        <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr));margin-top:0.75rem">
+        <div class="achievement-grid-inner">
             <div th:each="a : ${employeeAchievements}" class="stat-card">
                 <div class="stat-label" th:text="${a.title}">Название</div>
-                <p style="font-size:0.8rem;color:#aaa;margin:0.35rem 0" th:text="${a.description}">Описание</p>
+                <p class="text-muted-admin achievement-desc" th:text="${a.description}">Описание</p>
                 <span class="status-badge" th:if="${a.status == 'UNLOCKED'}">Получено</span>
                 <span class="status-badge" th:if="${a.status == 'IN_PROGRESS'}" th:text="|${a.progress}%|">0%</span>
                 <span class="tag" th:if="${a.status == 'LOCKED'}" style="opacity:0.5">Закрыто</span>
-                <div th:if="${a.status == 'IN_PROGRESS'}" style="margin-top:0.5rem;height:4px;background:#333;border-radius:2px;overflow:hidden">
-                    <div th:style="|width:${a.progress}%;height:100%;background:#c8a96e|"></div>
+                <div th:if="${a.status == 'IN_PROGRESS'}" class="progress-track">
+                    <div class="progress-fill" th:style="|width:${a.progress}%|"></div>
                 </div>
             </div>
         </div>
@@ -46,13 +60,13 @@
 </div>
 
 <div class="grid-2">
-    <div class="card"><div class="card-header"><h3>🔥 Популярные точки</h3></div>
+    <div class="card"><div class="card-header card-heading-row"><span class="icon-inline" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.348 4.375 5.99 5.99 0 0 0-1.348-4.375A3.75 3.75 0 0 0 12 18Z"/></svg></span><h3>Популярные точки</h3></div>
         <table><thead><tr><th>Название</th><th>Просмотры</th></tr></thead><tbody>
         <tr th:each="item : ${topPois}"><td th:text="${item[0]}"></td><td th:text="${item[1]}"></td></tr>
-        <tr th:if="${#lists.isEmpty(topPois)}"><td colspan="2" style="text-align:center;color:#999">Нет данных</td></tr></tbody></table></div>
-    <div class="card"><div class="card-header"><h3>🚶 Популярные маршруты</h3></div>
+        <tr th:if="${#lists.isEmpty(topPois)}"><td colspan="2" class="empty-state-muted" style="text-align:center">Нет данных</td></tr></tbody></table></div>
+    <div class="card"><div class="card-header card-heading-row"><span class="icon-inline" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg></span><h3>Популярные маршруты</h3></div>
         <table><thead><tr><th>Название</th><th>Просмотры</th></tr></thead><tbody>
         <tr th:each="item : ${topRoutes}"><td th:text="${item[0]}"></td><td th:text="${item[1]}"></td></tr>
-        <tr th:if="${#lists.isEmpty(topRoutes)}"><td colspan="2" style="text-align:center;color:#999">Нет данных</td></tr></tbody></table></div>
+        <tr th:if="${#lists.isEmpty(topRoutes)}"><td colspan="2" class="empty-state-muted" style="text-align:center">Нет данных</td></tr></tbody></table></div>
 </div>
 </main></div></body></html>

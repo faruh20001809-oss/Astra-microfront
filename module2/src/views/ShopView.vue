@@ -1,27 +1,35 @@
 <template>
   <div class="page-wrapper shop-page">
-    <div class="container">
+    <div class="container shop-page__inner">
 
-      <!-- Hero -->
-      <section class="shop-hero">
-        <p class="text-mono" style="color:var(--accent)">◻ Магазин</p>
-        <h1>Мерч<br />Астрахани</h1>
-        <p class="shop-subtitle">Товары с историческими мотивами города — футболки, кружки, открытки и сувениры.</p>
+      <!-- Hero: editorial band + fluid type -->
+      <section class="shop-hero" aria-labelledby="shop-hero-title">
+        <div class="shop-hero__accent" aria-hidden="true" />
+        <p class="shop-eyebrow text-mono">Магазин</p>
+        <h1 id="shop-hero-title" class="shop-hero-title">Мерч Астрахани</h1>
+        <p class="shop-subtitle">
+          Товары с историческими мотивами города — футболки, кружки, открытки и сувениры.
+        </p>
       </section>
 
-      <!-- Filters -->
-      <div class="shop-toolbar">
-        <div class="filter-group">
-          <button
-            v-for="cat in allCategories"
-            :key="cat"
-            :class="['filter-chip', { active: activeCategory === cat }]"
-            @click="activeCategory = activeCategory === cat ? null : cat"
-          >{{ cat }}</button>
+      <!-- Toolbar: scrollable chips on narrow viewports -->
+      <div class="shop-toolbar" role="region" aria-label="Фильтры и сортировка">
+        <div class="shop-toolbar__chips">
+          <div class="filter-group">
+            <button
+              v-for="cat in allCategories"
+              :key="cat"
+              type="button"
+              :class="['filter-chip', { active: activeCategory === cat }]"
+              @click="activeCategory = activeCategory === cat ? null : cat"
+            >
+              {{ cat }}
+            </button>
+          </div>
         </div>
         <div class="sort-group">
-          <span class="text-mono" style="color:var(--gray-400)">Сортировка:</span>
-          <select v-model="sortBy" class="form-select sort-select">
+          <label for="shop-sort" class="sort-label text-mono">Сортировка</label>
+          <select id="shop-sort" v-model="sortBy" class="form-select sort-select">
             <option value="default">По умолчанию</option>
             <option value="price-asc">Цена ↑</option>
             <option value="price-desc">Цена ↓</option>
@@ -31,23 +39,23 @@
       </div>
 
       <!-- Loading -->
-      <div v-if="isLoading" class="shop-loading">
-        <div class="spinner" />
+      <div v-if="isLoading" class="shop-loading" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true" />
         <span>Загрузка товаров…</span>
       </div>
 
       <!-- Error -->
       <div v-else-if="error" class="shop-error">
-        <p class="text-mono" style="color:var(--accent)">⚠ Внимание</p>
-        <p>{{ error }}</p>
-        <button class="btn btn-ghost btn-sm" @click="loadProducts">🔄 Попробовать снова</button>
+        <p class="shop-error__label text-mono">Внимание</p>
+        <p class="shop-error__text">{{ error }}</p>
+        <button type="button" class="btn btn-ghost btn-sm" @click="loadProducts">Попробовать снова</button>
       </div>
 
       <!-- Empty state (фильтр не дал результатов) -->
       <div v-else-if="!sortedProducts.length" class="shop-empty">
         <p class="shop-empty-title">В этой категории пока ничего нет</p>
         <p class="shop-empty-hint">Попробуйте другую категорию или сбросьте фильтр.</p>
-        <button class="btn btn-ghost btn-sm" @click="activeCategory = null">Сбросить фильтр</button>
+        <button type="button" class="btn btn-ghost btn-sm" @click="activeCategory = null">Сбросить фильтр</button>
       </div>
 
       <!-- Product grid -->
@@ -65,9 +73,26 @@
 
     <!-- Product modal -->
     <transition name="fade">
-      <div v-if="selectedProduct" class="modal-backdrop" @click.self="selectedProduct = null">
-        <div class="modal-box product-modal">
-          <button class="modal-close-btn" @click="selectedProduct = null">✕</button>
+      <div
+        v-if="selectedProduct"
+        class="modal-backdrop"
+        role="presentation"
+        @click.self="selectedProduct = null"
+      >
+        <div
+          class="modal-box product-modal"
+          role="dialog"
+          aria-modal="true"
+          :aria-labelledby="`product-modal-${selectedProduct.id}`"
+        >
+          <button
+            type="button"
+            class="modal-close-btn"
+            aria-label="Закрыть"
+            @click="selectedProduct = null"
+          >
+            ✕
+          </button>
 
           <div class="product-modal-body">
             <div class="product-modal-image">
@@ -76,12 +101,14 @@
             </div>
             <div class="product-modal-info">
               <span class="tag">{{ selectedProduct.category }}</span>
-              <h2 class="product-modal-name">{{ selectedProduct.name }}</h2>
+              <h2 :id="`product-modal-${selectedProduct.id}`" class="product-modal-name">
+                {{ selectedProduct.name }}
+              </h2>
               <p class="product-modal-price">{{ selectedProduct.price }} ₽</p>
               <p class="product-modal-desc">{{ selectedProduct.description }}</p>
 
               <div v-if="selectedProduct.variants?.length" class="variants-section">
-                <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Вариант</p>
+                <p class="variants-label text-mono">Вариант</p>
                 <div class="variants-row">
                   <button
                     v-for="v in selectedProduct.variants"
@@ -93,7 +120,7 @@
               </div>
 
               <div class="qty-row">
-                <span class="text-mono" style="color:var(--gray-400)">Кол-во:</span>
+                <span class="qty-label text-mono">Количество</span>
                 <div class="qty-control">
                   <button class="qty-btn" @click="qty = Math.max(1, qty - 1)">−</button>
                   <span class="qty-val">{{ qty }}</span>
@@ -201,68 +228,150 @@ function getMockProducts() {
 </script>
 
 <style scoped>
-.shop-page { padding-bottom: var(--spacing-2xl); }
+.shop-page {
+  padding-bottom: var(--spacing-2xl);
+  container-type: inline-size;
+  container-name: shop;
+}
+
+.shop-page__inner {
+  max-width: 1200px;
+}
 
 .shop-hero {
-  padding: var(--spacing-2xl) 0 var(--spacing-xl);
-  max-width: 480px;
+  position: relative;
+  padding: clamp(1.5rem, 4vw, 2.5rem) 0 clamp(1.25rem, 3vw, 2rem);
+  max-width: 36rem;
+}
+
+.shop-hero__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 3rem;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 2px;
+}
+
+.shop-eyebrow {
+  color: var(--accent);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: clamp(0.65rem, 0.5cqi + 0.55rem, 0.75rem);
+  margin: 0 0 var(--spacing-sm);
+}
+
+.shop-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 4cqi + 1.25rem, 2.75rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--cream);
 }
 
 .shop-subtitle {
   margin-top: var(--spacing-md);
   color: var(--gray-400);
-  line-height: 1.8;
-  font-size: 0.9rem;
+  line-height: 1.75;
+  font-size: clamp(0.875rem, 0.8rem + 0.35vw, 0.95rem);
+  max-width: 42ch;
 }
 
 /* Toolbar */
 .shop-toolbar {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--spacing-md);
   padding: var(--spacing-lg) 0;
-  border-top: 1px solid var(--gray-800);
-  border-bottom: 1px solid var(--gray-800);
+  border-top: 1px solid rgba(212, 184, 150, 0.12);
+  border-bottom: 1px solid rgba(212, 184, 150, 0.12);
   margin-bottom: var(--spacing-xl);
 }
 
-.filter-group { display: flex; flex-wrap: wrap; gap: var(--spacing-xs); }
+.shop-toolbar__chips {
+  flex: 1 1 min(100%, 28rem);
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+  mask-image: linear-gradient(to right, black calc(100% - 1.5rem), transparent);
+}
+
+@container shop (min-width: 520px) {
+  .shop-toolbar__chips {
+    mask-image: none;
+  }
+}
+
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  min-width: min-content;
+}
 
 .filter-chip {
-  padding: 0.35rem 0.8rem;
+  padding: 0.4rem 0.85rem;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.06em;
   border: 1px solid var(--gray-600);
-  border-radius: var(--radius-sm);
-  background: transparent;
+  border-radius: 999px;
+  background: rgba(20, 16, 13, 0.35);
   color: var(--gray-400);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+  white-space: nowrap;
 }
 
-.filter-chip:hover { border-color: var(--gray-400); color: var(--paper); }
-.filter-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(200,169,110,0.08); }
+.filter-chip:hover {
+  border-color: var(--gray-400);
+  color: var(--paper);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.filter-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(200, 169, 110, 0.1);
+}
 
 .sort-group {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+.sort-label {
+  color: var(--gray-400);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .sort-select {
   width: auto;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.75rem;
+  min-width: 10rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.78rem;
 }
 
 /* Grid */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: clamp(1rem, 2cqi, 1.5rem);
 }
 
 .shop-loading {
@@ -274,12 +383,30 @@ function getMockProducts() {
 }
 
 .shop-error {
-  padding: var(--spacing-xl) 0;
+  padding: var(--spacing-xl) var(--spacing-md);
   text-align: center;
   color: var(--gray-400);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(184, 74, 60, 0.35);
+  background: rgba(184, 74, 60, 0.06);
 }
-.shop-error p { margin: var(--spacing-sm) 0; }
-.shop-error .btn { margin-top: var(--spacing-md); }
+
+.shop-error__label {
+  color: var(--danger);
+  margin: 0 0 var(--spacing-xs);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.shop-error__text {
+  margin: 0 0 var(--spacing-md);
+  line-height: 1.6;
+}
+
+.shop-error .btn {
+  margin-top: 0;
+}
 
 .shop-empty {
   text-align: center;
@@ -291,18 +418,42 @@ function getMockProducts() {
 .shop-empty .btn { margin-top: var(--spacing-sm); }
 
 /* Product modal */
-.product-modal { max-width: 760px; position: relative; }
+.product-modal {
+  max-width: 760px;
+  position: relative;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(212, 184, 150, 0.14);
+  box-shadow: var(--shadow-modal);
+  background: linear-gradient(165deg, rgba(42, 35, 30, 0.98) 0%, rgba(20, 16, 13, 0.99) 100%);
+  backdrop-filter: blur(12px);
+}
 
 .modal-close-btn {
   position: absolute;
-  top: var(--spacing-md); right: var(--spacing-md);
-  background: transparent; border: 1px solid var(--gray-600);
-  color: var(--paper); width: 30px; height: 30px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; border-radius: var(--radius-sm);
-  transition: all var(--transition);
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  z-index: 2;
+  background: rgba(20, 16, 13, 0.75);
+  border: 1px solid var(--gray-600);
+  color: var(--paper);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: border-color var(--transition), background var(--transition);
 }
-.modal-close-btn:hover { border-color: var(--paper); }
+
+.modal-close-btn:hover {
+  border-color: var(--paper);
+}
+
+.modal-close-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
 .product-modal-body {
   display: grid;
@@ -313,8 +464,8 @@ function getMockProducts() {
 .product-modal-image {
   aspect-ratio: 1;
   background: var(--ink);
-  border: 1px solid var(--gray-800);
-  border-radius: var(--radius-sm);
+  border: 1px solid rgba(212, 184, 150, 0.1);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -334,9 +485,33 @@ function getMockProducts() {
   gap: var(--spacing-md);
 }
 
-.product-modal-name { font-size: 1.5rem; }
-.product-modal-price { font-size: 1.75rem; font-family: var(--font-mono); color: var(--accent); }
-.product-modal-desc { color: var(--gray-400); line-height: 1.7; font-size: 0.85rem; }
+.product-modal-name {
+  font-size: clamp(1.25rem, 2vw + 0.75rem, 1.85rem);
+  font-family: var(--font-display);
+  line-height: 1.2;
+}
+
+.product-modal-price {
+  font-size: 1.5rem;
+  font-family: var(--font-mono);
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.product-modal-desc {
+  color: var(--gray-400);
+  line-height: 1.75;
+  font-size: 0.875rem;
+  max-width: 52ch;
+}
+
+.variants-label {
+  color: var(--gray-400);
+  margin-bottom: 0.5rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 
 /* Variants */
 .variants-row { display: flex; flex-wrap: wrap; gap: var(--spacing-xs); }
@@ -357,6 +532,13 @@ function getMockProducts() {
 .variant-btn.active { border-color: var(--accent); color: var(--accent); }
 
 /* Qty */
+.qty-label {
+  color: var(--gray-400);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .qty-row { display: flex; align-items: center; gap: var(--spacing-md); }
 
 .qty-control { display: flex; align-items: center; gap: var(--spacing-sm); }
@@ -377,8 +559,14 @@ function getMockProducts() {
 @media (max-width: 768px) {
   .product-grid { grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md); }
   .product-modal-body { grid-template-columns: 1fr; }
-  .shop-toolbar { flex-direction: column; align-items: flex-start; gap: var(--spacing-sm); }
+  .shop-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-md);
+  }
+  .sort-group { justify-content: space-between; }
   .product-modal { max-width: 100%; margin: var(--spacing-md); }
+  .product-modal-image { border-radius: var(--radius-md) var(--radius-md) 0 0; }
   .filter-group .filter-chip { min-height: 44px; padding: 0.5rem 1rem; }
   .product-card { padding: var(--spacing-md); }
 }
@@ -389,5 +577,11 @@ function getMockProducts() {
   .product-modal { margin: var(--spacing-sm); padding: var(--spacing-md); }
   .product-modal-image { min-height: 200px; }
   .qty-control button { min-width: 44px; min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filter-chip {
+    transition: none;
+  }
 }
 </style>
