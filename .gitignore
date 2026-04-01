@@ -28,3 +28,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Cursor / agent skills (локально; в репозиторий не коммитим)
+.agents/skills/
+.claude/skills/
+**/__pycache__/
