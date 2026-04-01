@@ -83,6 +83,8 @@ cd /opt/astramicro
 bash deploy/update.sh
 ```
 
+Если при запуске `./deploy/update.sh` появляется **Permission denied**, вызывайте именно **`bash deploy/update.sh`** (или обновите репозиторий — в `deploy/*.sh` в Git выставлен исполняемый бит).
+
 Скрипт делает: `git fetch` и сброс к `origin/main`, сборка astrakhan-admin, сборка module2, перезапуск Java, Flask и (если установлен) **astramicro-node**.  
 Nginx перезагружать не нужно (статику берёт из обновлённого `module2/dist`).
 
