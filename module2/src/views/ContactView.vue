@@ -2,7 +2,7 @@
   <div class="page-wrapper contact-page">
     <div class="container contact-page__inner">
 
-      <section class="contact-hero" aria-labelledby="contact-hero-title">
+      <section class="contact-hero motion-reveal" aria-labelledby="contact-hero-title">
         <div class="contact-hero__accent" aria-hidden="true" />
         <p class="contact-eyebrow text-mono">Связь с нами</p>
         <h1 id="contact-hero-title" class="contact-hero-title">Контакты</h1>

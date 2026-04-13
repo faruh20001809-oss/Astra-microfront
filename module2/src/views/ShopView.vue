@@ -3,7 +3,7 @@
     <div class="container shop-page__inner">
 
       <!-- Hero: editorial band + fluid type -->
-      <section class="shop-hero" aria-labelledby="shop-hero-title">
+      <section class="shop-hero motion-reveal" aria-labelledby="shop-hero-title">
         <div class="shop-hero__accent" aria-hidden="true" />
         <p class="shop-eyebrow text-mono">Магазин</p>
         <h1 id="shop-hero-title" class="shop-hero-title">Мерч Астрахани</h1>
@@ -15,7 +15,7 @@
       <!-- Toolbar: scrollable chips on narrow viewports -->
       <div class="shop-toolbar" role="region" aria-label="Фильтры и сортировка">
         <div class="shop-toolbar__chips">
-          <div class="filter-group">
+          <div class="filter-group motion-stagger-children">
             <button
               v-for="cat in allCategories"
               :key="cat"

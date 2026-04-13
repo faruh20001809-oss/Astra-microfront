@@ -241,10 +241,31 @@ onUnmounted(() => {
   flex-shrink: 0;
   cursor: pointer;
   color: inherit;
+  transition: transform 0.4s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.logo:hover {
+  transform: translateY(-2px);
 }
 
 .logo-mark {
   color: var(--accent);
+  transition: transform 0.5s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.logo:hover .logo-mark {
+  transform: rotate(-8deg) scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo,
+  .logo-mark {
+    transition: none;
+  }
+  .logo:hover,
+  .logo:hover .logo-mark {
+    transform: none;
+  }
 }
 
 .logo-text {
@@ -290,6 +311,22 @@ onUnmounted(() => {
   transition: color var(--transition), background var(--transition);
   text-decoration: none;
   cursor: pointer;
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  width: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  transform: translateX(-50%);
+  transition: width 0.35s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
+  pointer-events: none;
+  opacity: 0.95;
 }
 
 .nav-link:hover {
@@ -297,13 +334,33 @@ onUnmounted(() => {
   background: var(--gray-800);
 }
 
+.nav-link:hover::after {
+  width: calc(100% - 1.25rem);
+}
+
 .nav-link.router-link-active {
   color: var(--paper);
+}
+
+.nav-link.router-link-active::after {
+  width: calc(100% - 1.25rem);
 }
 
 .nav-link.router-link-exact-active {
   color: var(--accent);
   background: var(--accent-soft, rgba(212, 184, 150, 0.18));
+}
+
+.nav-link.router-link-exact-active::after {
+  width: calc(100% - 1.25rem);
+  background: var(--accent);
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-link::after {
+    transition: none;
+  }
 }
 
 .nav-icon-el {
@@ -356,13 +413,29 @@ onUnmounted(() => {
   color: var(--gray-400);
   text-decoration: none;
   border-bottom: 1px solid var(--gray-800);
-  transition: background var(--transition), color var(--transition);
+  transition:
+    background var(--transition),
+    color var(--transition),
+    transform 0.3s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1)),
+    padding-left var(--transition);
   cursor: pointer;
 }
 
 .nav-drawer-link:hover {
   background: var(--gray-800);
   color: var(--paper);
+  transform: translateX(6px);
+  padding-left: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-drawer-link {
+    transition: background var(--transition), color var(--transition);
+  }
+  .nav-drawer-link:hover {
+    transform: none;
+    padding-left: 1.25rem;
+  }
 }
 
 .nav-drawer-link.router-link-active {

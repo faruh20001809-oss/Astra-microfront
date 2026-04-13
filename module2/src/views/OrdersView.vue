@@ -1,7 +1,7 @@
 <template>
   <div class="page-wrapper orders-page">
     <div class="container">
-      <section class="orders-hero">
+      <section class="orders-hero motion-reveal">
         <p class="text-mono" style="color:var(--accent)">◫ Кабинет гостя</p>
         <h1>Мои заказы</h1>
       </section>

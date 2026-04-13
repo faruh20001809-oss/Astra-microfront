@@ -1,7 +1,7 @@
 <template>
   <div class="page-wrapper auth-page">
     <div class="container auth-container">
-      <section class="auth-shell" aria-labelledby="auth-page-title">
+      <section class="auth-shell motion-reveal" aria-labelledby="auth-page-title">
         <header class="auth-head">
           <p class="auth-eyebrow text-mono">Вход в сервис</p>
           <h1 id="auth-page-title" class="auth-title">Профиль клиента</h1>

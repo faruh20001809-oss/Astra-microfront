@@ -3,7 +3,7 @@
     <div class="container routes-page__inner">
 
       <!-- Hero -->
-      <section class="routes-hero" aria-labelledby="routes-hero-title">
+      <section class="routes-hero motion-reveal" aria-labelledby="routes-hero-title">
         <div class="routes-hero__accent" aria-hidden="true" />
         <p class="routes-eyebrow text-mono">Исследование города</p>
         <h1 id="routes-hero-title" class="routes-hero-title">Исторические маршруты</h1>
@@ -15,7 +15,7 @@
       <!-- Filter bar -->
       <div class="routes-filter-bar" role="region" aria-label="Фильтры маршрутов">
         <div class="routes-filter-bar__row routes-filter-bar__row--scroll">
-          <div class="filter-group">
+          <div class="filter-group motion-stagger-children">
             <button
               v-for="cat in categories"
               :key="cat"
@@ -28,7 +28,7 @@
           </div>
         </div>
         <div class="routes-filter-bar__row">
-          <div class="filter-group filter-group--toggles">
+          <div class="filter-group filter-group--toggles motion-stagger-children">
             <button
               type="button"
               :class="['filter-chip', { active: showFree }]"

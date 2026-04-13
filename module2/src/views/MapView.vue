@@ -2,15 +2,15 @@
   <div class="map-page">
     <!-- Sidebar: на десктопе — слева в потоке; на мобильных скрыт, контент в Drawer -->
     <aside class="map-sidebar">
-      <div class="sidebar-header">
+      <div class="sidebar-header motion-reveal">
         <h2 class="sidebar-title">Исторические объекты</h2>
         <button type="button" class="sidebar-suggest-btn" @click="suggestPoiOpen = true" aria-label="Предложить точку">
           💡 Предложить точку
         </button>
       </div>
-      <div class="filter-section">
+      <div class="filter-section motion-reveal motion-reveal-delay-1">
         <p class="text-mono" style="color:var(--gray-400);margin-bottom:0.5rem">Категории</p>
-        <div class="filter-chips">
+        <div class="filter-chips motion-stagger-children">
           <button
             v-for="cat in mapStore.categories"
             :key="cat"

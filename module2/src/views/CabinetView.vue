@@ -1,7 +1,7 @@
 <template>
   <div class="page-wrapper cabinet-page">
     <div class="container cabinet-container">
-      <header class="cabinet-hero">
+      <header class="cabinet-hero motion-reveal">
         <div class="cabinet-hero__text">
           <p class="cabinet-eyebrow text-mono">Личный кабинет</p>
           <h1 class="cabinet-title">Профиль клиента</h1>
