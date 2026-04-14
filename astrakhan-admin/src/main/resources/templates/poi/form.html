@@ -197,7 +197,7 @@ checkDescriptionQuality();
 updatePoiSummary();
 </script>
 <script>
-function savePoiDraft(){var s=document.querySelector('[name="status"]'); if(s) s.value='DRAFT'; var f=document.querySelector('form'); if(f&&f.requestSubmit){f.requestSubmit()}else if(f){f.submit()}}
-function savePoiPublish(){var s=document.querySelector('[name="status"]'); if(s) s.value='PUBLISHED'; var f=document.querySelector('form'); if(f&&f.requestSubmit){f.requestSubmit()}else if(f){f.submit()}}
+function savePoiDraft(){var s=document.querySelector('#poiForm [name="status"]'); if(s) s.value='DRAFT'; var f=document.getElementById('poiForm'); if(f&&f.requestSubmit){f.requestSubmit()}else if(f){f.submit()}}
+function savePoiPublish(){var s=document.querySelector('#poiForm [name="status"]'); if(s) s.value='PUBLISHED'; var f=document.getElementById('poiForm'); if(f&&f.requestSubmit){f.requestSubmit()}else if(f){f.submit()}}
 </script>
 </main></div></body></html>
