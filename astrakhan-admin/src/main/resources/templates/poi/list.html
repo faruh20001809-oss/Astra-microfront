@@ -25,10 +25,10 @@
     <td><span class="status-badge" th:classappend="'status-' + ${poi.status.name().toLowerCase()}" th:text="${poi.status.name()}"></span></td>
     <td><div class="btn-group">
         <a th:href="@{'/admin/poi/edit/' + ${poi.id}}" class="btn btn-sm">✏️</a>
-        <form th:if="${poi.status.name() != 'PUBLISHED'}" th:action="@{'/admin/poi/publish/' + ${poi.id}}" method="post" style="display:inline"><button type="submit" class="btn btn-sm btn-success" title="Опубликовать">📤</button></form>
-        <form th:if="${poi.status.name() == 'PUBLISHED'}" th:action="@{'/admin/poi/archive/' + ${poi.id}}" method="post" style="display:inline"><button type="submit" class="btn btn-sm btn-warning" title="В архив">📥</button></form>
-        <form th:if="${poi.status.name() == 'PUBLISHED'}" th:action="@{'/admin/poi/broadcast-newsletter/' + ${poi.id}}" method="post" style="display:inline" onsubmit="return confirm('Разослать подписчикам письмо об этой точке?')"><button type="submit" class="btn btn-sm" title="Рассылка">✉️</button></form>
-        <form th:action="@{'/admin/poi/delete/' + ${poi.id}}" method="post" style="display:inline" onsubmit="return confirm('Удалить?')"><button type="submit" class="btn btn-sm btn-danger">🗑️</button></form>
+        <form th:if="${poi.status.name() != 'PUBLISHED'}" th:action="@{'/admin/poi/publish/' + ${poi.id}}" method="post" style="display:inline"><input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/><button type="submit" class="btn btn-sm btn-success" title="Опубликовать">📤</button></form>
+        <form th:if="${poi.status.name() == 'PUBLISHED'}" th:action="@{'/admin/poi/archive/' + ${poi.id}}" method="post" style="display:inline"><input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/><button type="submit" class="btn btn-sm btn-warning" title="В архив">📥</button></form>
+        <form th:if="${poi.status.name() == 'PUBLISHED'}" th:action="@{'/admin/poi/broadcast-newsletter/' + ${poi.id}}" method="post" style="display:inline" onsubmit="return confirm('Разослать подписчикам письмо об этой точке?')"><input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/><button type="submit" class="btn btn-sm" title="Рассылка">✉️</button></form>
+        <form th:action="@{'/admin/poi/delete/' + ${poi.id}}" method="post" style="display:inline" onsubmit="return confirm('Удалить?')"><input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/><button type="submit" class="btn btn-sm btn-danger">🗑️</button></form>
     </div></td>
 </tr>
 <tr th:if="${#lists.isEmpty(pois)}"><td colspan="9" style="text-align:center;padding:40px;color:#999">Нет точек интереса</td></tr>
