@@ -61,8 +61,40 @@ function saveDraft(){document.getElementById('publishedSelect').value='false';do
 function saveAndPublish(){document.getElementById('publishedSelect').value='true';document.getElementById('productForm').requestSubmit()}
 document.getElementById('product-save-draft-btn')?.addEventListener('click', saveDraft)
 document.getElementById('product-save-publish-btn')?.addEventListener('click', saveAndPublish)
-function updateProductSummary(){const name=document.querySelector('[name="name"]')?.value?.trim();const category=document.querySelector('[name="category"]')?.value?.trim();const price=Number(document.querySelector('[name="price"]')?.value||0);const qty=Number(document.querySelector('[name="quantity"]')?.value||0);const req=[ ['Название','[name="name"]',!!name],['Цена','[name="price"]',price>0],['Количество','[name="quantity"]',qty>=0],['Категория','[name="category"]',!!category]];document.getElementById('productSummary').innerHTML=req.map(r=>`${r[2]?'✅':'❌'} <a href="javascript:void(0)" onclick="document.querySelector('${r[1]}')?.scrollIntoView({behavior:'smooth',block:'center'})" style="color:${r[2]?'#8a8':'#d88'}">${r[0]}</a>`).join('<br>');document.getElementById('pvProductName').textContent=name||'Товар';document.getElementById('pvProductMeta').textContent=category||'Без категории';document.getElementById('pvProductPrice').textContent=`${price||0} ₽`}
-document.querySelectorAll('#productForm input,#productForm select,#productForm textarea').forEach(el=>el.addEventListener('input',updateProductSummary))
-document.querySelectorAll('#productForm input,#productForm select,#productForm textarea').forEach(el=>el.addEventListener('change',updateProductSummary))
-updateProductSummary()
+function updateProductSummary(){
+  const nameEl = document.querySelector('#productForm [name="name"]');
+  const categoryEl = document.querySelector('#productForm [name="category"]');
+  const priceEl = document.querySelector('#productForm [name="price"]');
+  const qtyEl = document.querySelector('#productForm [name="quantity"]');
+  const summaryEl = document.getElementById('productSummary');
+  const pvNameEl = document.getElementById('pvProductName');
+  const pvMetaEl = document.getElementById('pvProductMeta');
+  const pvPriceEl = document.getElementById('pvProductPrice');
+  if (!summaryEl || !pvNameEl || !pvMetaEl || !pvPriceEl) return;
+
+  const name = (nameEl && nameEl.value ? nameEl.value : '').trim();
+  const category = (categoryEl && categoryEl.value ? categoryEl.value : '').trim();
+  const price = Number((priceEl && priceEl.value) || 0);
+  const qty = Number((qtyEl && qtyEl.value) || 0);
+  const req = [
+    ['Название', '[name="name"]', !!name],
+    ['Цена', '[name="price"]', price > 0],
+    ['Количество', '[name="quantity"]', qty >= 0],
+    ['Категория', '[name="category"]', !!category]
+  ];
+
+  summaryEl.innerHTML = req.map(function (r) {
+    var ok = r[2];
+    var color = ok ? '#8a8' : '#d88';
+    return (ok ? '✅' : '❌') + ' <span style="color:' + color + '">' + r[0] + '</span>';
+  }).join('<br>');
+
+  pvNameEl.textContent = name || 'Товар';
+  pvMetaEl.textContent = category || 'Без категории';
+  pvPriceEl.textContent = (Number.isFinite(price) ? price : 0) + ' ₽';
+}
+
+document.querySelectorAll('#productForm input,#productForm select,#productForm textarea').forEach(function(el){el.addEventListener('input', updateProductSummary);});
+document.querySelectorAll('#productForm input,#productForm select,#productForm textarea').forEach(function(el){el.addEventListener('change', updateProductSummary);});
+updateProductSummary();
 </script></body></html>
