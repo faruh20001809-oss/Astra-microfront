@@ -75,10 +75,10 @@
   </div>
 </aside>
 </div>
-<script th:inline="javascript">
+<script th:if="${poiAiEnabled == true}">
 (function () {
-  var AI_DESC_URL = /*[[@{/admin/api/poi/ai-description}]]*/ '/admin/api/poi/ai-description';
-  var AI_IMG_URL = /*[[@{/admin/api/poi/image-analyze}]]*/ '/admin/api/poi/image-analyze';
+  var AI_DESC_URL = '/admin/api/poi/ai-description';
+  var AI_IMG_URL = '/admin/api/poi/image-analyze';
   var genBtn = document.getElementById('poi-ai-generate-btn');
   var imgBtn = document.getElementById('poi-image-analyze-btn');
   var msg = document.getElementById('poi-ai-msg');
@@ -188,13 +188,15 @@ function checkDescriptionQuality() {
 document.getElementById('latInput')?.addEventListener('input', checkCoords);
 document.getElementById('lngInput')?.addEventListener('input', checkCoords);
 document.getElementById('poi-description-field')?.addEventListener('input', checkDescriptionQuality);
-function savePoiDraft(){var s=document.querySelector('[name="status"]'); if(s) s.value='DRAFT'; document.querySelector('form')?.requestSubmit();}
-function savePoiPublish(){var s=document.querySelector('[name="status"]'); if(s) s.value='PUBLISHED'; document.querySelector('form')?.requestSubmit();}
 function updatePoiSummary(){var name=document.querySelector('[name="name"]')?.value?.trim();var category=document.querySelector('[name="category"]')?.value?.trim();var address=document.querySelector('[name="address"]')?.value?.trim();var desc=document.getElementById('poi-description-field')?.value?.trim();var req=[['Название','[name="name"]',!!name],['Категория','[name="category"]',!!category],['Широта','#latInput',!!document.getElementById('latInput')?.value],['Долгота','#lngInput',!!document.getElementById('lngInput')?.value]];document.getElementById('poiSummary').innerHTML=req.map(r=>`${r[2]?'✅':'❌'} <a href="javascript:void(0)" onclick="document.querySelector('${r[1]}')?.scrollIntoView({behavior:'smooth',block:'center'})" style="color:${r[2]?'#8a8':'#d88'}">${r[0]}</a>`).join('<br>');document.getElementById('pvPoiName').textContent=name||'Точка интереса';document.getElementById('pvPoiMeta').textContent=`${category||'Без категории'} · ${address||'Адрес не указан'}`;document.getElementById('pvPoiDesc').textContent=(desc||'Описание...').slice(0,120)}
 document.querySelectorAll('#poiForm input,#poiForm select,#poiForm textarea').forEach(el=>el.addEventListener('input',updatePoiSummary))
 document.querySelectorAll('#poiForm input,#poiForm select,#poiForm textarea').forEach(el=>el.addEventListener('change',updatePoiSummary))
 checkCoords();
 checkDescriptionQuality();
 updatePoiSummary();
+</script>
+<script>
+function savePoiDraft(){var s=document.querySelector('[name="status"]'); if(s) s.value='DRAFT'; var f=document.querySelector('form'); if(f&&f.requestSubmit){f.requestSubmit()}else if(f){f.submit()}}
+function savePoiPublish(){var s=document.querySelector('[name="status"]'); if(s) s.value='PUBLISHED'; var f=document.querySelector('form'); if(f&&f.requestSubmit){f.requestSubmit()}else if(f){f.submit()}}
 </script>
 </main></div></body></html>
