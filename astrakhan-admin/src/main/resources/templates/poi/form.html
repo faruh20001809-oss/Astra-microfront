@@ -58,8 +58,8 @@
 <h3 style="margin:24px 0 16px">Публикация</h3>
 <div class="form-row"><div class="form-group"><label>Опубликовать в</label><input type="datetime-local" class="form-control" th:field="*{publishAt}"/></div><div class="form-group"><label>Снять с публикации</label><input type="datetime-local" class="form-control" th:field="*{unpublishAt}"/></div></div>
 <div class="form-actions" style="position:sticky;bottom:0;background:var(--gray-800);z-index:2;">
-    <button type="button" class="btn btn-ghost" onclick="savePoiDraft()">Сохранить как черновик</button>
-    <button type="button" class="btn btn-primary" onclick="savePoiPublish()">Сохранить и опубликовать</button>
+    <button type="button" class="btn btn-ghost" id="poi-save-draft-btn">Сохранить как черновик</button>
+    <button type="button" class="btn btn-primary" id="poi-save-publish-btn">Сохранить и опубликовать</button>
     <a th:href="@{/admin/poi}" class="btn btn-ghost">Отмена</a>
 </div>
 </form></div>
@@ -199,5 +199,7 @@ updatePoiSummary();
 <script>
 function savePoiDraft(){var s=document.querySelector('#poiForm [name="status"]'); if(s) s.value='DRAFT'; var f=document.getElementById('poiForm'); if(f&&f.requestSubmit){f.requestSubmit()}else if(f){f.submit()}}
 function savePoiPublish(){var s=document.querySelector('#poiForm [name="status"]'); if(s) s.value='PUBLISHED'; var f=document.getElementById('poiForm'); if(f&&f.requestSubmit){f.requestSubmit()}else if(f){f.submit()}}
+document.getElementById('poi-save-draft-btn')?.addEventListener('click', savePoiDraft);
+document.getElementById('poi-save-publish-btn')?.addEventListener('click', savePoiPublish);
 </script>
 </main></div></body></html>
