@@ -35,8 +35,8 @@
     </div>
 
     <div class="form-actions" style="position:sticky;bottom:0;background:var(--gray-800);z-index:2;">
-      <button type="button" class="btn btn-ghost" onclick="saveDraft()">Сохранить как черновик</button>
-      <button type="button" class="btn btn-primary" onclick="saveAndPublish()">Сохранить и опубликовать</button>
+      <button type="button" class="btn btn-ghost" id="product-save-draft-btn">Сохранить как черновик</button>
+      <button type="button" class="btn btn-primary" id="product-save-publish-btn">Сохранить и опубликовать</button>
       <a th:href="@{/admin/products}" class="btn btn-ghost">Отмена</a>
     </div>
   </form>
@@ -59,6 +59,8 @@ function applyTemplate(kind){const sizes=document.getElementById('sizesInput');c
 document.getElementById('productForm').addEventListener('submit',(e)=>{const published=document.getElementById('publishedSelect').value==='true';if(!published)return;const price=Number(document.querySelector('[name="price"]').value||0);const qty=Number(document.querySelector('[name="quantity"]').value||0);const file=document.getElementById('imageFileInput').files?.length||0;const err=document.getElementById('productFormError');if(!Number.isFinite(price)||price<=0||qty<1||file<1){e.preventDefault();err.style.display='block';err.textContent='Для опубликованного товара обязательны: цена > 0, остаток > 0 и изображение.';return}err.style.display='none'})
 function saveDraft(){document.getElementById('publishedSelect').value='false';document.getElementById('productForm').requestSubmit()}
 function saveAndPublish(){document.getElementById('publishedSelect').value='true';document.getElementById('productForm').requestSubmit()}
+document.getElementById('product-save-draft-btn')?.addEventListener('click', saveDraft)
+document.getElementById('product-save-publish-btn')?.addEventListener('click', saveAndPublish)
 function updateProductSummary(){const name=document.querySelector('[name="name"]')?.value?.trim();const category=document.querySelector('[name="category"]')?.value?.trim();const price=Number(document.querySelector('[name="price"]')?.value||0);const qty=Number(document.querySelector('[name="quantity"]')?.value||0);const req=[['Название','[name="name"]',!!name],['Цена','[name="price"]',price>0],['Количество','[name="quantity"]',qty>=0],['Категория','[name="category"]',!!category]];document.getElementById('productSummary').innerHTML=req.map(r=>`${r[2]?'✅':'❌'} <a href="javascript:void(0)" onclick="document.querySelector('${r[1]}')?.scrollIntoView({behavior:'smooth',block:'center'})" style="color:${r[2]?'#8a8':'#d88'}">${r[0]}</a>`).join('<br>');document.getElementById('pvProductName').textContent=name||'Товар';document.getElementById('pvProductMeta').textContent=category||'Без категории';document.getElementById('pvProductPrice').textContent=`${price||0} ₽`}
 document.querySelectorAll('#productForm input,#productForm select,#productForm textarea').forEach(el=>el.addEventListener('input',updateProductSummary))
 document.querySelectorAll('#productForm input,#productForm select,#productForm textarea').forEach(el=>el.addEventListener('change',updateProductSummary))
