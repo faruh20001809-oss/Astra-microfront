@@ -359,7 +359,7 @@ def generate_report():
     
     # Иконка музея (простой прямоугольник)
     pdf.set_fill_color(255, 255, 255)
-    pdf.rounded_rect(12, 8, 20, 20, 3, 3, 'F')
+    pdf.rect(12, 8, 20, 20, 'F')
     pdf.set_fill_color(*PRIMARY)
     pdf.rect(15, 12, 6, 12, 'F')
     pdf.rect(23, 12, 6, 12, 'F')
@@ -411,7 +411,7 @@ def generate_report():
         pdf.set_fill_color(255, 255, 255)
         pdf.set_draw_color(*color)
         pdf.set_line_width(1)
-        pdf.rounded_rect(x, y, card_width, card_height, 3, 3, 'FD')
+        pdf.rect(x, y, card_width, card_height, 'FD')
         
         # Иконка
         pdf.set_xy(x + 3, y + 3)
@@ -573,7 +573,7 @@ def generate_report():
     # Карточка с выводами - современный стиль
     summary_y = pdf.get_y()
     pdf.set_fill_color(249, 250, 251)
-    pdf.rounded_rect(10, summary_y, 277, 50, 3, 3, 'F')
+    pdf.rect(10, summary_y, 277, 50, 'F')
     
     # Выводы на основе данных
     total_users = report_data['total_users']
