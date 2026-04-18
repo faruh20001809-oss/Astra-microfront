@@ -214,15 +214,16 @@ function addToCartModal() {
 }
 
 function getMockProducts() {
+  const img = (id) => `https://picsum.photos/seed/astra-heritage-${id}/400/400`
   return [
-    { id: 1, name: 'Футболка «Кремль»', category: 'Одежда', price: 1490, emoji: '👕', description: 'Хлопковая футболка с силуэтом Астраханского Кремля, печать по технологии DTF. Доступны размеры S–3XL.', variants: ['S', 'M', 'L', 'XL', '2XL'], image: null },
-    { id: 2, name: 'Кружка «Лотос дельты»', category: 'Посуда', price: 890, emoji: '☕', description: 'Керамическая кружка 350 мл с авторской иллюстрацией лотосовых полей дельты Волги.', variants: null, image: null },
-    { id: 3, name: 'Открытка «Зодчество»', category: 'Открытки', price: 120, emoji: '✉', description: 'Набор из 5 открыток с историческими фасадами астраханского зодчества XIX–XX веков. Мелованная бумага 350 г.', variants: null, image: null },
-    { id: 4, name: 'Магнит «Кремль» (3D)', category: 'Сувениры', price: 290, emoji: '🧲', description: 'Объёмный магнит-копия Астраханского Кремля из полирезины. Размер 8×5 см.', variants: null, image: null },
-    { id: 5, name: 'Толстовка «Астрахань 1556»', category: 'Одежда', price: 2890, emoji: '🧥', description: 'Оверсайз-толстовка с датой основания города. 100% хлопок, плотность 360 г/м².', variants: ['S', 'M', 'L', 'XL', '2XL'], image: null },
-    { id: 6, name: 'Блокнот «История края»', category: 'Канцелярия', price: 450, emoji: '📒', description: 'Блокнот А5 в твёрдой обложке с репродукциями исторических карт Астраханской губернии. 192 стр., в точку.', variants: null, image: null },
-    { id: 7, name: 'Постер «Кремль» А2', category: 'Плакаты', price: 690, emoji: '🖼', description: 'Высококачественная печать на матовой бумаге 200 г. Архитектурная иллюстрация в монохромном стиле.', variants: null, image: null },
-    { id: 8, name: 'Бейсболка «Волга»', category: 'Одежда', price: 990, emoji: '🧢', description: 'Шестипанельная бейсболка с вышивкой. Регулируемый ремешок. Один размер.', variants: ['Чёрная', 'Кремовая'], image: null }
+    { id: 1, name: 'Футболка «Кремль»', category: 'Одежда', price: 1490, emoji: '👕', description: 'Хлопковая футболка с силуэтом Астраханского Кремля, печать по технологии DTF. Доступны размеры S–3XL.', variants: ['S', 'M', 'L', 'XL', '2XL'], image: img(1) },
+    { id: 2, name: 'Кружка «Лотос дельты»', category: 'Посуда', price: 890, emoji: '☕', description: 'Керамическая кружка 350 мл с авторской иллюстрацией лотосовых полей дельты Волги.', variants: null, image: img(2) },
+    { id: 3, name: 'Открытка «Зодчество»', category: 'Открытки', price: 120, emoji: '✉', description: 'Набор из 5 открыток с историческими фасадами астраханского зодчества XIX–XX веков. Мелованная бумага 350 г.', variants: null, image: img(3) },
+    { id: 4, name: 'Магнит «Кремль» (3D)', category: 'Сувениры', price: 290, emoji: '🧲', description: 'Объёмный магнит-копия Астраханского Кремля из полирезины. Размер 8×5 см.', variants: null, image: img(4) },
+    { id: 5, name: 'Толстовка «Астрахань 1556»', category: 'Одежда', price: 2890, emoji: '🧥', description: 'Оверсайз-толстовка с датой основания города. 100% хлопок, плотность 360 г/м².', variants: ['S', 'M', 'L', 'XL', '2XL'], image: img(5) },
+    { id: 6, name: 'Блокнот «История края»', category: 'Канцелярия', price: 450, emoji: '📒', description: 'Блокнот А5 в твёрдой обложке с репродукциями исторических карт Астраханской губернии. 192 стр., в точку.', variants: null, image: img(6) },
+    { id: 7, name: 'Постер «Кремль» А2', category: 'Плакаты', price: 690, emoji: '🖼', description: 'Высококачественная печать на матовой бумаге 200 г. Архитектурная иллюстрация в монохромном стиле.', variants: null, image: img(7) },
+    { id: 8, name: 'Бейсболка «Волга»', category: 'Одежда', price: 990, emoji: '🧢', description: 'Шестипанельная бейсболка с вышивкой. Регулируемый ремешок. Один размер.', variants: ['Чёрная', 'Кремовая'], image: img(8) }
   ]
 }
 </script>

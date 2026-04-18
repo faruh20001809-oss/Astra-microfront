@@ -30,9 +30,7 @@
                   :key="item.id"
                   class="cart-item"
               >
-                <div class="cart-item-img">
-                  <span>{{ item.emoji || '◻' }}</span>
-                </div>
+                <CartItemThumbnail :item="item" />
                 <div class="cart-item-info">
                   <p class="cart-item-name">{{ item.name }}</p>
                   <p v-if="item.variant" class="cart-item-variant">{{ item.variant }}</p>
@@ -235,6 +233,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useCartStore, useToastStore } from '@/store/index.js'
 import { javaApi } from '@/api/backend'
+import CartItemThumbnail from '@/components/shop/CartItemThumbnail.vue'
 
 /** Пункты выдачи с бэкенда (тот же список, что в модалке заказа Java-админки) */
 const pickupPoints = ref([])
@@ -742,12 +741,6 @@ async function checkout() {
   display: flex; align-items: center; gap: var(--spacing-sm);
   padding: var(--spacing-md) 0; border-bottom: 1px solid var(--gray-800);
 }
-.cart-item-img {
-  width: 48px; height: 48px; background: var(--ink);
-  border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1.5rem; flex-shrink: 0;
-}
 .cart-item-info { flex: 1; min-width: 0; }
 .cart-item-name { font-size: 0.8rem; line-height: 1.3; }
 .cart-item-variant { font-size: 0.65rem; color: var(--gray-400); margin-top: 2px; }
@@ -929,15 +922,17 @@ async function checkout() {
 
 .newsletter-opt { margin-bottom: 0.5rem; }
 .checkbox-inline {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
+  display: block;
   font-size: 0.8rem;
   color: var(--gray-300);
   cursor: pointer;
   line-height: 1.4;
 }
-.checkbox-inline input { margin-top: 0.2rem; flex-shrink: 0; }
+.checkbox-inline input {
+  margin-top: 0.2rem;
+  margin-right: 0.5rem;
+  vertical-align: top;
+}
 
 .pickup-block { margin-top: var(--spacing-sm); }
 .pickup-hint {

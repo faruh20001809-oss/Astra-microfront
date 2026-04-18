@@ -1093,6 +1093,11 @@ textarea:focus-visible {
   color: var(--paper) !important;
 }
 
+/* Правые drawer (меню и т.д.): фиксированная ширина; корзина — свои правила в CartDrawer.vue */
+.p-drawer-right .p-drawer:not(.cart-drawer-pv) {
+  width: 26rem;
+}
+
 /* Корзина: тема PrimeVue может оставить у .p-drawer-content фикс. ширину (~20rem) при широкой панели */
 @media (min-width: 769px) {
   #astra-cart-drawer.p-drawer .p-drawer-header,
