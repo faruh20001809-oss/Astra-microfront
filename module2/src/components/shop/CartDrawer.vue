@@ -250,8 +250,10 @@ const cartDrawerIntrinsicRef = ref(null)
 function drawerPanelEl() {
   return cartDrawerRootRef.value?.$el ?? document.getElementById('astra-cart-drawer')
 }
-const CART_DRAWER_MIN_W = 320
-const CART_DRAWER_MAX_W = () => Math.min(window.innerWidth * 0.96, 900)
+/** Нижняя граница ~32rem — иначе авто-измерение даёт узкую панель; верхняя — запас под широкие экраны */
+const CART_DRAWER_MIN_W = 520
+const CART_DRAWER_MEASURE_PAD = 28
+const CART_DRAWER_MAX_W = () => Math.min(window.innerWidth * 0.98, 1100)
 
 function clampCartDrawerW(w) {
   return Math.min(Math.max(Math.round(w), CART_DRAWER_MIN_W), CART_DRAWER_MAX_W())
@@ -318,7 +320,7 @@ function measureCartDrawerWidth() {
     footer.style.maxWidth = mwSt
   }
 
-  applyCartDrawerWidth(clampCartDrawerW(needed))
+  applyCartDrawerWidth(clampCartDrawerW(needed + CART_DRAWER_MEASURE_PAD))
 }
 
 function scheduleMeasureCartDrawer() {
@@ -680,7 +682,11 @@ async function checkout() {
   min-height: 0;
 }
 
-.cart-drawer-pv .p-drawer-content { display: flex; flex-direction: column; overflow: hidden; }
+.cart-drawer-pv .p-drawer-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 .cart-drawer-pv .cart-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
 .cart-drawer-pv .cart-checkout-btn { width: 100%; }
 .cart-drawer-pv .p-drawer-footer { padding: var(--spacing-md); padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0)); border-top: 1px solid var(--gray-600); }
@@ -828,13 +834,23 @@ async function checkout() {
 }
 .consent-text a { color: var(--gray-400); text-decoration: underline; }
 
-/* Desktop: фактическая width задаётся скриптом по ширине контента; здесь пределы и плавное изменение */
+/* Desktop: фактическая width задаётся скриптом; min/max держат панель и контент шире прежнего «узкого» измерения */
 @media (min-width: 769px) {
   .cart-drawer-pv.p-drawer {
-    width: min(32rem, 92vw);
-    min-width: 22rem;
-    max-width: min(56.25rem, 96vw);
+    width: min(40rem, 94vw);
+    min-width: min(34rem, 92vw);
+    max-width: min(68.75rem, 98vw);
     transition: width 0.42s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .cart-drawer-pv :deep(.p-drawer-content) {
+    flex: 1 1 auto;
+    min-width: min(32rem, 90vw);
+    box-sizing: border-box;
+  }
+
+  .cart-drawer-intrinsic {
+    min-width: min(31rem, calc(90vw - 3rem));
   }
 
   .cart-drawer-pv .cart-item-name {
