@@ -672,10 +672,10 @@ async function checkout() {
 }
 .consent-text a { color: var(--gray-400); text-decoration: underline; }
 
-/* Desktop: PrimeVue default is 20rem — widen so line items + two-column form fit */
+/* Desktop: PrimeVue default is 20rem — до ~900px, чтобы строки корзины, форма и длинные подписи ПВЗ помещались */
 @media (min-width: 769px) {
   .cart-drawer-pv .p-drawer {
-    width: min(32rem, 90vw);
+    width: min(56.25rem, 96vw);
   }
 }
 
