@@ -457,10 +457,34 @@ import { usePoiAiTts } from '@/composables/usePoiAiTts.js'
 import { useFavorites } from '@/composables/useFavorites.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import { javaApi } from '@/api/backend.js'
+import { fetch2gisRouteCoordinates, isDgisRoutingConfigured } from '@/api/dgisRouting.js'
 
 const LS_POI_CATALOG_MAX = 'astra-poi-catalog-max-id'
 const LS_POI_DISMISSED = 'astra-poi-dismissed-new-ids'
 const NEW_POI_POLL_MS = 75_000
+
+/** Один JSON из `VITE_DGIS_MAP`: `{ "key": "…", "style": "…" }` (ключ как `DGIS_MAP_KEY` / `app.dgis.map-key` в админке). */
+const DGIS_MAP_DEFAULT = Object.freeze({
+  key: '2fa2df2d-9b29-4877-ac65-818e02de807d',
+  style: '0651ff51-79b6-409c-8b90-37a9be2e97ad',
+})
+
+function loadDgisMapFromEnv() {
+  const raw = import.meta.env.VITE_DGIS_MAP
+  if (!raw || typeof raw !== 'string') return { ...DGIS_MAP_DEFAULT }
+  try {
+    const o = JSON.parse(raw)
+    return {
+      key: typeof o.key === 'string' && o.key.trim() ? o.key.trim() : DGIS_MAP_DEFAULT.key,
+      style:
+        typeof o.style === 'string' && o.style.trim() ? o.style.trim() : DGIS_MAP_DEFAULT.style,
+    }
+  } catch {
+    return { ...DGIS_MAP_DEFAULT }
+  }
+}
+
+const dgisMap = loadDgisMapFromEnv()
 
 const mapStore = useMapStore()
 const toastStore = useToastStore()
@@ -771,8 +795,8 @@ function initMap() {
     map = new window.mapgl.Map(mapEl.value, {
       center: ASTRAKHAN_CENTER,
       zoom: 14,
-      key: 'c840368d-de9e-49ef-8def-37b5da56cb48',
-      style: '0651ff51-79b6-409c-8b90-37a9be2e97ad',
+      key: dgisMap.key,
+      style: dgisMap.style,
     })
 
     zoomLevel.value = map.getZoom()
@@ -960,11 +984,25 @@ async function applyFollowRouteFromQuery() {
   renderMarkers()
   destroyRoutePolyline()
 
+  let lineCoords = ordered.map((p) => [Number(p.lng), Number(p.lat)])
+  if (ordered.length >= 2 && isDgisRoutingConfigured()) {
+    try {
+      const routed = await fetch2gisRouteCoordinates(
+        ordered.map((p) => ({ lng: Number(p.lng), lat: Number(p.lat) })),
+      )
+      if (routed && routed.length >= 2) {
+        lineCoords = routed
+      }
+    } catch (e) {
+      console.warn('2GIS Routing API:', e)
+      toastStore.push('Не удалось построить маршрут по дорогам — показана прямая линия', 'info')
+    }
+  }
+
   if (ordered.length >= 2 && window.mapgl?.Polyline) {
     try {
-      const coords = ordered.map((p) => [p.lng, p.lat])
       routePolyline = new window.mapgl.Polyline(map, {
-        coordinates: coords,
+        coordinates: lineCoords,
         width: 6,
         color: '#c8a96e',
         zIndex: 2,

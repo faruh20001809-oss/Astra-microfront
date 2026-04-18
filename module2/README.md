@@ -59,6 +59,17 @@ GROQ_API_KEY=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
 PORT=3001
 ```
 
+Фронт (корень `module2/`, файл `.env` / `.env.local`):
+
+| Переменная | Назначение |
+|------------|------------|
+| `VITE_DGIS_MAP` | JSON `{"key":"…","style":"…"}` — ключ MapGL и стиль карты 2GIS |
+| `VITE_DGIS_ROUTING_KEY` | Ключ **Routing / Directions API** 2GIS (если не задан — подставляется `key` из `VITE_DGIS_MAP`) |
+| `VITE_DGIS_ROUTING_BASE` | Базовый URL API маршрутизации (по умолчанию `https://routing.api.2gis.com`). При CORS в dev: `VITE_DGIS_ROUTING_BASE=/api/dgis-routing` — запрос пойдёт через прокси Vite |
+| `VITE_DGIS_ROUTING_TRANSPORT` | `walking` (по умолчанию) или `driving` и др. — см. документацию 2GIS Routing |
+
+Маршрут с каталога (`?route=id`) на карте строится по **цепочке POI**: запросы к Routing API по сегментам между соседними точками, линия по дорогам/тропам; при ошибке — прямая линия между точками.
+
 ### 3. Запуск в dev-режиме (два терминала)
 ```bash
 # Терминал 1 — Node.js сервер

@@ -381,19 +381,40 @@ body.m3-sidebar-open .m3-sidebar-overlay {
   }
 }
 
-body.astra-app.app-light-theme .m3-sidebar {
-  background: #ffffff;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
+/* ── Светлая тема: layout module3 (фон страницы — в astra.css для body.app-light-theme) ── */
+
+.app-light .m3-sidebar {
+  background: var(--gray-100);
+  border-right: 1px solid var(--gray-200);
 }
 
-body.astra-app.app-light-theme .m3-sidebar-nav a:hover,
-body.astra-app.app-light-theme .m3-sidebar-nav a:focus-visible {
-  background: rgba(0, 0, 0, 0.05);
+.app-light .m3-sidebar-brand {
+  color: var(--cream);
 }
 
-body.astra-app.app-light-theme .m3-mobile-bar {
+.app-light .m3-sidebar-footer {
+  border-top-color: var(--gray-200);
+}
+
+.app-light .m3-sidebar-nav a {
+  color: var(--gray-600);
+}
+
+.app-light .m3-sidebar-nav a:hover,
+.app-light .m3-sidebar-nav a:focus-visible {
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  border-left-color: var(--accent);
+}
+
+.app-light .m3-mobile-bar {
   background: rgba(255, 255, 255, 0.97);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  border-bottom-color: var(--gray-200);
+}
+
+.app-light .m3-menu-btn {
+  color: var(--paper);
+  border-color: var(--gray-300);
 }
 
 body.astra-app.app-light-theme .m3-stat-pill {

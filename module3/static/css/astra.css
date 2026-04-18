@@ -63,35 +63,39 @@
 }
 
 :root.app-light {
-  --ink: #ffffff;
-  --paper: #000000;
-  --cream: #000000;
+  --ink:   #ffffff;   /* фон приложения          */
+  --paper: #0d0d0d;   /* основной текст           */
+  --cream: #1a1512;   /* заголовки                */
   --white: #ffffff;
 
-  --gray-50: #ffffff;
-  --gray-100: #ffffff;
-  --gray-200: #e0e0e0;
-  --gray-300: #d2d2d2;
-  --gray-400: #707070;
-  --gray-500: #666666;
-  --gray-600: #585858;
-  --gray-700: #4c4c4c;
-  --gray-800: #ffffff;
-  --gray-900: #ffffff;
-  --gray-950: #ffffff;
+  --gray-50:  #fafafa;   /* самый светлый фон       */
+  --gray-100: #f5f5f5;   /* сайдбар, шапки таблиц   */
+  --gray-200: #e8e8e8;   /* бордеры, разделители    */
+  --gray-300: #d4d4d4;   /* hover-бордеры           */
+  --gray-400: #9a9a9a;   /* иконки                  */
+  --gray-500: #737373;   /* лейблы, подписи         */
+  --gray-600: #525252;   /* текст навигации         */
+  --gray-700: #3d3d3d;
+  --gray-800: #f0f0f0;   /* hover-фон               */
+  --gray-900: #ebebeb;   /* инпуты                  */
+  --gray-950: #e5e5e5;   /* активные поверхности    */
 
-  --accent: #2f2f2f;
-  --accent-soft: rgba(47, 47, 47, 0.06);
-  --accent-dark: #262626;
-  --accent-glow: rgba(47, 47, 47, 0.025);
-  --danger: #aa2a2a;
-  --success: #1f7a42;
-  --warning: #7f5d00;
-  --info: #205f77;
+  --accent:      #b8945e;              /* золото               */
+  --accent-soft: rgba(184, 148, 94, 0.12); /* лёгкий фон акцента   */
+  --accent-dark: #8f6f45;              /* hover-золото         */
+  --accent-glow: rgba(184, 148, 94, 0.06);
 
-  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.03), 0 4px 12px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 8px 22px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  --shadow-modal: 0 14px 30px rgba(0, 0, 0, 0.12);
+  --danger:  #c0392b;
+  --success: #1a6b3a;
+  --warning: #b8860b;
+  --info:    #2563eb;
+
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-card:   0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --shadow-modal:  0 14px 40px rgba(0, 0, 0, 0.15);
+
+  --header-bg:           rgba(255, 255, 255, 0.94);
+  --header-border-color: rgba(0, 0, 0, 0.08);
 }
 
 *, *::before, *::after {
@@ -499,9 +503,9 @@ body.astra-app.app-light-theme {
 
 .astra-app.app-light-theme .navbar,
 .astra-app.app-light-theme .app-header {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 6px 16px rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: var(--header-bg);
+  box-shadow: 0 1px 0 var(--header-border-color), 0 6px 16px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid var(--header-border-color);
 }
 
 .astra-app.app-light-theme .btn-primary {

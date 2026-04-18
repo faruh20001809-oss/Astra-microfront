@@ -47,6 +47,14 @@ export default defineConfig(({ mode }) => {
           target: 'http://localhost:3001',
           changeOrigin: true,
         },
+
+        /** 2GIS Routing API — если браузер блокирует CORS, задайте VITE_DGIS_ROUTING_BASE=/api/dgis-routing */
+        '/api/dgis-routing': {
+          target: 'https://routing.api.2gis.com',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/api\/dgis-routing/, ''),
+        },
       }
     }
   }

@@ -68,6 +68,42 @@
   --z-mobile-topbar: 99;
 }
 
+:root.app-light {
+  --ink:   #ffffff;   /* фон приложения          */
+  --paper: #0d0d0d;   /* основной текст           */
+  --cream: #1a1512;   /* заголовки                */
+  --white: #ffffff;
+
+  --gray-50:  #fafafa;   /* самый светлый фон       */
+  --gray-100: #f5f5f5;   /* сайдбар, шапки таблиц   */
+  --gray-200: #e8e8e8;   /* бордеры, разделители    */
+  --gray-300: #d4d4d4;   /* hover-бордеры           */
+  --gray-400: #9a9a9a;   /* иконки                  */
+  --gray-500: #737373;   /* лейблы, подписи         */
+  --gray-600: #525252;   /* текст навигации         */
+  --gray-700: #3d3d3d;
+  --gray-800: #f0f0f0;   /* hover-фон               */
+  --gray-900: #ebebeb;   /* инпуты                  */
+  --gray-950: #e5e5e5;   /* активные поверхности    */
+
+  --accent:      #b8945e;              /* золото               */
+  --accent-soft: rgba(184, 148, 94, 0.12); /* лёгкий фон акцента   */
+  --accent-dark: #8f6f45;              /* hover-золото         */
+  --accent-glow: rgba(184, 148, 94, 0.06);
+
+  --danger:  #c0392b;
+  --success: #1a6b3a;
+  --warning: #b8860b;
+  --info:    #2563eb;
+
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-card:   0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  --shadow-modal:  0 14px 40px rgba(0, 0, 0, 0.15);
+
+  --header-bg:           rgba(255, 255, 255, 0.94);
+  --header-border-color: rgba(0, 0, 0, 0.08);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
