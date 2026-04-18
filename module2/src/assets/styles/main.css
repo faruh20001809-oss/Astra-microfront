@@ -1093,9 +1093,19 @@ textarea:focus-visible {
   color: var(--paper) !important;
 }
 
-/* Правые drawer (меню и т.д.): фиксированная ширина; корзина — свои правила в CartDrawer.vue */
+/* Правые drawer (меню и т.д.): фиксированная ширина */
 .p-drawer-right .p-drawer:not(.cart-drawer-pv) {
   width: 26rem;
+}
+
+/* Корзина: p-drawer.p-component.cart-drawer-pv — 29rem (дубль к CartDrawer.vue для приоритета над темой) */
+@media (min-width: 769px) {
+  .p-drawer-right .p-drawer.cart-drawer-pv.p-component,
+  #astra-cart-drawer.p-drawer.p-component.cart-drawer-pv {
+    width: min(29rem, 96vw) !important;
+    min-width: min(29rem, 96vw) !important;
+    max-width: min(29rem, 96vw) !important;
+  }
 }
 
 /* Корзина: тема PrimeVue может оставить у .p-drawer-content фикс. ширину (~20rem) при широкой панели */
