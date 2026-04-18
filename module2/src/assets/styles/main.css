@@ -104,6 +104,11 @@
 
   --header-bg:           rgba(255, 255, 255, 0.94);
   --header-border-color: rgba(0, 0, 0, 0.08);
+
+  /* Тёплая полупрозрачная поверхность: кнопки primary и карточки кабинета */
+  --surface-warm:        #f5f4f259;
+  --surface-warm-hover:  rgba(245, 244, 242, 0.45);
+  --surface-warm-nested: rgba(245, 244, 242, 0.35);
 }
 
 *, *::before, *::after {
@@ -183,14 +188,14 @@ body.app-light-theme {
 }
 
 .app-light .btn-primary {
-  background: var(--gray-100);
+  background: var(--surface-warm);
   color: var(--paper);
-  border-color: var(--gray-200);
+  border-color: rgba(13, 13, 13, 0.1);
 }
 
 .app-light .btn-primary:hover {
-  background: var(--gray-200);
-  border-color: var(--gray-300);
+  background: var(--surface-warm-hover);
+  border-color: rgba(13, 13, 13, 0.16);
 }
 
 .app-light .btn-accent {
@@ -212,6 +217,61 @@ body.app-light-theme {
 .app-light .btn-ghost:hover {
   color: var(--paper);
   border-color: var(--gray-400);
+}
+
+/* ---- Light theme: личный кабинет (та же тёплая поверхность, что у btn-primary) ---- */
+.app-light .cabinet-page .cabinet-card {
+  border-color: rgba(184, 148, 94, 0.22);
+  background: var(--surface-warm);
+  box-shadow: var(--shadow-subtle);
+}
+
+.app-light .cabinet-page .cabinet-card::before {
+  background: radial-gradient(120% 80% at 0% 0%, rgba(212, 184, 150, 0.14), transparent 55%);
+}
+
+.app-light .cabinet-page .cabinet-nav-link {
+  border-color: rgba(184, 148, 94, 0.2);
+  background: var(--surface-warm-nested);
+  color: var(--paper);
+}
+
+.app-light .cabinet-page .cabinet-nav-link:hover {
+  border-color: rgba(184, 148, 94, 0.4);
+  background: rgba(212, 184, 150, 0.12);
+}
+
+.app-light .cabinet-page .cabinet-empty {
+  border-color: rgba(184, 148, 94, 0.28);
+  background: var(--surface-warm-nested);
+}
+
+.app-light .cabinet-page .cabinet-stat {
+  border-color: rgba(184, 148, 94, 0.16);
+  background: var(--surface-warm-nested);
+}
+
+.app-light .cabinet-page .cabinet-ach-item {
+  border-color: rgba(184, 148, 94, 0.14);
+  background: var(--surface-warm-nested);
+}
+
+.app-light .cabinet-page .cabinet-ach-item.is-unlocked {
+  border-color: rgba(184, 148, 94, 0.3);
+  background: linear-gradient(
+    125deg,
+    rgba(212, 184, 150, 0.16) 0%,
+    var(--surface-warm-nested) 55%
+  );
+  box-shadow: 0 0 0 1px rgba(184, 148, 94, 0.08);
+}
+
+.app-light .cabinet-page .cabinet-tier__badge {
+  border-color: rgba(184, 148, 94, 0.22);
+}
+
+.app-light .cabinet-page .cabinet-tier__badge--active {
+  background: rgba(212, 184, 150, 0.14);
 }
 
 /* ---- Typography ---- */
