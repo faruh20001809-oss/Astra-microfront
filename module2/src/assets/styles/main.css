@@ -1092,3 +1092,14 @@ textarea:focus-visible {
   border-color: var(--gray-200) !important;
   color: var(--paper) !important;
 }
+
+/* Корзина: тема PrimeVue может оставить у .p-drawer-content фикс. ширину (~20rem) при широкой панели */
+@media (min-width: 769px) {
+  #astra-cart-drawer.p-drawer .p-drawer-header,
+  #astra-cart-drawer.p-drawer .p-drawer-content,
+  #astra-cart-drawer.p-drawer .p-drawer-footer {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+  }
+}

@@ -247,8 +247,12 @@ const toastStore = useToastStore()
 const cartDrawerRootRef = ref(null)
 const cartDrawerIntrinsicRef = ref(null)
 
-function drawerPanelEl() {
-  return cartDrawerRootRef.value?.$el ?? document.getElementById('astra-cart-drawer')
+/** Сама выдвижная панель `.p-drawer` (у PrimeVue корень компонента иногда обёртка — ширину задаём здесь) */
+function drawerSlidePanelEl() {
+  const root = cartDrawerRootRef.value?.$el ?? document.getElementById('astra-cart-drawer')
+  if (!root) return null
+  if (root.classList?.contains('p-drawer')) return root
+  return root.querySelector?.('.p-drawer') ?? root
 }
 /** Нижняя граница ~32rem — иначе авто-измерение даёт узкую панель; верхняя — запас под широкие экраны */
 const CART_DRAWER_MIN_W = 520
@@ -263,7 +267,7 @@ let cartDrawerMeasureTimer = null
 let cartDrawerResizeObs = null
 
 function applyCartDrawerWidth(px) {
-  const panel = drawerPanelEl()
+  const panel = drawerSlidePanelEl()
   if (!panel) return
   if (px == null || window.innerWidth <= 768) {
     panel.style.removeProperty('width')
@@ -282,7 +286,7 @@ function measureCartDrawerWidth() {
     return
   }
 
-  const panel = drawerPanelEl()
+  const panel = drawerSlidePanelEl()
   if (!panel) return
 
   let needed = CART_DRAWER_MIN_W
@@ -342,7 +346,7 @@ function setupCartDrawerResizeObs() {
   teardownCartDrawerResizeObs()
   if (typeof ResizeObserver === 'undefined' || window.innerWidth <= 768) return
   const intrinsic = cartDrawerIntrinsicRef.value
-  const panel = drawerPanelEl()
+  const panel = drawerSlidePanelEl()
   if (!panel) return
   cartDrawerResizeObs = new ResizeObserver(() => scheduleMeasureCartDrawer())
   if (intrinsic) cartDrawerResizeObs.observe(intrinsic)
@@ -687,6 +691,15 @@ async function checkout() {
   flex-direction: column;
   overflow: hidden;
 }
+
+/* Тема PrimeVue часто задаёт узкую width у колонки контента — тянем на всю панель */
+.cart-drawer-pv :deep(.p-drawer-header),
+.cart-drawer-pv :deep(.p-drawer-content),
+.cart-drawer-pv :deep(.p-drawer-footer) {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+}
 .cart-drawer-pv .cart-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
 .cart-drawer-pv .cart-checkout-btn { width: 100%; }
 .cart-drawer-pv .p-drawer-footer { padding: var(--spacing-md); padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0)); border-top: 1px solid var(--gray-600); }
@@ -834,9 +847,11 @@ async function checkout() {
 }
 .consent-text a { color: var(--gray-400); text-decoration: underline; }
 
-/* Desktop: фактическая width задаётся скриптом; min/max держат панель и контент шире прежнего «узкого» измерения */
+/* Desktop: фактическая width задаётся скриптом; панель — flex-колонка, контент на 100% ширины */
 @media (min-width: 769px) {
   .cart-drawer-pv.p-drawer {
+    display: flex;
+    flex-direction: column;
     width: min(40rem, 94vw);
     min-width: min(34rem, 92vw);
     max-width: min(68.75rem, 98vw);
@@ -845,12 +860,17 @@ async function checkout() {
 
   .cart-drawer-pv :deep(.p-drawer-content) {
     flex: 1 1 auto;
-    min-width: min(32rem, 90vw);
-    box-sizing: border-box;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    align-self: stretch;
   }
 
   .cart-drawer-intrinsic {
-    min-width: min(31rem, calc(90vw - 3rem));
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    align-self: stretch;
   }
 
   .cart-drawer-pv .cart-item-name {
