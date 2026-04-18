@@ -148,7 +148,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_pre_ping': True,
     'pool_recycle': 300,
 }
-app.config['SECRET_KEY'] = 'CHANGE_THIS_SECRET'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'CHANGE_THIS_SECRET')
 
 db.init_app(app)
 ma.init_app(app)

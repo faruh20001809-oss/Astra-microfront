@@ -20,6 +20,7 @@ module2/dist/
 .env
 .env.local
 *.env.example
+!module2/.env.example
 !application-mail.example.properties
 
 # OS

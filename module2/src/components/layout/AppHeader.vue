@@ -76,6 +76,14 @@
       <template #header>
         <h2 class="nav-drawer-title" id="nav-drawer-heading">Меню</h2>
       </template>
+      <div class="nav-drawer-theme">
+        <Button
+          :label="uiStore.isDark ? 'Светлая тема' : 'Тёмная тема'"
+          :icon="uiStore.isDark ? 'pi pi-sun' : 'pi pi-moon'"
+          class="p-button-text p-button-secondary"
+          @click="uiStore.toggleTheme(); closeDrawer()"
+        />
+      </div>
       <nav class="nav-drawer-list" aria-labelledby="nav-drawer-heading">
         <template v-for="item in navItems" :key="item.to">
           <a
@@ -401,6 +409,21 @@ onUnmounted(() => {
 .burger-btn {
   display: none;
   cursor: pointer;
+}
+
+.nav-drawer-theme {
+  padding: 0 var(--spacing-md) var(--spacing-sm);
+  border-bottom: 1px solid var(--gray-800, rgba(255, 255, 255, 0.08));
+  margin-bottom: var(--spacing-sm);
+}
+
+.app-light .nav-drawer-theme {
+  border-bottom-color: var(--gray-200, #e8e8e8);
+}
+
+.nav-drawer-theme :deep(.p-button) {
+  width: 100%;
+  justify-content: flex-start;
 }
 
 .nav-drawer-title {

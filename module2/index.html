@@ -14,8 +14,34 @@
 
     <!-- ✅ 2GIS Maps API — БЕЗ пробелов -->
     <script src="https://mapgl.2gis.com/api/js/v1"></script>
+    <!-- Светлая тема по умолчанию; до гидрации Vue читаем localStorage astra-theme -->
+    <script>
+      (function () {
+        var t = 'light';
+        try {
+          var s = localStorage.getItem('astra-theme');
+          if (s === 'dark' || s === 'light') t = s;
+        } catch (e) {}
+        var d = t === 'dark';
+        var root = document.documentElement;
+        root.classList.toggle('app-dark', d);
+        root.classList.toggle('app-light', !d);
+      })();
+    </script>
 </head>
-<body class="app-dark">
+<body>
+    <script>
+      (function () {
+        var t = 'light';
+        try {
+          var s = localStorage.getItem('astra-theme');
+          if (s === 'dark' || s === 'light') t = s;
+        } catch (e) {}
+        var d = t === 'dark';
+        document.body.classList.toggle('app-dark-theme', d);
+        document.body.classList.toggle('app-light-theme', !d);
+      })();
+    </script>
 <div id="app"></div>
 <script type="module" src="/src/main.js"></script>
 </body>

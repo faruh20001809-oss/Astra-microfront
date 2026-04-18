@@ -62,7 +62,6 @@ function onAchievementUnlocked(e) {
 }
 
 onMounted(() => {
-  uiStore.initTheme()
   window.addEventListener('astra:achievement-unlocked', onAchievementUnlocked)
 })
 onUnmounted(() => {

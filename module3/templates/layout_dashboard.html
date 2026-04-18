@@ -8,9 +8,27 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/astra.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/module3-pages.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script>
+      (function () {
+        var t = 'light';
+        try { var s = localStorage.getItem('astra-theme'); if (s === 'dark' || s === 'light') t = s; } catch (e) {}
+        var d = t === 'dark';
+        document.documentElement.classList.toggle('app-dark', d);
+        document.documentElement.classList.toggle('app-light', !d);
+      })();
+    </script>
     {% block head_extra %}{% endblock %}
 </head>
 <body class="astra-app">
+    <script>
+      (function () {
+        var t = 'light';
+        try { var s = localStorage.getItem('astra-theme'); if (s === 'dark' || s === 'light') t = s; } catch (e) {}
+        var d = t === 'dark';
+        document.body.classList.toggle('app-dark-theme', d);
+        document.body.classList.toggle('app-light-theme', !d);
+      })();
+    </script>
     <a href="#main-content" class="m3-skip-link">К основному содержанию</a>
     <div class="m3-db-layout">
         <aside class="m3-sidebar" id="m3-sidebar" aria-label="Разделы панели">

@@ -7,6 +7,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/astra.css(v=4)}">
     <link rel="stylesheet" th:href="@{/css/admin.css(v=5)}">
+    <script>
+      (function () {
+        var t = 'light';
+        try { var s = localStorage.getItem('astra-theme'); if (s === 'dark' || s === 'light') t = s; } catch (e) {}
+        var d = t === 'dark';
+        document.documentElement.classList.toggle('app-dark', d);
+        document.documentElement.classList.toggle('app-light', !d);
+      })();
+    </script>
+    <script defer th:src="@{/js/astra-theme.js(v=1)}"></script>
     <script th:inline="javascript">
       document.addEventListener('DOMContentLoaded', function() {
         var layout = document.querySelector('.layout');
@@ -122,6 +132,9 @@
             </a>
         </li>
     </ul>
+    <div class="sidebar-theme-row" style="padding:0 12px 12px;">
+        <button type="button" id="adminThemeToggle" class="btn btn-ghost btn-sm" style="width:100%">Тёмная тема</button>
+    </div>
     <div class="sidebar-footer">
         <a th:href="@{/admin/profile}" class="btn btn-sm btn-ghost sidebar-footer-btn">Профиль</a>
         <form th:action="@{/logout}" method="post" class="sidebar-footer-form">

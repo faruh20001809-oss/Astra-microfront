@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import Aura from '@primeuix/themes/aura'
 import Button from 'primevue/button'
@@ -9,6 +9,7 @@ import Badge from 'primevue/badge'
 import Ripple from 'primevue/ripple'
 import App from './App.vue'
 import router from './router/index.js'
+import { useUiStore } from '@/store/index.js'
 import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
 import './assets/styles/main.css'
@@ -17,6 +18,8 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
+setActivePinia(pinia)
+useUiStore().initTheme()
 app.use(router)
 app.use(PrimeVue, {
   theme: {

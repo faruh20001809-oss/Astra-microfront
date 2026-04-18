@@ -61,6 +61,7 @@
 
   --nav-h: 64px;
   --header-bg: rgba(42, 35, 30, 0.96);
+  --header-border-color: rgba(212, 184, 150, 0.08);
   --sidebar-w: 380px;
   --z-header: 1000;
   --z-sidebar: 500;
@@ -118,7 +119,8 @@
   right: 0;
   z-index: var(--z-header);
   background: var(--header-bg);
-  box-shadow: 0 1px 0 rgba(212, 184, 150, 0.08), 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--header-border-color);
+  box-shadow: 0 1px 0 var(--header-border-color), 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 body, #app {
   margin: 0;
@@ -164,50 +166,52 @@ body.app-light-theme {
 
 .app-light .app-header,
 .app-light .navbar {
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 6px 16px rgba(0, 0, 0, 0.05);
+  background: var(--header-bg);
+  border-bottom: 1px solid var(--header-border-color);
+  box-shadow: 0 1px 0 var(--header-border-color), 0 6px 16px rgba(0, 0, 0, 0.05);
 }
 
 .app-light .card {
   background: #ffffff;
-  border-color: #e0e0e0;
+  border-color: var(--gray-200);
 }
 
 .app-light .card:hover {
-  border-color: #d2d2d2;
+  border-color: var(--gray-300);
   transform: none;
   box-shadow: var(--shadow-subtle);
 }
 
 .app-light .btn-primary {
-  background: #f0f0f0;
-  color: #202020;
-  border-color: #dddddd;
+  background: var(--gray-100);
+  color: var(--paper);
+  border-color: var(--gray-200);
 }
 
 .app-light .btn-primary:hover {
-  background: #ebebeb;
-  border-color: #d4d4d4;
+  background: var(--gray-200);
+  border-color: var(--gray-300);
 }
 
 .app-light .btn-accent {
-  background: #e9e9e9;
-  color: #222222;
-  border-color: #d6d6d6;
+  background: var(--accent-soft);
+  color: var(--accent-dark);
+  border-color: rgba(184, 148, 94, 0.35);
 }
 
 .app-light .btn-accent:hover {
-  background: #e2e2e2;
-  border-color: #cccccc;
+  background: rgba(184, 148, 94, 0.2);
+  border-color: var(--accent);
 }
 
 .app-light .btn-ghost {
-  color: #3b3b3b;
-  border-color: #d4d4d4;
+  color: var(--gray-600);
+  border-color: var(--gray-300);
 }
 
 .app-light .btn-ghost:hover {
-  color: #2a2a2a;
-  border-color: #c7c7c7;
+  color: var(--paper);
+  border-color: var(--gray-400);
 }
 
 /* ---- Typography ---- */

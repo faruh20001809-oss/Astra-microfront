@@ -1,6 +1,8 @@
 # Модуль 2 — Астрахань. Живая История
 **Vue 3 + Node.js frontend/backend**
 
+**Тема оформления:** по умолчанию **светлая** (`astra-theme` в `localStorage`, при отсутствии ключа — светлая). Переключатель в шапке (и в бургер-меню на мобильных). Тот же ключ `astra-theme` используют module3 и Spring Admin.
+
 ## Архитектура
 
 ```
@@ -59,7 +61,7 @@ GROQ_API_KEY=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
 PORT=3001
 ```
 
-Фронт (корень `module2/`, файл `.env` / `.env.local`):
+Фронт (корень `module2/`): скопируйте **`.env.example` → `.env.local`** и заполните ключи (`.env.local` в `.gitignore` не попадает в репозиторий).
 
 | Переменная | Назначение |
 |------------|------------|

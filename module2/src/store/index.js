@@ -24,6 +24,7 @@ function saveCartToStorage(items) {
   } catch (_) {}
 }
 
+/** По умолчанию — светлая тема; переключение в UI и `localStorage['astra-theme']`. */
 function detectSystemTheme() {
   return 'light'
 }
