@@ -39,6 +39,13 @@ public class ApiController {
     private final UserProgressService userProgressService;
     private final RouteProgressService routeProgressService;
     private final SharedUserSyncService sharedUserSyncService;
+    private final PickupPointsService pickupPointsService;
+
+    /** Тот же справочник пунктов самовывоза, что в админке (модалка заказа). */
+    @GetMapping("/pickup-points")
+    public ResponseEntity<Map<String, Object>> getPickupPoints() {
+        return ok(pickupPointsService.listAll());
+    }
 
     // ===== POIs =====
     @GetMapping("/pois")
@@ -230,17 +237,23 @@ public class ApiController {
                     .currency("RUB")
                     .build();
 
-            // 🔹 3. Обрабатываем адрес доставки
+            // 🔹 3. Обрабатываем адрес доставки (для самовывоза — pickupPointId/pickupAddress в JSON)
             if (request.getShippingAddress() != null) {
-                // Сохраняем весь адрес как JSON
-                String addressJson = objectMapper.writeValueAsString(request.getShippingAddress());
+                java.util.Map<String, Object> addrMap = new java.util.LinkedHashMap<>(request.getShippingAddress());
+                if (request.getPickupPointId() != null && !request.getPickupPointId().isBlank()) {
+                    addrMap.putIfAbsent("pickupPointId", request.getPickupPointId().trim());
+                }
+                if (request.getPickupAddress() != null && !request.getPickupAddress().isBlank()) {
+                    addrMap.putIfAbsent("pickupAddress", request.getPickupAddress().trim());
+                }
+                String addressJson = objectMapper.writeValueAsString(addrMap);
                 order.setShippingAddress(addressJson);
 
                 // Извлекаем имя и телефон для удобного отображения
-                String firstName = (String) request.getShippingAddress().getOrDefault("firstName", "");
-                String lastName = (String) request.getShippingAddress().getOrDefault("lastName", "");
-                String phone = (String) request.getShippingAddress().get("phone");
-                String email = (String) request.getShippingAddress().get("email");
+                String firstName = (String) addrMap.getOrDefault("firstName", "");
+                String lastName = (String) addrMap.getOrDefault("lastName", "");
+                String phone = (String) addrMap.get("phone");
+                String email = (String) addrMap.get("email");
 
                 order.setCustomerName((firstName + " " + lastName).trim());
                 order.setPhone(phone);
@@ -321,7 +334,7 @@ public class ApiController {
             }
         }
         if (request.getShippingAddress() == null || request.getShippingAddress().isEmpty()) {
-            errors.put("shippingAddress", "Укажите адрес доставки");
+            errors.put("shippingAddress", "Укажите контактные данные");
         } else {
             Map<String, Object> addr = request.getShippingAddress();
             String firstName = (String) addr.get("firstName");
@@ -336,12 +349,29 @@ public class ApiController {
             if (phone == null || phone.isBlank()) {
                 errors.put("shippingAddress.phone", "Укажите телефон");
             }
-            if ((address == null || address.isBlank()) && (city == null || city.isBlank())) {
-                errors.put("shippingAddress.address", "Укажите адрес доставки");
+            if (city == null || city.isBlank()) {
+                errors.put("shippingAddress.city", "Укажите город");
             }
             String email = (String) addr.get("email");
             if (email != null && !email.isBlank() && !EMAIL_PATTERN.matcher(email).matches()) {
                 errors.put("shippingAddress.email", "Некорректный формат email");
+            }
+
+            String method = request.getShippingMethod() != null ? request.getShippingMethod().trim().toLowerCase() : "";
+            boolean isPickup = "pickup".equals(method);
+            String pickupPointId = request.getPickupPointId();
+            if (pickupPointId == null || pickupPointId.isBlank()) {
+                Object pObj = addr.get("pickupPointId");
+                pickupPointId = pObj != null ? String.valueOf(pObj).trim() : "";
+            }
+            if (isPickup) {
+                if (pickupPointId.isEmpty()) {
+                    errors.put("pickupPointId", "Выберите пункт самовывоза");
+                }
+            } else {
+                if (address == null || address.isBlank()) {
+                    errors.put("shippingAddress.address", "Укажите адрес доставки");
+                }
             }
         }
         if (request.getShippingMethod() == null || request.getShippingMethod().isBlank()) {
@@ -546,11 +576,31 @@ public class ApiController {
             err.put("message", "Заполните обязательные поля: название, место, почему добавить");
             return ResponseEntity.badRequest().body(err);
         }
+        Double lat = null;
+        Double lng = null;
+        if (body.get("latitude") instanceof Number n) {
+            lat = n.doubleValue();
+        } else if (body.get("latitude") != null) {
+            try {
+                lat = Double.parseDouble(String.valueOf(body.get("latitude")));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        if (body.get("longitude") instanceof Number n) {
+            lng = n.doubleValue();
+        } else if (body.get("longitude") != null) {
+            try {
+                lng = Double.parseDouble(String.valueOf(body.get("longitude")));
+            } catch (NumberFormatException ignored) {
+            }
+        }
         PoiSuggestion s = PoiSuggestion.builder()
                 .name(name.trim())
                 .place(place.trim())
                 .description(description != null ? description.trim() : null)
                 .whyAdd(whyAdd.trim())
+                .latitude(lat)
+                .longitude(lng)
                 .build();
         PoiSuggestion saved = poiSuggestionService.save(s);
         Map<String, Object> res = new LinkedHashMap<>();

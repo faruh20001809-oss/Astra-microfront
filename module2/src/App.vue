@@ -1,5 +1,5 @@
 <template>
-  <div id="app-root" class="app-dark">
+  <div id="app-root" :class="appThemeClass">
     <!-- Navigation -->
     <AppHeader />
 
@@ -47,12 +47,14 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
-import { useToastStore } from '@/store/index.js'
+import { computed, onMounted, onUnmounted } from 'vue'
+import { useToastStore, useUiStore } from '@/store/index.js'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import CartDrawer from '@/components/shop/CartDrawer.vue'
 
 const toastStore = useToastStore()
+const uiStore = useUiStore()
+const appThemeClass = computed(() => (uiStore.isDark ? 'app-dark' : 'app-light'))
 
 function onAchievementUnlocked(e) {
   const title = e?.detail?.title
@@ -60,6 +62,7 @@ function onAchievementUnlocked(e) {
 }
 
 onMounted(() => {
+  uiStore.initTheme()
   window.addEventListener('astra:achievement-unlocked', onAchievementUnlocked)
 })
 onUnmounted(() => {

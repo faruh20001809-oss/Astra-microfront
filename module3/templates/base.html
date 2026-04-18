@@ -54,6 +54,9 @@
             {% endif %}
         </div>
         <div class="nav-links">
+            <button type="button" id="themeToggleBase" class="btn btn-ghost btn-sm theme-toggle-btn" aria-label="Переключить тему" title="Переключить тему">
+                <i class="bi bi-moon-stars" aria-hidden="true"></i>
+            </button>
             {% if g.user %}
                 <span style="font-size: 0.8rem; color: var(--gray-400);"><i class="bi bi-person-circle" style="margin-right: 0.25rem;"></i>{{ g.user.name }}</span>
                 <form method="post" action="{{ root }}/api/logout" style="display: inline;">
@@ -79,6 +82,50 @@
     </main>
 
     <script>
+        (function () {
+            var THEME_KEY = 'astra-theme';
+            var root = document.documentElement;
+            var body = document.body;
+            var toggleBtn = document.getElementById('themeToggleBase');
+
+            function applyTheme(theme) {
+                var isDark = theme === 'dark';
+                root.classList.toggle('app-dark', isDark);
+                root.classList.toggle('app-light', !isDark);
+                body.classList.toggle('app-dark-theme', isDark);
+                body.classList.toggle('app-light-theme', !isDark);
+                if (toggleBtn) {
+                    var icon = toggleBtn.querySelector('i');
+                    if (icon) icon.className = 'bi ' + (isDark ? 'bi-sun' : 'bi-moon-stars');
+                    toggleBtn.setAttribute('aria-label', isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему');
+                    toggleBtn.setAttribute('title', isDark ? 'Светлая тема' : 'Тёмная тема');
+                }
+            }
+
+            function getTheme() {
+                try {
+                    var stored = localStorage.getItem(THEME_KEY);
+                    if (stored === 'dark' || stored === 'light') return stored;
+                } catch (_) {}
+                return 'light';
+            }
+
+            function setTheme(theme) {
+                applyTheme(theme);
+                try { localStorage.setItem(THEME_KEY, theme); } catch (_) {}
+                window.dispatchEvent(new CustomEvent('astra:theme-changed', { detail: { theme: theme } }));
+            }
+
+            setTheme(getTheme());
+
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', function () {
+                    var current = root.classList.contains('app-dark') ? 'dark' : 'light';
+                    setTheme(current === 'dark' ? 'light' : 'dark');
+                });
+            }
+        })();
+
         document.getElementById('mobileMenuBtn').addEventListener('click', function() {
             var m = document.getElementById('mobileMenu');
             var open = m.classList.toggle('open');

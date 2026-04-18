@@ -4,6 +4,8 @@ import { defineStore } from 'pinia'
    Cart Store
 ───────────────────────────────────────── */
 const CART_STORAGE_KEY = 'astra-cart'
+const THEME_STORAGE_KEY = 'astra-theme'
+const VALID_THEMES = ['dark', 'light']
 
 function loadCartFromStorage() {
   try {
@@ -20,6 +22,34 @@ function saveCartToStorage(items) {
   try {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
   } catch (_) {}
+}
+
+function detectSystemTheme() {
+  return 'light'
+}
+
+function loadThemeFromStorage() {
+  try {
+    const raw = localStorage.getItem(THEME_STORAGE_KEY)
+    if (VALID_THEMES.includes(raw)) return raw
+  } catch (_) {}
+  return 'light'
+}
+
+function saveThemeToStorage(theme) {
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, theme)
+  } catch (_) {}
+}
+
+function applyThemeToDom(theme) {
+  if (typeof document === 'undefined') return
+
+  const isDark = theme === 'dark'
+  document.documentElement.classList.toggle('app-dark', isDark)
+  document.documentElement.classList.toggle('app-light', !isDark)
+  document.body?.classList.toggle('app-dark-theme', isDark)
+  document.body?.classList.toggle('app-light-theme', !isDark)
 }
 
 export const useCartStore = defineStore('cart', {
@@ -60,6 +90,37 @@ export const useCartStore = defineStore('cart', {
       this.isOpen = !this.isOpen
     }
   }
+})
+
+/* ─────────────────────────────────────────
+   UI Store
+───────────────────────────────────────── */
+export const useUiStore = defineStore('ui', {
+  state: () => ({
+    theme: loadThemeFromStorage(),
+  }),
+  getters: {
+    isDark: (state) => state.theme === 'dark',
+  },
+  actions: {
+    initTheme() {
+      const nextTheme = this.theme && VALID_THEMES.includes(this.theme)
+        ? this.theme
+        : detectSystemTheme()
+      this.theme = nextTheme
+      applyThemeToDom(nextTheme)
+      saveThemeToStorage(nextTheme)
+    },
+    setTheme(theme) {
+      if (!VALID_THEMES.includes(theme)) return
+      this.theme = theme
+      applyThemeToDom(theme)
+      saveThemeToStorage(theme)
+    },
+    toggleTheme() {
+      this.setTheme(this.theme === 'dark' ? 'light' : 'dark')
+    },
+  },
 })
 
 /* ─────────────────────────────────────────

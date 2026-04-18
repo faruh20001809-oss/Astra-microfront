@@ -3,9 +3,13 @@
 <body class="astra-app"><div class="layout"><nav th:replace="~{fragments/layout :: sidebar}"></nav>
 <main class="main-content">
 <div class="page-header"><h1 th:text="${isEdit} ? '✏️ Редактирование точки' : '📍 Новая точка'"></h1><a th:href="@{/admin/poi}" class="btn">← Назад</a></div>
+<div th:if="${fromSuggestionId != null}" class="alert alert-success" style="margin-bottom:12px;padding:12px 16px;border-radius:8px;">
+  <strong>Создано из предложения</strong> #<span th:text="${fromSuggestionId}"></span> — проверьте данные и сохраните точку.
+</div>
 <div style="display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;align-items:start">
 <div class="card"><form id="poiForm" th:action="@{/admin/poi/save}" method="post" enctype="multipart/form-data" th:object="${poi}">
 <input type="hidden" th:field="*{id}"/>
+<input type="hidden" name="fromSuggestionId" th:if="${fromSuggestionId != null}" th:value="${fromSuggestionId}"/>
 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 <h3>Основное</h3>
 <div class="form-group"><label>Название *</label><input type="text" class="form-control" th:field="*{name}" required/></div>
@@ -38,12 +42,109 @@
     <small id="poi-image-ai-msg" style="color:#888;display:block;margin-top:8px"></small>
 </div>
 <div class="form-group"><label>Адрес</label><input type="text" class="form-control" th:field="*{address}"/></div>
-<h3 style="margin:24px 0 16px">Координаты (2GIS)</h3>
+<h3 style="margin:24px 0 16px">Координаты (2ГИС MapGL)</h3>
+<p style="color:#888;font-size:13px;margin:0 0 8px 0">Кликните по карте, чтобы поставить маркер, или введите широту и долготу вручную.</p>
+<div id="dgisCoordMap" style="width:100%;height:280px;border-radius:8px;margin-bottom:10px;border:1px solid #444;min-height:200px;background:#1a1a1a"></div>
+<p id="dgisMapHint" style="color:#c66;font-size:12px;margin:0 0 8px 0"></p>
+<div class="form-row" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
+    <button type="button" class="btn btn-sm" id="dgisPickModeBtn" style="margin-bottom:8px">Выбрать на карте</button>
+    <button type="button" class="btn btn-sm btn-ghost" id="dgisClearCoords" style="margin-bottom:8px">Очистить координаты</button>
+</div>
 <div class="form-row">
     <div class="form-group"><label>Широта</label><input id="latInput" type="number" step="0.000001" class="form-control" th:field="*{latitude}" placeholder="46.3497"/></div>
     <div class="form-group"><label>Долгота</label><input id="lngInput" type="number" step="0.000001" class="form-control" th:field="*{longitude}" placeholder="48.0332"/></div>
 </div>
 <small id="coordHint" style="color:#999;display:block;margin-top:4px"></small>
+<script src="https://mapgl.2gis.com/api/js/v1"></script>
+<script th:inline="javascript">
+(function () {
+  var KEY = /*[[${dgisMapKey}]]*/ '';
+  var mapEl = document.getElementById('dgisCoordMap');
+  var hint = document.getElementById('dgisMapHint');
+  var latInput = document.getElementById('latInput');
+  var lngInput = document.getElementById('lngInput');
+  var pickBtn = document.getElementById('dgisPickModeBtn');
+  var clearBtn = document.getElementById('dgisClearCoords');
+  if (!mapEl || !window.mapgl) {
+    if (hint) hint.textContent = 'Не удалось загрузить API карты. Укажите координаты вручную.';
+    return;
+  }
+  var center = [48.0408, 46.3497];
+  var lat0 = latInput && latInput.value ? parseFloat(latInput.value) : NaN;
+  var lng0 = lngInput && lngInput.value ? parseFloat(lngInput.value) : NaN;
+  if (Number.isFinite(lat0) && Number.isFinite(lng0)) center = [lng0, lat0];
+  var map = null;
+  var marker = null;
+  var pickMode = false;
+  try {
+    map = new mapgl.Map(mapEl, {
+      center: center,
+      zoom: Number.isFinite(lat0) ? 15 : 12,
+      key: KEY,
+      style: '0651ff51-79b6-409c-8b90-37a9be2e97ad'
+    });
+  } catch (e) {
+    if (hint) hint.textContent = 'Карта недоступна: укажите координаты вручную.';
+    return;
+  }
+  function setMarker(lng, lat) {
+    if (!map || !window.mapgl) return;
+    if (marker && typeof marker.destroy === 'function') marker.destroy();
+    if (typeof mapgl.Marker === 'function') {
+      marker = new mapgl.Marker(map, { coordinates: [lng, lat] });
+    } else {
+      var el = document.createElement('div');
+      el.style.cssText = 'width:14px;height:14px;border-radius:50%;background:#d4b896;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)';
+      marker = new mapgl.HtmlMarker(map, { coordinates: [lng, lat], html: el, anchor: 'center' });
+    }
+  }
+  function syncFromInputs() {
+    var lat = parseFloat(latInput.value);
+    var lng = parseFloat(lngInput.value);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    if (map && typeof map.setCenter === 'function') map.setCenter([lng, lat]);
+    setMarker(lng, lat);
+  }
+  if (Number.isFinite(lat0) && Number.isFinite(lng0)) {
+    map.on('load', function () { setMarker(lng0, lat0); });
+  }
+  map.on('click', function (e) {
+    if (!pickMode) return;
+    var ll = e.lngLat || e.coordinates || (e.point && e.point);
+    var lng = Array.isArray(ll) ? ll[0] : (ll && typeof ll.lng === 'number' ? ll.lng : null);
+    var lat = Array.isArray(ll) ? ll[1] : (ll && typeof ll.lat === 'number' ? ll.lat : null);
+    if (lng == null || lat == null) return;
+    latInput.value = String(Math.round(lat * 1e6) / 1e6);
+    lngInput.value = String(Math.round(lng * 1e6) / 1e6);
+    latInput.dispatchEvent(new Event('input', { bubbles: true }));
+    lngInput.dispatchEvent(new Event('input', { bubbles: true }));
+    setMarker(lng, lat);
+    pickMode = false;
+    if (pickBtn) pickBtn.classList.remove('btn-primary');
+  });
+  if (pickBtn) {
+    pickBtn.addEventListener('click', function () {
+      pickMode = !pickMode;
+      pickBtn.classList.toggle('btn-primary', pickMode);
+      pickBtn.textContent = pickMode ? 'Кликните по карте…' : 'Выбрать на карте';
+    });
+  }
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function () {
+      latInput.value = '';
+      lngInput.value = '';
+      if (marker && typeof marker.destroy === 'function') marker.destroy();
+      marker = null;
+      pickMode = false;
+      if (pickBtn) { pickBtn.textContent = 'Выбрать на карте'; pickBtn.classList.remove('btn-primary'); }
+      if (typeof checkCoords === 'function') checkCoords();
+      if (typeof updatePoiSummary === 'function') updatePoiSummary();
+    });
+  }
+  latInput.addEventListener('input', syncFromInputs);
+  lngInput.addEventListener('input', syncFromInputs);
+})();
+</script>
 <h3 style="margin:24px 0 16px">Медиа</h3>
 <div class="form-group"><label>Загрузить файл</label><input type="file" class="form-control" name="imageFile" accept="image/*"/><small style="color:#999">Передаётся в Модуль 2 вместе с JSON</small></div>
 <div th:if="${isEdit and poi.imageData != null}" style="margin-top:8px"><img th:src="@{'/admin/poi/image/' + ${poi.id}}" style="max-width:200px;border-radius:8px"/></div>

@@ -53,4 +53,14 @@ public class PoiSuggestionService {
     public long countNew() {
         return repository.countByStatus(PoiSuggestion.SuggestionStatus.NEW);
     }
+
+    /**
+     * Связать одобренное предложение с созданной POI (повторное создание блокируется в UI по importedPoiId).
+     */
+    @Transactional
+    public void markImportedFromPoi(Long suggestionId, Long poiId) {
+        PoiSuggestion s = repository.findById(suggestionId).orElseThrow(() -> new RuntimeException("Not found"));
+        s.setImportedPoiId(poiId);
+        repository.save(s);
+    }
 }

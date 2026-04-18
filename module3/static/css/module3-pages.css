@@ -380,3 +380,27 @@ body.m3-sidebar-open .m3-sidebar-overlay {
     transition: none;
   }
 }
+
+body.astra-app.app-light-theme .m3-sidebar {
+  background: #ffffff;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.astra-app.app-light-theme .m3-sidebar-nav a:hover,
+body.astra-app.app-light-theme .m3-sidebar-nav a:focus-visible {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.astra-app.app-light-theme .m3-mobile-bar {
+  background: rgba(255, 255, 255, 0.97);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.astra-app.app-light-theme .m3-stat-pill {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.16);
+}
+
+body.astra-app.app-light-theme .m3-sidebar-overlay {
+  background: rgba(0, 0, 0, 0.12);
+}

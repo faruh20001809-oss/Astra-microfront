@@ -62,6 +62,38 @@
   --z-modal: 1000;
 }
 
+:root.app-light {
+  --ink: #ffffff;
+  --paper: #000000;
+  --cream: #000000;
+  --white: #ffffff;
+
+  --gray-50: #ffffff;
+  --gray-100: #ffffff;
+  --gray-200: #e0e0e0;
+  --gray-300: #d2d2d2;
+  --gray-400: #707070;
+  --gray-500: #666666;
+  --gray-600: #585858;
+  --gray-700: #4c4c4c;
+  --gray-800: #ffffff;
+  --gray-900: #ffffff;
+  --gray-950: #ffffff;
+
+  --accent: #2f2f2f;
+  --accent-soft: rgba(47, 47, 47, 0.06);
+  --accent-dark: #262626;
+  --accent-glow: rgba(47, 47, 47, 0.025);
+  --danger: #aa2a2a;
+  --success: #1f7a42;
+  --warning: #7f5d00;
+  --info: #205f77;
+
+  --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.03), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 8px 22px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-modal: 0 14px 30px rgba(0, 0, 0, 0.12);
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -95,6 +127,11 @@ body.astra-app {
   overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh;
+}
+
+body.astra-app.app-light-theme {
+  background-color: var(--ink);
+  background-image: none;
 }
 
 .astra-app a {
@@ -458,6 +495,62 @@ body.astra-app {
   background: rgba(42, 35, 30, 0.96);
   box-shadow: 0 1px 0 rgba(212, 184, 150, 0.08), 0 8px 24px rgba(0, 0, 0, 0.25);
   border-bottom: 1px solid rgba(212, 184, 150, 0.08);
+}
+
+.astra-app.app-light-theme .navbar,
+.astra-app.app-light-theme .app-header {
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 6px 16px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.astra-app.app-light-theme .btn-primary {
+  background: #f0f0f0;
+  color: #202020;
+  border-color: #dddddd;
+}
+
+.astra-app.app-light-theme .btn-primary:hover {
+  background: #ebebeb;
+  border-color: #d4d4d4;
+}
+
+.astra-app.app-light-theme .btn-accent {
+  background: #e9e9e9;
+  color: #222222;
+  border-color: #d6d6d6;
+}
+
+.astra-app.app-light-theme .btn-accent:hover {
+  background: #e2e2e2;
+  border-color: #cccccc;
+}
+
+.astra-app.app-light-theme .btn-ghost {
+  color: #3b3b3b;
+  border-color: #d4d4d4;
+}
+
+.astra-app.app-light-theme .btn-ghost:hover {
+  color: #2a2a2a;
+  border-color: #c7c7c7;
+}
+
+.astra-app.app-light-theme .card {
+  background: #ffffff;
+  border-color: #e0e0e0;
+}
+
+.astra-app.app-light-theme .card:hover {
+  border-color: #d2d2d2;
+  box-shadow: var(--shadow-subtle);
+}
+
+.astra-app .theme-toggle-btn {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
+  font-size: 1rem;
 }
 
 /* ---- Страница входа ---- */

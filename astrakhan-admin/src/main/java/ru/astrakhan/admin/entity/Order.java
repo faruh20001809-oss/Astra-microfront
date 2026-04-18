@@ -113,6 +113,18 @@ public class Order {
         try {
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> addr = mapper.readValue(shippingAddress, Map.class);
+            if (shippingMethod != null && "pickup".equalsIgnoreCase(shippingMethod.trim())) {
+                Object pa = addr.get("pickupAddress");
+                if (pa != null && !pa.toString().isBlank()) {
+                    return "Самовывоз: " + pa;
+                }
+                Object pid = addr.get("pickupPointId");
+                if (pid != null && !pid.toString().isBlank()) {
+                    return "Самовывоз (пункт: " + pid + ")";
+                }
+                return "Самовывоз";
+            }
+
             List<String> parts = new ArrayList<>();
 
             if (addr.get("city") != null) parts.add(addr.get("city").toString());

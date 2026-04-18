@@ -38,6 +38,13 @@
 
       <div class="header-actions">
         <Button
+            :icon="uiStore.isDark ? 'pi pi-sun' : 'pi pi-moon'"
+            class="p-button-text p-button-secondary theme-btn"
+            @click="uiStore.toggleTheme()"
+            :aria-label="uiStore.isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'"
+            :title="uiStore.isDark ? 'Светлая тема' : 'Тёмная тема'"
+        />
+        <Button
             v-if="cartStore.totalCount > 0"
             class="p-button-text p-button-secondary cart-btn"
             @click="cartStore.toggleCart()"
@@ -100,11 +107,12 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useCartStore } from '@/store/index.js'
+import { useCartStore, useUiStore } from '@/store/index.js'
 import NavIcon from '@/components/common/NavIcon.vue'
 
 const route = useRoute()
 const cartStore = useCartStore()
+const uiStore = useUiStore()
 const menuOpen = ref(false)
 const headerVisible = ref(true)
 const headerHovered = ref(false)
@@ -378,6 +386,12 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--spacing-xs);
   position: relative;
+  cursor: pointer;
+}
+
+.theme-btn {
+  min-width: 44px;
+  min-height: 44px;
   cursor: pointer;
 }
 

@@ -21,4 +21,9 @@ public class CreateOrderRequest {
     private String customerComment;
     /** Подписка на рассылку о новых точках на карте (опционально). */
     private Boolean newsletterSubscribe;
+
+    /** Идентификатор пункта самовывоза (обязателен при shippingMethod=pickup). Можно дублировать в shippingAddress. */
+    private String pickupPointId;
+    /** Адрес пункта самовывоза (снимок для отображения). */
+    private String pickupAddress;
 }

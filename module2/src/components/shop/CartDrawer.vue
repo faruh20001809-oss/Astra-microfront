@@ -131,8 +131,8 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="address" class="form-label">Адрес *</label>
+            <div v-if="delivery !== 'pickup'" class="form-group">
+              <label for="address" class="form-label">Адрес доставки *</label>
               <input
                   id="address"
                   v-model="customerForm.address"
@@ -142,6 +142,29 @@
                   @blur="validateField('address')"
               />
               <span v-if="errors.address" class="error-msg">{{ errors.address }}</span>
+            </div>
+
+            <div v-else class="form-group pickup-block">
+              <label for="pickupPoint" class="form-label">Пункт самовывоза *</label>
+              <select
+                  v-if="!pickupPointsLoading && pickupPoints.length"
+                  id="pickupPoint"
+                  v-model="selectedPickupId"
+                  class="form-select"
+                  :class="{ error: errors.pickupPointId }"
+                  @change="validateField('pickupPointId')"
+              >
+                <option v-for="p in pickupPoints" :key="p.id" :value="p.id">{{ p.label }}</option>
+              </select>
+              <p v-else-if="pickupPointsLoading" class="pickup-hint text-mono">Загрузка пунктов…</p>
+              <p v-else class="error-msg">Пункты самовывоза недоступны. Проверьте подключение к серверу.</p>
+              <template v-if="!pickupPointsLoading && pickupPoints.length">
+                <p class="pickup-hint text-mono">
+                  Забрать заказ можно по адресу: {{ selectedPickupAddress }}
+                </p>
+                <p v-if="selectedPickupHours" class="pickup-hint text-mono">{{ selectedPickupHours }}</p>
+              </template>
+              <span v-if="errors.pickupPointId" class="error-msg">{{ errors.pickupPointId }}</span>
             </div>
           </div>
 
@@ -205,15 +228,20 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useCartStore, useToastStore } from '@/store/index.js'
 import { javaApi } from '@/api/backend'
+
+/** Пункты выдачи с бэкенда (тот же список, что в модалке заказа Java-админки) */
+const pickupPoints = ref([])
+const pickupPointsLoading = ref(false)
 
 const cartStore = useCartStore()
 const toastStore = useToastStore()
 
 // Delivery & payment
 const delivery = ref('pickup')
+const selectedPickupId = ref('')
 const paymentMethod = ref('card')
 const checkoutLoading = ref(false)
 const newsletterSubscribe = ref(false)
@@ -239,14 +267,73 @@ const deliveryPrice = computed(() => {
   return 0
 })
 
+const selectedPickupAddress = computed(() => {
+  const p = pickupPoints.value.find((x) => x.id === selectedPickupId.value)
+  return p?.address || ''
+})
+
+const selectedPickupHours = computed(() => {
+  const p = pickupPoints.value.find((x) => x.id === selectedPickupId.value)
+  return p?.hours || ''
+})
+
+function syncPickupSelection() {
+  if (!pickupPoints.value.length) return
+  if (!pickupPoints.value.some((x) => x.id === selectedPickupId.value)) {
+    selectedPickupId.value = pickupPoints.value[0].id
+  }
+}
+
+async function loadPickupPoints() {
+  pickupPointsLoading.value = true
+  try {
+    const list = await javaApi.pickupPoints.getList()
+    if (Array.isArray(list) && list.length > 0) {
+      pickupPoints.value = list.map((p) => ({
+        id: p.id,
+        label: p.label,
+        address: p.address || '',
+        hours: p.hours || ''
+      }))
+      syncPickupSelection()
+    }
+  } catch (e) {
+    console.warn('pickup points:', e)
+    toastStore.push('Не удалось загрузить пункты самовывоза', 'error')
+  } finally {
+    pickupPointsLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadPickupPoints()
+})
+
+watch(
+  () => cartStore.isOpen,
+  (open) => {
+    if (open && !pickupPoints.value.length && !pickupPointsLoading.value) {
+      loadPickupPoints()
+    }
+  }
+)
+
 const isFormValid = computed(() => {
-  return (
-      customerForm.value.firstName.trim() &&
-      customerForm.value.lastName.trim() &&
-      customerForm.value.phone.trim() &&
-      customerForm.value.city.trim() &&
-      customerForm.value.address.trim()
-  )
+  const c = customerForm.value
+  if (!c.firstName.trim() || !c.lastName.trim() || !c.phone.trim() || !c.city.trim()) {
+    return false
+  }
+  if (delivery.value === 'pickup') {
+    if (pickupPointsLoading.value || !pickupPoints.value.length) return false
+    return !!selectedPickupId.value
+  }
+  return !!c.address.trim()
+})
+
+watch(delivery, (v) => {
+  if (v === 'pickup') {
+    errors.value.address = ''
+  }
 })
 
 // Phone formatting: +7 (XXX) XXX-XX-XX
@@ -279,8 +366,21 @@ function validateField(field) {
       else errors.value.phone = ''
       break
     case 'city':
-    case 'address':
       errors.value[field] = !value ? 'Обязательное поле' : ''
+      break
+    case 'address':
+      if (delivery.value === 'pickup') {
+        errors.value.address = ''
+      } else {
+        errors.value[field] = !value ? 'Обязательное поле' : ''
+      }
+      break
+    case 'pickupPointId':
+      if (delivery.value === 'pickup' && !selectedPickupId.value) {
+        errors.value.pickupPointId = 'Выберите пункт самовывоза'
+      } else {
+        errors.value.pickupPointId = ''
+      }
       break
     case 'email':
       errors.value.email = value && !/^\S+@\S+\.\S+$/.test(value) ? 'Некорректный email' : ''
@@ -290,7 +390,15 @@ function validateField(field) {
 
 // Full form validation
 function validateForm() {
-  ;['firstName', 'lastName', 'phone', 'city', 'address'].forEach(validateField)
+  ;['firstName', 'lastName', 'phone', 'city'].forEach(validateField)
+  if (delivery.value === 'pickup') {
+    validateField('pickupPointId')
+    errors.value.address = ''
+  } else {
+    validateField('address')
+    errors.value.pickupPointId = ''
+  }
+  validateField('email')
   return !Object.values(errors.value).some(e => e)
 }
 
@@ -319,6 +427,8 @@ async function checkout() {
   )
 
   try {
+    const isPickup = delivery.value === 'pickup'
+    const pickupAddr = selectedPickupAddress.value
     const orderPayload = {
       userId: 'guest-' + Date.now(),
       shippingAddress: {
@@ -327,10 +437,18 @@ async function checkout() {
         phone: customerForm.value.phone.trim(),
         email: customerForm.value.email?.trim() || null,
         city: customerForm.value.city.trim(),
-        address: customerForm.value.address.trim(),
-        zip: customerForm.value.zip?.trim() || null
+        address: isPickup ? '' : customerForm.value.address.trim(),
+        zip: customerForm.value.zip?.trim() || null,
+        ...(isPickup
+          ? {
+              pickupPointId: selectedPickupId.value,
+              pickupAddress: pickupAddr,
+            }
+          : {}),
       },
       shippingMethod: delivery.value,
+      pickupPointId: isPickup ? selectedPickupId.value : undefined,
+      pickupAddress: isPickup ? pickupAddr : undefined,
       paymentMethod: paymentMethod.value,
       items: cartStore.items.map(item => ({
         id: item.id,
@@ -360,6 +478,7 @@ async function checkout() {
         cartStore.clearCart()
         cartStore.isOpen = false
         customerForm.value = { firstName: '', lastName: '', phone: '', email: '', city: 'Астрахань', address: '', zip: '' }
+        selectedPickupId.value = pickupPoints.value[0]?.id || ''
         newsletterSubscribe.value = false
         delivery.value = 'pickup'
         paymentMethod.value = 'card'
@@ -371,6 +490,7 @@ async function checkout() {
         cartStore.clearCart()
         cartStore.isOpen = false
         customerForm.value = { firstName: '', lastName: '', phone: '', email: '', city: 'Астрахань', address: '', zip: '' }
+        selectedPickupId.value = pickupPoints.value[0]?.id || ''
         newsletterSubscribe.value = false
         delivery.value = 'pickup'
         paymentMethod.value = 'card'
@@ -389,6 +509,7 @@ async function checkout() {
       firstName: '', lastName: '', phone: '', email: '',
       city: 'Астрахань', address: '', zip: ''
     }
+    selectedPickupId.value = pickupPoints.value[0]?.id || ''
     newsletterSubscribe.value = false
     delivery.value = 'pickup'
     paymentMethod.value = 'card'
@@ -608,4 +729,12 @@ async function checkout() {
   line-height: 1.4;
 }
 .checkbox-inline input { margin-top: 0.2rem; flex-shrink: 0; }
+
+.pickup-block { margin-top: var(--spacing-sm); }
+.pickup-hint {
+  margin: var(--spacing-sm) 0 0;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--gray-400);
+}
 </style>

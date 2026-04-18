@@ -30,6 +30,14 @@ public class PoiSuggestion {
     @Column(name = "why_add", columnDefinition = "TEXT", nullable = false)
     private String whyAdd;
 
+    /** Координаты с карты (пользовательского предложения), WGS84 */
+    private Double latitude;
+    private Double longitude;
+
+    /** Если из предложения создана POI в админке — ссылка на запись (без дубликатов). */
+    @Column(name = "imported_poi_id")
+    private Long importedPoiId;
+
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     @Builder.Default

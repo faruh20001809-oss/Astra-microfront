@@ -19,6 +19,7 @@
             </div>
         </div>
         <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
         <div class="grid-2">
 
@@ -82,6 +83,12 @@
                 <div class="detail-row">
                     <div class="detail-label">Адрес</div>
                     <div class="detail-value" th:text="${order.formattedAddress}"></div>
+                </div>
+                <div class="detail-row" th:if="${order.shippingMethod != null and #strings.equalsIgnoreCase(order.shippingMethod, 'pickup')}">
+                    <div class="detail-label">Самовывоз</div>
+                    <div class="detail-value">
+                        <button type="button" class="btn btn-ghost btn-sm" data-open-pickup-modal>Выбрать пункт выдачи</button>
+                    </div>
                 </div>
 
                 <div class="detail-row" th:if="${order.trackingNumber}">
@@ -215,5 +222,67 @@
         </div>
     </main>
 </div>
+<div id="pickupModal" class="pickup-modal" aria-hidden="true">
+    <div class="pickup-modal__backdrop" data-close-pickup-modal></div>
+    <div class="pickup-modal__content" role="dialog" aria-modal="true" aria-labelledby="pickupModalTitle">
+        <div class="pickup-modal__header">
+            <h3 id="pickupModalTitle" style="margin:0;">Пункты выдачи</h3>
+            <button type="button" class="btn btn-ghost btn-sm" data-close-pickup-modal>Закрыть</button>
+        </div>
+        <p style="margin:0 0 12px 0;color:var(--gray-400);">Выберите пункт самовывоза для заказа <strong th:text="${order.orderId}"></strong>.</p>
+        <form th:action="@{'/admin/orders/pickup-point/'+${order.id}}" method="post">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <div class="pickup-list">
+                <label class="pickup-card" th:each="p, stat : ${pickupPoints}">
+                    <input type="radio" name="pickupPointId" th:value="${p.id}" th:checked="${stat.index == 0}" required />
+                    <div>
+                        <div class="pickup-card__title" th:text="${p.label}"></div>
+                        <div class="pickup-card__meta" th:text="${p.address}"></div>
+                        <div class="pickup-card__meta" th:text="${p.hours}"></div>
+                    </div>
+                </label>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+                <button type="button" class="btn btn-ghost" data-close-pickup-modal>Отмена</button>
+                <button type="submit" class="btn btn-primary">Применить пункт</button>
+            </div>
+        </form>
+    </div>
+</div>
+<style>
+    .pickup-modal { position: fixed; inset: 0; display: none; z-index: 1200; }
+    .pickup-modal.is-open { display: block; }
+    .pickup-modal__backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.35); }
+    .pickup-modal__content { position: relative; width: min(620px, 96vw); margin: 6vh auto; background: var(--white); color: var(--paper); border: 1px solid var(--gray-200); border-radius: 10px; padding: 16px; max-height: 88vh; overflow: auto; }
+    .pickup-modal__header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .pickup-list { display:grid; gap:8px; }
+    .pickup-card { display:flex; gap:10px; align-items:flex-start; border:1px solid var(--gray-300); border-radius:8px; padding:10px; cursor:pointer; }
+    .pickup-card:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+    .pickup-card__title { font-weight: 600; margin-bottom:4px; }
+    .pickup-card__meta { font-size: 12px; color: var(--gray-500); line-height: 1.4; }
+</style>
+<script>
+    (function () {
+        var modal = document.getElementById('pickupModal');
+        if (!modal) return;
+        function openModal() {
+            modal.classList.add('is-open');
+            modal.setAttribute('aria-hidden', 'false');
+        }
+        function closeModal() {
+            modal.classList.remove('is-open');
+            modal.setAttribute('aria-hidden', 'true');
+        }
+        document.querySelectorAll('[data-open-pickup-modal]').forEach(function (btn) {
+            btn.addEventListener('click', openModal);
+        });
+        document.querySelectorAll('[data-close-pickup-modal]').forEach(function (btn) {
+            btn.addEventListener('click', closeModal);
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && modal.classList.contains('is-open')) closeModal();
+        });
+    })();
+</script>
 </body>
 </html>

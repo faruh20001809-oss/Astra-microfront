@@ -24,7 +24,12 @@
   <td th:text="${#strings.abbreviate(s.whyAdd,50)}"></td>
   <td><span class="status-badge" th:classappend="'status-'+${s.status.name().toLowerCase()}" th:text="${s.status.name() == 'NEW' ? 'Новое' : (s.status.name() == 'APPROVED' ? 'Одобрено' : 'Отклонено')}"></span></td>
   <td th:text="${#temporals.format(s.createdAt,'dd.MM.yyyy HH:mm')}"></td>
-  <td><a th:href="@{'/admin/poi-suggestions/view/'+${s.id}}" class="btn btn-sm">👁️ Просмотр</a></td>
+  <td>
+    <a th:href="@{'/admin/poi-suggestions/view/'+${s.id}}" class="btn btn-sm">👁️ Просмотр</a>
+    <a th:if="${s.status.name() == 'APPROVED' and s.importedPoiId == null}"
+       th:href="@{/admin/poi/create(fromSuggestion=${s.id})}" class="btn btn-sm btn-primary" style="margin-left:6px">+ POI</a>
+    <span th:if="${s.importedPoiId != null}" style="font-size:11px;color:var(--gray-400);margin-left:6px" th:text="'→ POI #' + ${s.importedPoiId}"></span>
+  </td>
 </tr>
 <tr th:if="${#lists.isEmpty(suggestions)}"><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">Нет предложений</td></tr>
 </tbody>

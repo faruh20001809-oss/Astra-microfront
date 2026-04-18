@@ -9,11 +9,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.astrakhan.admin.entity.PoiSuggestion;
 import ru.astrakhan.admin.entity.PointOfInterest;
 import ru.astrakhan.admin.entity.Route;
 import ru.astrakhan.admin.repository.ReviewRepository;
 import ru.astrakhan.admin.service.PoiPublicationNotificationService;
 import ru.astrakhan.admin.service.PoiService;
+import ru.astrakhan.admin.service.PoiSuggestionService;
 import ru.astrakhan.admin.service.RouteService;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 @Controller @RequestMapping("/admin/poi") @RequiredArgsConstructor
 public class PoiAdminController {
     private final PoiService poiService;
+    private final PoiSuggestionService poiSuggestionService;
     private final RouteService routeService;
     private final ReviewRepository reviewRepository;
     private final ObjectMapper objectMapper;
@@ -30,6 +33,9 @@ public class PoiAdminController {
 
     @Value("${app.ai.enabled:false}")
     private boolean poiAiEnabled;
+
+    @Value("${app.dgis.map-key:2fa2df2d-9b29-4877-ac65-818e02de807d}")
+    private String dgisMapKey;
 
     @GetMapping public String list(@RequestParam(required = false) String status, Model model) {
         List<PointOfInterest> pois = (status != null && !status.isEmpty()) ?
@@ -39,9 +45,39 @@ public class PoiAdminController {
         return "poi/list";
     }
 
-    @GetMapping("/create") public String createForm(Model model) {
-        model.addAttribute("poi", new PointOfInterest()); model.addAttribute("isEdit", false);
+    @GetMapping("/create") public String createForm(@RequestParam(required = false) Long fromSuggestion,
+            Model model,
+            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+        model.addAttribute("isEdit", false);
         model.addAttribute("poiAiEnabled", poiAiEnabled);
+        model.addAttribute("dgisMapKey", dgisMapKey);
+        if (fromSuggestion == null) {
+            model.addAttribute("poi", new PointOfInterest());
+            model.addAttribute("fromSuggestionId", null);
+            return "poi/form";
+        }
+        PoiSuggestion s = poiSuggestionService.findById(fromSuggestion).orElse(null);
+        if (s == null) {
+            ra.addFlashAttribute("error", "Предложение не найдено");
+            return "redirect:/admin/poi-suggestions";
+        }
+        if (s.getImportedPoiId() != null) {
+            ra.addFlashAttribute("error", "Из этого предложения уже создана точка интереса (POI #" + s.getImportedPoiId() + ").");
+            return "redirect:/admin/poi-suggestions/view/" + fromSuggestion;
+        }
+        if (s.getStatus() != PoiSuggestion.SuggestionStatus.APPROVED) {
+            ra.addFlashAttribute("error", "Сначала одобрите предложение.");
+            return "redirect:/admin/poi-suggestions/view/" + fromSuggestion;
+        }
+        PointOfInterest poi = new PointOfInterest();
+        poi.setName(s.getName());
+        poi.setAddress(s.getPlace());
+        poi.setDescription(s.getDescription());
+        poi.setCategory("Прочее");
+        if (s.getLatitude() != null) poi.setLatitude(s.getLatitude());
+        if (s.getLongitude() != null) poi.setLongitude(s.getLongitude());
+        model.addAttribute("poi", poi);
+        model.addAttribute("fromSuggestionId", s.getId());
         return "poi/form";
     }
 
@@ -49,13 +85,17 @@ public class PoiAdminController {
         model.addAttribute("poi", poiService.findById(id).orElseThrow(() -> new RuntimeException("Not found")));
         model.addAttribute("isEdit", true);
         model.addAttribute("poiAiEnabled", poiAiEnabled);
+        model.addAttribute("dgisMapKey", dgisMapKey);
+        model.addAttribute("fromSuggestionId", null);
         return "poi/form";
     }
 
     @PostMapping("/save") public String save(@ModelAttribute PointOfInterest poi,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
+            @RequestParam(value = "fromSuggestionId", required = false) Long fromSuggestionId,
             RedirectAttributes ra) {
         try {
+            Long prevId = poi.getId();
             if (imageFile != null && !imageFile.isEmpty()) {
                 poi.setImageData(imageFile.getBytes()); poi.setImageFilename(imageFile.getOriginalFilename());
             } else if (poi.getId() != null) {
@@ -63,7 +103,16 @@ public class PoiAdminController {
                     if (poi.getImageData() == null) { poi.setImageData(ex.getImageData()); poi.setImageFilename(ex.getImageFilename()); }
                 });
             }
-            poiService.save(poi); ra.addFlashAttribute("success", "Точка интереса сохранена!");
+            PointOfInterest saved = poiService.save(poi);
+            if (fromSuggestionId != null && prevId == null) {
+                try {
+                    poiSuggestionService.markImportedFromPoi(fromSuggestionId, saved.getId());
+                } catch (Exception ex) {
+                    ra.addFlashAttribute("error", "Точка сохранена, но не удалось связать с предложением: " + ex.getMessage());
+                    return "redirect:/admin/poi";
+                }
+            }
+            ra.addFlashAttribute("success", "Точка интереса сохранена!");
         } catch (IOException e) { ra.addFlashAttribute("error", "Ошибка: " + e.getMessage()); }
         return "redirect:/admin/poi";
     }

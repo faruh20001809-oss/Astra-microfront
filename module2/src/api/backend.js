@@ -209,6 +209,14 @@ export const javaApi = {
     }
   },
 
+  /** Пункты самовывоза (тот же справочник, что модалка заказа в Java-админке) */
+  pickupPoints: {
+    getList: async () => {
+      const res = await baseFetch(`${JAVA_API_BASE}/pickup-points`)
+      return handleJavaResponse(res)
+    }
+  },
+
   /** Orders (Заказы) */
   orders: {
     /** @param {Object} orderData */

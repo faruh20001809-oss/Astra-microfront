@@ -1,6 +1,8 @@
 package ru.astrakhan.admin.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -10,10 +12,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.astrakhan.admin.entity.Order;
 import ru.astrakhan.admin.service.OrderService;
 import ru.astrakhan.admin.service.OrderEmailService;
+import ru.astrakhan.admin.service.PickupPointsService;
 import ru.astrakhan.admin.service.TelegramNotificationService;
 
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -23,6 +28,8 @@ public class OrderAdminController {
     private final OrderService orderService;
     private final OrderEmailService orderEmailService;
     private final TelegramNotificationService telegramNotificationService;
+    private final ObjectMapper objectMapper;
+    private final PickupPointsService pickupPointsService;
 
     @GetMapping
     public String list(@RequestParam(required = false) String status,
@@ -59,6 +66,7 @@ public class OrderAdminController {
         model.addAttribute("request", request); // 👈 Для шаблона orders/view
 
         model.addAttribute("order", orderService.findById(id).orElseThrow(() -> new RuntimeException("Not found")));
+        model.addAttribute("pickupPoints", pickupPointsService.listAll());
         return "orders/view";
     }
 
@@ -104,6 +112,35 @@ public class OrderAdminController {
         Order order = orderService.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
         orderEmailService.sendTrackingUpdate(order);
         ra.addFlashAttribute("success", "Письмо с трек-номером отправлено на " + order.getEmail());
+        return "redirect:/admin/orders/view/" + id;
+    }
+
+    @PostMapping("/pickup-point/{id}")
+    public String updatePickupPoint(@PathVariable Long id,
+                                    @RequestParam String pickupPointId,
+                                    RedirectAttributes ra) {
+        Order order = orderService.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        Map<String, String> point = pickupPointsService.findById(pickupPointId).orElse(null);
+        if (point == null) {
+            ra.addFlashAttribute("error", "Пункт выдачи не найден");
+            return "redirect:/admin/orders/view/" + id;
+        }
+        try {
+            Map<String, Object> shipping = new LinkedHashMap<>();
+            if (order.getShippingAddress() != null && !order.getShippingAddress().isBlank()) {
+                shipping = objectMapper.readValue(order.getShippingAddress(), new TypeReference<>() {});
+            }
+            shipping.put("pickupPointId", point.get("id"));
+            shipping.put("pickupAddress", point.get("address"));
+            shipping.put("pickupLabel", point.get("label"));
+            shipping.put("pickupHours", point.get("hours"));
+            order.setShippingMethod("pickup");
+            order.setShippingAddress(objectMapper.writeValueAsString(shipping));
+            orderService.save(order);
+            ra.addFlashAttribute("success", "Пункт выдачи обновлён: " + point.get("label"));
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", "Не удалось обновить пункт выдачи: " + ex.getMessage());
+        }
         return "redirect:/admin/orders/view/" + id;
     }
 }

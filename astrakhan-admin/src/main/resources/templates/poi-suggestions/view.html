@@ -7,6 +7,7 @@
 <main class="main-content">
 <div class="page-header"><h1 th:text="'📍 Предложение #'+${suggestion.id}"></h1><a th:href="@{/admin/poi-suggestions}" class="btn">← Назад</a></div>
 <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 <div class="grid-2">
   <div class="card">
     <div class="card-header"><h3>Данные предложения</h3></div>
@@ -18,6 +19,19 @@
     <div class="detail-row" th:if="${suggestion.createdAt}"><div class="detail-label">Дата создания</div><div class="detail-value" th:text="${#temporals.format(suggestion.createdAt,'dd.MM.yyyy HH:mm')}"></div></div>
     <div class="detail-row" th:if="${suggestion.reviewedAt}"><div class="detail-label">Рассмотрено</div><div class="detail-value" th:text="${#temporals.format(suggestion.reviewedAt,'dd.MM.yyyy HH:mm')}"></div></div>
     <div class="detail-row" th:if="${suggestion.adminNotes}"><div class="detail-label">Заметка администратора</div><div class="detail-value" style="white-space:pre-wrap;" th:text="${suggestion.adminNotes}"></div></div>
+    <div class="detail-row" th:if="${suggestion.latitude != null or suggestion.longitude != null}">
+      <div class="detail-label">Координаты</div>
+      <div class="detail-value" th:text="${suggestion.latitude != null and suggestion.longitude != null ? (suggestion.latitude + ', ' + suggestion.longitude) : '—'}"></div>
+    </div>
+  </div>
+  <div class="card" th:if="${suggestion.status.name() == 'APPROVED'}">
+    <div class="card-header"><h3>Добавление на карту</h3></div>
+    <p th:if="${suggestion.importedPoiId != null}" style="color:var(--gray-400);margin:0 0 12px 0">
+      Из этого предложения уже создана точка: <strong th:text="'POI #' + ${suggestion.importedPoiId}"></strong>
+    </p>
+    <a th:if="${suggestion.importedPoiId == null}"
+       th:href="@{/admin/poi/create(fromSuggestion=${suggestion.id})}"
+       class="btn btn-primary">Создать POI из предложения</a>
   </div>
   <div class="card" th:if="${suggestion.status.name() == 'NEW'}">
     <div class="card-header"><h3>Решение</h3></div>

@@ -115,13 +115,27 @@
 <script>
     let visitsChart = null, activityChart = null, heatmapChart = null;
     let isAdmin = false;
-    const CHART_TEXT = '#f2e8dc';
-    const CHART_GRID = 'rgba(212, 184, 150, 0.12)';
-    const ACCENT = 'rgba(212, 184, 150, 0.85)';
-    const ACCENT_LINE = '#d4b896';
-    const SUCCESS = '#2d6b45';
+    let CHART_TEXT = '#f2e8dc';
+    let CHART_GRID = 'rgba(212, 184, 150, 0.12)';
+    let ACCENT = 'rgba(212, 184, 150, 0.85)';
+    let ACCENT_LINE = '#d4b896';
+    let SUCCESS = '#2d6b45';
 
     const ROOT = '{{ root }}';
+
+    function syncChartPalette() {
+        const styles = getComputedStyle(document.documentElement);
+        const paper = styles.getPropertyValue('--paper').trim();
+        const accent = styles.getPropertyValue('--accent').trim();
+        const success = styles.getPropertyValue('--success').trim();
+        const grid = styles.getPropertyValue('--gray-300').trim();
+
+        CHART_TEXT = paper || CHART_TEXT;
+        ACCENT_LINE = accent || ACCENT_LINE;
+        SUCCESS = success || SUCCESS;
+        CHART_GRID = grid ? ('color-mix(in srgb, ' + grid + ' 45%, transparent)') : CHART_GRID;
+        ACCENT = accent ? ('color-mix(in srgb, ' + accent + ' 82%, transparent)') : ACCENT;
+    }
 
     function showLoading(id, show) {
         const chartEl = document.getElementById(id + 'Chart');
@@ -149,6 +163,7 @@
     }
 
     function initDashboard(role) {
+        syncChartPalette();
         isAdmin = role === 'admin' || role === 'administrator' || role === 'Администратор';
         const roleBadge = document.getElementById('roleBadge');
         roleBadge.textContent = isAdmin ? 'Администратор' : String(role).toUpperCase();
@@ -349,6 +364,14 @@
             loadHeatmap(start, end);
         });
     }
+
+    window.addEventListener('astra:theme-changed', function () {
+        syncChartPalette();
+        if (isAdmin) {
+            loadDailyCharts();
+            loadHeatmap();
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', checkUserRole);
 </script>
