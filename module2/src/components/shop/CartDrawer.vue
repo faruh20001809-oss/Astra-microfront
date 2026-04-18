@@ -1,5 +1,7 @@
 <template>
   <Drawer
+      ref="cartDrawerRootRef"
+      id="astra-cart-drawer"
       v-model:visible="cartStore.isOpen"
       position="right"
       :modal="true"
@@ -11,6 +13,7 @@
       <span class="cart-title">Корзина</span>
     </template>
 
+    <div ref="cartDrawerIntrinsicRef" class="cart-drawer-intrinsic">
     <!-- Empty state -->
     <div v-if="!cartStore.items.length" class="cart-empty">
       <span class="cart-empty-icon" aria-hidden="true">◻</span>
@@ -212,6 +215,7 @@
               </p>
             </div>
       </div>
+    </div>
 
     <!-- Кнопка оплаты в футере Drawer — всегда видна -->
     <template #footer>
@@ -228,7 +232,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useCartStore, useToastStore } from '@/store/index.js'
 import { javaApi } from '@/api/backend'
 
@@ -238,6 +242,115 @@ const pickupPointsLoading = ref(false)
 
 const cartStore = useCartStore()
 const toastStore = useToastStore()
+
+/** Ширина панели на desktop: подстраивается под контент, чтобы заголовки/кнопки не ломались на два ряда */
+const cartDrawerRootRef = ref(null)
+const cartDrawerIntrinsicRef = ref(null)
+
+function drawerPanelEl() {
+  return cartDrawerRootRef.value?.$el ?? document.getElementById('astra-cart-drawer')
+}
+const CART_DRAWER_MIN_W = 320
+const CART_DRAWER_MAX_W = () => Math.min(window.innerWidth * 0.96, 900)
+
+function clampCartDrawerW(w) {
+  return Math.min(Math.max(Math.round(w), CART_DRAWER_MIN_W), CART_DRAWER_MAX_W())
+}
+
+let cartDrawerMeasureTimer = null
+let cartDrawerResizeObs = null
+
+function applyCartDrawerWidth(px) {
+  const panel = drawerPanelEl()
+  if (!panel) return
+  if (px == null || window.innerWidth <= 768) {
+    panel.style.removeProperty('width')
+    return
+  }
+  panel.style.width = `${px}px`
+}
+
+function measureCartDrawerWidth() {
+  if (typeof document === 'undefined' || window.innerWidth <= 768) {
+    applyCartDrawerWidth(null)
+    return
+  }
+  if (!cartStore.isOpen) {
+    applyCartDrawerWidth(null)
+    return
+  }
+
+  const panel = drawerPanelEl()
+  if (!panel) return
+
+  let needed = CART_DRAWER_MIN_W
+
+  const intrinsic = cartDrawerIntrinsicRef.value
+  if (intrinsic) {
+    const wSt = intrinsic.style.width
+    const mwSt = intrinsic.style.maxWidth
+    intrinsic.style.width = 'max-content'
+    intrinsic.style.maxWidth = 'none'
+    needed = Math.max(needed, intrinsic.scrollWidth)
+    intrinsic.style.width = wSt
+    intrinsic.style.maxWidth = mwSt
+  }
+
+  const header = panel.querySelector('.p-drawer-header')
+  if (header) {
+    const wSt = header.style.width
+    const mwSt = header.style.maxWidth
+    header.style.width = 'max-content'
+    header.style.maxWidth = 'none'
+    needed = Math.max(needed, header.offsetWidth)
+    header.style.width = wSt
+    header.style.maxWidth = mwSt
+  }
+
+  const footer = panel.querySelector('.p-drawer-footer')
+  if (footer) {
+    const wSt = footer.style.width
+    const mwSt = footer.style.maxWidth
+    footer.style.width = 'max-content'
+    footer.style.maxWidth = 'none'
+    needed = Math.max(needed, footer.offsetWidth)
+    footer.style.width = wSt
+    footer.style.maxWidth = mwSt
+  }
+
+  applyCartDrawerWidth(clampCartDrawerW(needed))
+}
+
+function scheduleMeasureCartDrawer() {
+  if (cartDrawerMeasureTimer) clearTimeout(cartDrawerMeasureTimer)
+  cartDrawerMeasureTimer = setTimeout(() => {
+    cartDrawerMeasureTimer = null
+    void nextTick(() => measureCartDrawerWidth())
+  }, 60)
+}
+
+function teardownCartDrawerResizeObs() {
+  if (cartDrawerResizeObs) {
+    cartDrawerResizeObs.disconnect()
+    cartDrawerResizeObs = null
+  }
+}
+
+function setupCartDrawerResizeObs() {
+  teardownCartDrawerResizeObs()
+  if (typeof ResizeObserver === 'undefined' || window.innerWidth <= 768) return
+  const intrinsic = cartDrawerIntrinsicRef.value
+  const panel = drawerPanelEl()
+  if (!panel) return
+  cartDrawerResizeObs = new ResizeObserver(() => scheduleMeasureCartDrawer())
+  if (intrinsic) cartDrawerResizeObs.observe(intrinsic)
+  const footer = panel.querySelector('.p-drawer-footer')
+  if (footer) cartDrawerResizeObs.observe(footer)
+}
+
+function onWindowResize() {
+  scheduleMeasureCartDrawer()
+}
 
 // Delivery & payment
 const delivery = ref('pickup')
@@ -302,19 +415,54 @@ async function loadPickupPoints() {
     toastStore.push('Не удалось загрузить пункты самовывоза', 'error')
   } finally {
     pickupPointsLoading.value = false
+    if (cartStore.isOpen) scheduleMeasureCartDrawer()
   }
 }
 
 onMounted(() => {
   loadPickupPoints()
+  window.addEventListener('resize', onWindowResize, { passive: true })
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onWindowResize)
+  teardownCartDrawerResizeObs()
+  if (cartDrawerMeasureTimer) clearTimeout(cartDrawerMeasureTimer)
+  applyCartDrawerWidth(null)
 })
 
 watch(
   () => cartStore.isOpen,
-  (open) => {
+  async (open) => {
     if (open && !pickupPoints.value.length && !pickupPointsLoading.value) {
       loadPickupPoints()
     }
+    if (open) {
+      await nextTick()
+      scheduleMeasureCartDrawer()
+      await nextTick()
+      setupCartDrawerResizeObs()
+    } else {
+      applyCartDrawerWidth(null)
+      teardownCartDrawerResizeObs()
+    }
+  }
+)
+
+watch(
+  () => [
+    cartStore.items.length,
+    cartStore.items.map((i) => `${i.id}:${i.name}:${i.qty}`).join('|'),
+    delivery.value,
+    selectedPickupId.value,
+    selectedPickupAddress.value,
+    selectedPickupHours.value,
+    checkoutLoading.value,
+    pickupPointsLoading.value,
+    pickupPoints.value.length,
+  ],
+  () => {
+    if (cartStore.isOpen) scheduleMeasureCartDrawer()
   }
 )
 
@@ -524,6 +672,14 @@ async function checkout() {
 </script>
 
 <style scoped>
+.cart-drawer-intrinsic {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}
+
 .cart-drawer-pv .p-drawer-content { display: flex; flex-direction: column; overflow: hidden; }
 .cart-drawer-pv .cart-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
 .cart-drawer-pv .cart-checkout-btn { width: 100%; }
@@ -672,10 +828,27 @@ async function checkout() {
 }
 .consent-text a { color: var(--gray-400); text-decoration: underline; }
 
-/* Desktop: PrimeVue default is 20rem — до ~900px, чтобы строки корзины, форма и длинные подписи ПВЗ помещались */
+/* Desktop: фактическая width задаётся скриптом по ширине контента; здесь пределы и плавное изменение */
 @media (min-width: 769px) {
-  .cart-drawer-pv .p-drawer {
-    width: min(56.25rem, 96vw);
+  .cart-drawer-pv.p-drawer {
+    width: min(32rem, 92vw);
+    min-width: 22rem;
+    max-width: min(56.25rem, 96vw);
+    transition: width 0.42s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
+  }
+
+  .cart-drawer-pv .cart-item-name {
+    white-space: nowrap;
+  }
+
+  .cart-drawer-pv :deep(.cart-checkout-btn .p-button-label) {
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 769px) and (prefers-reduced-motion: reduce) {
+  .cart-drawer-pv.p-drawer {
+    transition: none;
   }
 }
 
