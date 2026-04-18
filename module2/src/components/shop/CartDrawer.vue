@@ -254,10 +254,10 @@ function drawerSlidePanelEl() {
   if (root.classList?.contains('p-drawer')) return root
   return root.querySelector?.('.p-drawer') ?? root
 }
-/** Нижняя граница ~32rem — иначе авто-измерение даёт узкую панель; верхняя — запас под широкие экраны */
-const CART_DRAWER_MIN_W = 520
+/** Нижняя/верхняя границы ширины `.p-drawer.cart-drawer-pv` на desktop (синхронно с CSS max-width) */
+const CART_DRAWER_MIN_W = 640
 const CART_DRAWER_MEASURE_PAD = 28
-const CART_DRAWER_MAX_W = () => Math.min(window.innerWidth * 0.98, 1100)
+const CART_DRAWER_MAX_W = () => Math.min(window.innerWidth * 0.98, 1280)
 
 function clampCartDrawerW(w) {
   return Math.min(Math.max(Math.round(w), CART_DRAWER_MIN_W), CART_DRAWER_MAX_W())
@@ -852,9 +852,9 @@ async function checkout() {
   .cart-drawer-pv.p-drawer {
     display: flex;
     flex-direction: column;
-    width: min(40rem, 94vw);
-    min-width: min(34rem, 92vw);
-    max-width: min(68.75rem, 98vw);
+    width: min(48rem, 95vw);
+    min-width: min(42rem, 94vw);
+    max-width: min(80rem, 98vw);
     transition: width 0.42s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
   }
 
