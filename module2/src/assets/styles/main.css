@@ -1098,13 +1098,13 @@ textarea:focus-visible {
   width: 26rem;
 }
 
-/* Корзина: p-drawer.p-component.cart-drawer-pv — 29rem (дубль к CartDrawer.vue для приоритета над темой) */
+/* Корзина: p-drawer.p-component.cart-drawer-pv — ровно 29rem (тема / inline PrimeVue) */
 @media (min-width: 769px) {
-  .p-drawer-right .p-drawer.cart-drawer-pv.p-component,
+  .p-drawer-right .p-drawer.p-component.cart-drawer-pv,
   #astra-cart-drawer.p-drawer.p-component.cart-drawer-pv {
-    width: min(29rem, 96vw) !important;
-    min-width: min(29rem, 96vw) !important;
-    max-width: min(29rem, 96vw) !important;
+    width: 29rem !important;
+    min-width: 29rem !important;
+    max-width: min(29rem, 100vw) !important;
   }
 }
 

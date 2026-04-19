@@ -246,26 +246,67 @@ const toastStore = useToastStore()
 const cartDrawerRootRef = ref(null)
 const cartDrawerIntrinsicRef = ref(null)
 
-/** Сама выдвижная панель `.p-drawer` (у PrimeVue корень компонента иногда обёртка — ширину задаём здесь) */
+/** DOM-элемент (не Comment/Text и т.д.) — у Drawer с Teleport `$el` может быть не HTMLElement */
+function asElement(node) {
+  return node && typeof node === 'object' && node.nodeType === Node.ELEMENT_NODE ? node : null
+}
+
+/** Сама выдвижная панель `.p-drawer` (Teleport: `$el` может быть не Element — не вызываем querySelector на нём) */
 function drawerSlidePanelEl() {
-  const root = cartDrawerRootRef.value?.$el ?? document.getElementById('astra-cart-drawer')
+  if (typeof document === 'undefined') return null
+  const byId = asElement(document.getElementById('astra-cart-drawer'))
+  const fromRef = asElement(cartDrawerRootRef.value?.$el)
+  let root = byId ?? fromRef
+  if (!root) {
+    root = asElement(
+      document.querySelector('.p-drawer-right .p-drawer.cart-drawer-pv')
+    )
+  }
   if (!root) return null
   if (root.classList?.contains('p-drawer')) return root
-  return root.querySelector?.('.p-drawer') ?? root
+  const inner = asElement(root.querySelector?.('.p-drawer'))
+  return inner ?? root
 }
-/** Ширина `.p-drawer.cart-drawer-pv` задаётся в CSS (29rem); сбрасываем inline width, если остался от старых версий */
-let cartDrawerMeasureTimer = null
+/** PrimeVue часто пишет width inline на `.p-drawer` — фиксируем 29rem с !important после монтирования панели */
+const CART_DRAWER_PANEL_W = '29rem'
+const CART_DRAWER_PANEL_MAX = 'min(29rem, 100vw)'
 
-function clearCartDrawerInlineWidth() {
-  drawerSlidePanelEl()?.style.removeProperty('width')
+let cartDrawerWidthTimer = null
+
+function applyCartDrawerDesktopWidth() {
+  if (typeof window === 'undefined' || window.innerWidth <= 768) return
+  const el = drawerSlidePanelEl()
+  if (!el) return
+  el.style.setProperty('width', CART_DRAWER_PANEL_W, 'important')
+  el.style.setProperty('min-width', CART_DRAWER_PANEL_W, 'important')
+  el.style.setProperty('max-width', CART_DRAWER_PANEL_MAX, 'important')
 }
 
-function scheduleClearCartDrawerWidth() {
-  if (cartDrawerMeasureTimer) clearTimeout(cartDrawerMeasureTimer)
-  cartDrawerMeasureTimer = setTimeout(() => {
-    cartDrawerMeasureTimer = null
-    void nextTick(() => clearCartDrawerInlineWidth())
-  }, 60)
+function clearCartDrawerDesktopWidth() {
+  const el = drawerSlidePanelEl()
+  if (!el) return
+  el.style.removeProperty('width')
+  el.style.removeProperty('min-width')
+  el.style.removeProperty('max-width')
+}
+
+/** Несколько попыток: Teleport + PrimeVue выставляют стили чуть позже nextTick */
+function scheduleApplyCartDrawerDesktopWidth() {
+  if (cartDrawerWidthTimer) clearTimeout(cartDrawerWidthTimer)
+  const run = () => {
+    void nextTick(() => {
+      applyCartDrawerDesktopWidth()
+      requestAnimationFrame(() => {
+        applyCartDrawerDesktopWidth()
+        requestAnimationFrame(() => applyCartDrawerDesktopWidth())
+      })
+    })
+  }
+  run()
+  cartDrawerWidthTimer = window.setTimeout(() => {
+    cartDrawerWidthTimer = null
+    applyCartDrawerDesktopWidth()
+  }, 120)
 }
 
 // Delivery & payment
@@ -331,7 +372,7 @@ async function loadPickupPoints() {
     toastStore.push('Не удалось загрузить пункты самовывоза', 'error')
   } finally {
     pickupPointsLoading.value = false
-    if (cartStore.isOpen) scheduleClearCartDrawerWidth()
+    if (cartStore.isOpen) scheduleApplyCartDrawerDesktopWidth()
   }
 }
 
@@ -340,8 +381,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (cartDrawerMeasureTimer) clearTimeout(cartDrawerMeasureTimer)
-  clearCartDrawerInlineWidth()
+  if (cartDrawerWidthTimer) clearTimeout(cartDrawerWidthTimer)
+  clearCartDrawerDesktopWidth()
 })
 
 watch(
@@ -352,9 +393,9 @@ watch(
     }
     if (open) {
       await nextTick()
-      scheduleClearCartDrawerWidth()
+      scheduleApplyCartDrawerDesktopWidth()
     } else {
-      clearCartDrawerInlineWidth()
+      clearCartDrawerDesktopWidth()
     }
   }
 )
@@ -728,14 +769,14 @@ async function checkout() {
 }
 .consent-text a { color: var(--gray-400); text-decoration: underline; }
 
-/* Desktop: фиксированная ширина панели корзины (p-drawer.p-component.cart-drawer-pv) */
+/* Desktop: 29rem (дублируется глобальным блоком ниже + inline important в скрипте из-за PrimeVue) */
 @media (min-width: 769px) {
   .cart-drawer-pv.p-drawer {
     display: flex;
     flex-direction: column;
-    width: min(29rem, 96vw);
-    min-width: min(29rem, 96vw);
-    max-width: min(29rem, 96vw);
+    width: 29rem;
+    min-width: 29rem;
+    max-width: min(29rem, 100vw);
     transition: width 0.42s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
   }
 
@@ -828,5 +869,15 @@ async function checkout() {
   font-size: 0.72rem;
   line-height: 1.45;
   color: var(--gray-400);
+}
+</style>
+
+<style>
+@media (min-width: 769px) {
+  .p-drawer-right .p-drawer.p-component.cart-drawer-pv {
+    width: 29rem !important;
+    min-width: 29rem !important;
+    max-width: min(29rem, 100vw) !important;
+  }
 }
 </style>
