@@ -93,6 +93,31 @@ public class ApiController {
         return okSingle(poiDetailMap(poi));
     }
 
+    /** Обложка ТОИ из загруженного файла (imageData), как у товаров и маршрутов. */
+    @GetMapping(value = "/pois/{id}/image", produces = "image/*")
+    public ResponseEntity<byte[]> getPoiImage(@PathVariable Long id) {
+        return poiService.findById(id)
+                .filter(p -> p.getImageData() != null && p.getImageData().length > 0)
+                .map(p -> {
+                    String contentType = "image/jpeg";
+                    if (p.getImageFilename() != null) {
+                        String fn = p.getImageFilename().toLowerCase();
+                        if (fn.endsWith(".png")) contentType = "image/png";
+                        else if (fn.endsWith(".gif")) contentType = "image/gif";
+                        else if (fn.endsWith(".webp")) contentType = "image/webp";
+                    }
+                    String etag = p.getUpdatedAt() != null
+                            ? "\"poi" + id + "-" + p.getUpdatedAt().toEpochSecond(java.time.ZoneOffset.UTC) + "\""
+                            : "\"poi" + id + "\"";
+                    return ResponseEntity.ok()
+                            .header("Cache-Control", "private, max-age=3600, must-revalidate")
+                            .header("ETag", etag)
+                            .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
+                            .body(p.getImageData());
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     private Map<String, Object> poiSinceMap(PointOfInterest p) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", p.getId());
@@ -674,7 +699,8 @@ public class ApiController {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", p.getId()); m.put("name", p.getName()); m.put("description", p.getDescription());
         m.put("category", p.getCategory()); m.put("latitude", p.getLatitude()); m.put("longitude", p.getLongitude());
-        m.put("address", p.getAddress()); m.put("image", p.getImageUrl());
+        m.put("address", p.getAddress());
+        m.put("image", poiCoverImageUrl(p));
         m.put("rating", p.getRating()); m.put("reviewsCount", p.getReviewsCount());
         m.put("phone", p.getPhone()); m.put("website", p.getWebsite());
         m.put("tags", p.getTags() != null ? Arrays.asList(p.getTags().split(",")) : List.of());
@@ -689,6 +715,18 @@ public class ApiController {
         m.put("coordinates", Map.of("latitude", p.getLatitude() != null ? p.getLatitude() : 0, "longitude", p.getLongitude() != null ? p.getLongitude() : 0));
         return m;
     }
+
+    /** Внешний URL или путь к API для обложки: при загрузке файла в админке — только imageData, без imageUrl. */
+    private static String poiCoverImageUrl(PointOfInterest p) {
+        if (p.getImageUrl() != null && !p.getImageUrl().isBlank()) {
+            return p.getImageUrl().trim();
+        }
+        if (p.getImageData() != null && p.getImageData().length > 0 && p.getId() != null) {
+            return "/java-api/api/v1/pois/" + p.getId() + "/image";
+        }
+        return null;
+    }
+
     private Map<String, Object> routeMap(Route r) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", r.getId());

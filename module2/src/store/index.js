@@ -202,7 +202,7 @@ export const useMapStore = defineStore('map', {
           reviewsCount: p.reviewsCount,
           year: p.extendedInfo?.foundedYear ?? null,
           architect: p.extendedInfo?.architect ?? null,
-          image: p.image || null,
+          image: p.image || p.imageUrl || null,
           tags: p.tags || [],
         }))
       } catch (err) {
