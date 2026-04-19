@@ -1185,7 +1185,7 @@ function categoryIcon(cat) {
   flex: 0 0 auto;
   width: var(--sidebar-w, 320px);
   min-width: 0;
-  background: var(--header-bg);
+  background: rgba(200, 169, 110, 0.15);
   border-right: 1px solid var(--header-border-color);
   display: flex;
   flex-direction: column;
