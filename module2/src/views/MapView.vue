@@ -1574,7 +1574,7 @@ function categoryIcon(cat) {
   }
 }
 
-/* ===== Floating modal: горизонтальная карточка на десктопе ===== */
+/* ===== Floating modal: горизонтальная карточка на десктопе (фикс. фон #bb9970, без темы) ===== */
 .poi-modal.floating {
   position: absolute;
   z-index: 220;
@@ -1585,27 +1585,9 @@ function categoryIcon(cat) {
   overflow: visible;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(
-    155deg,
-    rgba(30, 25, 21, 0.97) 0%,
-    rgba(18, 16, 14, 0.98) 45%,
-    rgba(14, 12, 10, 0.99) 100%
-  );
+  background: #bb9970 !important;
   border-radius: 12px;
   padding: clamp(2.25rem, 3vw, 2.75rem) clamp(2.5rem, 3vw, 2.75rem) 0 clamp(0.75rem, 1.5vw, 1rem);
-  border: 1px solid rgba(212, 184, 150, 0.14);
-  box-shadow:
-    var(--shadow-modal),
-    0 0 0 1px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 252, 248, 0.04);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  pointer-events: auto;
-}
-
-/* Светлая тема: плавающая карточка POI (#app-root + body — класс темы из App.vue / inline script) */
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating {
-  background: #bb9970 !important;
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
     var(--shadow-modal),
@@ -1613,138 +1595,141 @@ function categoryIcon(cat) {
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  pointer-events: auto;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-modal-title {
-  color: #fff;
+.poi-modal.floating .poi-modal-title,
+.poi-modal.floating #poi-card-title {
+  color: #fff !important;
   border-bottom-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .modal-close {
-  background: #bb9970;
+.poi-modal.floating .modal-close {
+  background: #bb9970 !important;
   border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #fff;
+  color: #fff !important;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .modal-close:hover {
-  background: #a88962;
+.poi-modal.floating .modal-close:hover {
+  background: #a88962 !important;
   border-color: rgba(255, 255, 255, 0.5);
-  color: #fff;
+  color: #fff !important;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-fav-btn {
+.poi-modal.floating .poi-fav-btn {
   background: rgba(0, 0, 0, 0.12);
   border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
+  color: #fff !important;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-fav-btn:hover {
+.poi-modal.floating .poi-fav-btn:hover {
   border-color: rgba(255, 255, 255, 0.55);
-  color: #fff;
+  color: #fff !important;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-fav-btn.active {
-  color: #ffe4e4;
+.poi-modal.floating .poi-fav-btn.active {
+  color: #ffe4e4 !important;
   border-color: rgba(255, 200, 200, 0.55);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-ghost {
-  color: #fff;
+.poi-modal.floating .btn.btn-ghost {
+  color: #fff !important;
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-ghost:hover {
-  color: #fff;
+.poi-modal.floating .btn.btn-ghost:hover {
+  color: #fff !important;
   border-color: rgba(255, 255, 255, 0.55);
   background: rgba(255, 255, 255, 0.12);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-accent {
-  color: #fff;
+.poi-modal.floating .btn.btn-accent {
+  color: #fff !important;
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-accent:hover {
-  color: #fff;
+.poi-modal.floating .btn.btn-accent:hover {
+  color: #fff !important;
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-danger {
-  color: #fff;
+.poi-modal.floating .btn.btn-danger {
+  color: #fff !important;
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .ai-gen-btn {
-  background: rgba(255, 255, 255, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+.poi-modal.floating .ai-gen-btn {
+  background: rgba(255, 255, 255, 0.35) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
   color: #fff !important;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .ai-gen-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.4);
-  border-color: rgba(255, 255, 255, 0.55) !important;
+.poi-modal.floating .ai-gen-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.48) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
   color: #fff !important;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tabs {
+.poi-modal.floating .poi-tabs {
   background: rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tab-btn {
+.poi-modal.floating .poi-tab-btn {
   color: rgba(255, 255, 255, 0.88);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tab-btn:hover {
+.poi-modal.floating .poi-tab-btn:hover {
   color: #fff;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tabs .poi-tab-btn.active {
-  color: var(--ink);
+.poi-modal.floating .poi-tabs .poi-tab-btn.active {
+  color: #fff !important;
+  font-weight: 600;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-desc-text,
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-description,
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .ai-content-text {
-  color: rgba(255, 255, 255, 0.95);
+.poi-modal.floating .poi-desc-text,
+.poi-modal.floating .poi-description,
+.poi-modal.floating .ai-content-text {
+  color: rgba(255, 255, 255, 0.95) !important;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-desc-fallback {
+.poi-modal.floating .poi-desc-fallback {
   color: rgba(255, 255, 255, 0.88);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-desc-placeholder,
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .empty-state {
+.poi-modal.floating .poi-desc-placeholder,
+.poi-modal.floating .empty-state {
   color: rgba(255, 255, 255, 0.85);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tts-voice-label,
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-meta-list,
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-meta-list dt {
+.poi-modal.floating .poi-tts-voice-label,
+.poi-modal.floating .poi-meta-list,
+.poi-modal.floating .poi-meta-list dt {
   color: rgba(255, 255, 255, 0.88);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-type-badge {
-  color: #fff;
+.poi-modal.floating .poi-type-badge {
+  color: #fff !important;
   background: rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .street-view-placeholder {
+.poi-modal.floating .street-view-placeholder {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.35);
   color: rgba(255, 255, 255, 0.92);
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tts-voice-select {
+.poi-modal.floating .poi-tts-voice-select {
   background: rgba(255, 255, 255, 0.22);
   border-color: rgba(255, 255, 255, 0.35);
-  color: #fff;
+  color: #fff !important;
 }
 
-:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .ai-content-box {
+.poi-modal.floating .ai-content-box {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.28);
 }
@@ -2392,21 +2377,6 @@ function categoryIcon(cat) {
     max-height: 70vh;
     min-height: 40vh;
     border-radius: 16px 16px 0 0;
-    border: 1px solid rgba(212, 184, 150, 0.14);
-    border-bottom: none;
-    box-shadow:
-      0 -12px 40px rgba(0, 0, 0, 0.45),
-      inset 0 1px 0 rgba(255, 252, 248, 0.05);
-    padding-top: 0;
-    padding-left: 0;
-    padding-right: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0);
-    transform: none !important;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  :global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating {
     background: #bb9970 !important;
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-bottom: none;
@@ -2415,6 +2385,14 @@ function categoryIcon(cat) {
       inset 0 1px 0 rgba(255, 255, 255, 0.95);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    padding-top: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    transform: none !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   .poi-tabs .poi-tab-btn.active {
     color: var(--ink);
