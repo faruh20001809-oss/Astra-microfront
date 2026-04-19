@@ -664,7 +664,7 @@ function getMockRoutes() {
 
 /* Route modal */
 .route-modal {
-  max-width: 660px;
+  max-width: min(92vw, 720px);
   position: relative;
   border-radius: var(--radius-md);
   border: 1px solid rgba(212, 184, 150, 0.14);

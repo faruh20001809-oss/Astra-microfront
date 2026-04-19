@@ -214,14 +214,156 @@ body.app-light-theme {
   border-color: var(--accent);
 }
 
-.app-light .btn-ghost {
+.app-light .btn-ghost,
+body.app-light-theme .btn-ghost {
   color: var(--gray-600);
-  border-color: var(--gray-300);
+  border-color: rgba(184, 148, 94, 0.28);
+  background: rgba(212, 184, 150, 0.1);
 }
 
-.app-light .btn-ghost:hover {
+.app-light .btn-ghost:hover,
+body.app-light-theme .btn-ghost:hover {
   color: var(--paper);
-  border-color: var(--gray-400);
+  border-color: rgba(184, 148, 94, 0.42);
+  background: rgba(212, 184, 150, 0.18);
+}
+
+/* ---- Light theme: чипы фильтров (.filter-group / .filter-chips) и вторичные контролы ---- */
+.app-light .filter-chip,
+body.app-light-theme .filter-chip {
+  background: rgba(212, 184, 150, 0.1);
+  border-color: rgba(184, 148, 94, 0.28);
+  color: var(--gray-700);
+}
+
+.app-light .filter-chip:hover,
+body.app-light-theme .filter-chip:hover {
+  background: rgba(212, 184, 150, 0.18);
+  border-color: rgba(184, 148, 94, 0.4);
+  color: var(--paper);
+}
+
+.app-light .filter-chip.active,
+body.app-light-theme .filter-chip.active {
+  background: rgba(212, 184, 150, 0.26);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.app-light .filter-chip:focus-visible,
+body.app-light-theme .filter-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app-light .btn-secondary,
+body.app-light-theme .btn-secondary {
+  background: rgba(212, 184, 150, 0.1);
+  color: var(--paper);
+  border-color: rgba(184, 148, 94, 0.32);
+}
+
+.app-light .btn-secondary:hover,
+body.app-light-theme .btn-secondary:hover {
+  background: rgba(212, 184, 150, 0.2);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.app-light .payment-success-page .btn.btn-secondary,
+body.app-light-theme .payment-success-page .btn.btn-secondary {
+  background: rgba(212, 184, 150, 0.1);
+  color: var(--paper);
+  border-color: rgba(184, 148, 94, 0.32);
+}
+
+.app-light .payment-success-page .btn.btn-secondary:hover,
+body.app-light-theme .payment-success-page .btn.btn-secondary:hover {
+  background: rgba(212, 184, 150, 0.2);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.app-light .payment-success-page .copy-btn,
+body.app-light-theme .payment-success-page .copy-btn {
+  background: rgba(212, 184, 150, 0.1);
+  border: 1px solid rgba(184, 148, 94, 0.28);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.75rem;
+  color: var(--accent-dark);
+}
+
+.app-light .payment-success-page .copy-btn:hover,
+body.app-light-theme .payment-success-page .copy-btn:hover {
+  background: rgba(212, 184, 150, 0.2);
+  border-color: var(--accent);
+  text-decoration: none;
+}
+
+.app-light .map-page .sidebar-suggest-btn,
+body.app-light-theme .map-page .sidebar-suggest-btn,
+.app-light .map-page .drawer-suggest-btn,
+body.app-light-theme .map-page .drawer-suggest-btn {
+  background: rgba(212, 184, 150, 0.1);
+  border-color: rgba(184, 148, 94, 0.28);
+  color: var(--gray-700);
+}
+
+.app-light .map-page .sidebar-suggest-btn:hover,
+body.app-light-theme .map-page .sidebar-suggest-btn:hover,
+.app-light .map-page .drawer-suggest-btn:hover,
+body.app-light-theme .map-page .drawer-suggest-btn:hover {
+  background: rgba(212, 184, 150, 0.2);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.app-light .map-page .map-poins-btn,
+body.app-light-theme .map-page .map-poins-btn {
+  background: rgba(212, 184, 150, 0.12);
+  border-color: rgba(184, 148, 94, 0.3);
+  color: var(--paper);
+}
+
+.app-light .map-page .map-poins-btn:hover,
+body.app-light-theme .map-page .map-poins-btn:hover {
+  background: rgba(212, 184, 150, 0.22);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.app-light .map-page .map-ctrl-btn,
+body.app-light-theme .map-page .map-ctrl-btn {
+  background: rgba(212, 184, 150, 0.1);
+  border-color: rgba(184, 148, 94, 0.28);
+  color: var(--paper);
+}
+
+.app-light .map-page .map-ctrl-btn:hover,
+body.app-light-theme .map-page .map-ctrl-btn:hover {
+  background: rgba(212, 184, 150, 0.2);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.app-light .route-card .route-icon-btn,
+body.app-light-theme .route-card .route-icon-btn {
+  background: rgba(212, 184, 150, 0.12);
+  border-color: rgba(184, 148, 94, 0.35);
+  color: var(--gray-700);
+}
+
+.app-light .route-card .route-icon-btn:hover,
+body.app-light-theme .route-card .route-icon-btn:hover {
+  background: rgba(212, 184, 150, 0.22);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.app-light .route-card .route-icon-btn.active,
+body.app-light-theme .route-card .route-icon-btn.active {
+  color: #b85c5c;
+  border-color: rgba(184, 92, 92, 0.45);
 }
 
 /* ---- Light theme: личный кабинет (та же тёплая поверхность, что у btn-primary) ---- */
@@ -384,13 +526,151 @@ body.app-light-theme .map-wrapper .map-route-stop-check {
   accent-color: var(--accent-dark);
 }
 
-/* ---- Light theme: модалки маршрутов (RoutesView — .route-modal, поделиться) ---- */
-.app-light .routes-page .modal-backdrop,
-body.app-light-theme .routes-page .modal-backdrop {
+/* ---- Light theme: все модалки .modal-backdrop / .modal-box (магазин, маршруты и др.) ---- */
+.app-light .modal-backdrop,
+body.app-light-theme .modal-backdrop {
   background: rgba(20, 18, 16, 0.38);
   backdrop-filter: blur(8px);
 }
 
+.app-light .modal-box,
+body.app-light-theme .modal-box {
+  border-color: rgba(184, 148, 94, 0.28);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.99) 0%,
+    var(--surface-warm-nested) 100%
+  );
+  box-shadow: var(--shadow-subtle);
+  backdrop-filter: none;
+}
+
+.app-light .modal-box .modal-close-btn,
+body.app-light-theme .modal-box .modal-close-btn {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--gray-300);
+  color: var(--paper);
+}
+
+.app-light .modal-box .modal-close-btn:hover,
+body.app-light-theme .modal-box .modal-close-btn:hover {
+  border-color: var(--accent);
+  background: var(--gray-50);
+}
+
+/* Магазин: карточка товара в модалке */
+.app-light .modal-box.product-modal .product-modal-name,
+body.app-light-theme .modal-box.product-modal .product-modal-name {
+  color: var(--paper);
+}
+
+.app-light .modal-box.product-modal .product-modal-desc,
+body.app-light-theme .modal-box.product-modal .product-modal-desc {
+  color: var(--gray-600);
+}
+
+.app-light .modal-box.product-modal .product-img-placeholder,
+body.app-light-theme .modal-box.product-modal .product-img-placeholder {
+  color: var(--gray-400);
+}
+
+.app-light .modal-box.product-modal .product-modal-image,
+body.app-light-theme .modal-box.product-modal .product-modal-image {
+  border-color: rgba(184, 148, 94, 0.2);
+  background: var(--gray-50);
+}
+
+.app-light .modal-box.product-modal .variants-label,
+.app-light .modal-box.product-modal .qty-label,
+body.app-light-theme .modal-box.product-modal .variants-label,
+body.app-light-theme .modal-box.product-modal .qty-label {
+  color: var(--gray-500);
+}
+
+.app-light .modal-box.product-modal .variant-btn,
+body.app-light-theme .modal-box.product-modal .variant-btn {
+  background: rgba(212, 184, 150, 0.1);
+  border-color: rgba(184, 148, 94, 0.3);
+  color: var(--gray-700);
+}
+
+.app-light .modal-box.product-modal .variant-btn:hover,
+body.app-light-theme .modal-box.product-modal .variant-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.app-light .modal-box.product-modal .variant-btn.active,
+body.app-light-theme .modal-box.product-modal .variant-btn.active {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+  background: rgba(212, 184, 150, 0.2);
+}
+
+.app-light .modal-box.product-modal .qty-btn,
+body.app-light-theme .modal-box.product-modal .qty-btn {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+  color: var(--paper);
+}
+
+.app-light .modal-box.product-modal .qty-btn:hover,
+body.app-light-theme .modal-box.product-modal .qty-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.app-light .modal-box.product-modal .tag,
+body.app-light-theme .modal-box.product-modal .tag {
+  border-color: var(--gray-300);
+  color: var(--gray-600);
+}
+
+.app-light .modal-box.product-modal,
+body.app-light-theme .modal-box.product-modal {
+  max-width: min(94vw, 860px);
+}
+
+/* QR-модалка (teleport body; классы из QrModal.vue) */
+.app-light .qr-modal-backdrop,
+body.app-light-theme .qr-modal-backdrop {
+  background: rgba(20, 18, 16, 0.38);
+  backdrop-filter: blur(8px);
+}
+
+.app-light .qr-modal-box,
+body.app-light-theme .qr-modal-box {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.99) 0%,
+    var(--surface-warm-nested) 100%
+  ) !important;
+  border: 1px solid rgba(184, 148, 94, 0.28);
+  color: var(--paper);
+  padding-top: 2.75rem;
+  padding-right: 2.75rem;
+  box-shadow: var(--shadow-subtle);
+}
+
+.app-light .qr-modal-close,
+body.app-light-theme .qr-modal-close {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--gray-300);
+  color: var(--paper);
+}
+
+.app-light .qr-modal-close:hover,
+body.app-light-theme .qr-modal-close:hover {
+  border-color: var(--accent);
+  background: var(--gray-50);
+}
+
+.app-light .qr-hint,
+body.app-light-theme .qr-hint {
+  color: var(--gray-600);
+}
+
+/* ---- Light theme: модалки маршрутов (RoutesView — .route-modal, поделиться) ---- */
 .app-light .routes-page .route-modal,
 body.app-light-theme .routes-page .route-modal {
   border-color: rgba(184, 148, 94, 0.3);
@@ -401,24 +681,12 @@ body.app-light-theme .routes-page .route-modal {
   );
   box-shadow: var(--shadow-subtle);
   backdrop-filter: none;
+  max-width: min(92vw, 720px);
 }
 
 .app-light .routes-page .route-modal__title,
 body.app-light-theme .routes-page .route-modal__title {
   color: var(--paper);
-}
-
-.app-light .routes-page .route-modal .modal-close-btn,
-body.app-light-theme .routes-page .route-modal .modal-close-btn {
-  background: rgba(255, 255, 255, 0.92);
-  border-color: var(--gray-300);
-  color: var(--paper);
-}
-
-.app-light .routes-page .route-modal .modal-close-btn:hover,
-body.app-light-theme .routes-page .route-modal .modal-close-btn:hover {
-  border-color: var(--accent);
-  background: var(--gray-50);
 }
 
 .app-light .routes-page .route-meta-row,
@@ -764,9 +1032,12 @@ textarea:focus-visible {
   background: linear-gradient(160deg, var(--gray-800) 0%, var(--gray-900) 100%);
   border: 1px solid rgba(212, 184, 150, 0.14);
   border-radius: var(--radius-md);
+  /* Запас под абсолютный крестик (44px + отступы), чтобы не наезжал на заголовок/теги */
   padding: var(--spacing-xl);
+  padding-top: calc(var(--spacing-xl) + 3rem);
+  padding-right: calc(var(--spacing-xl) + 3rem);
   width: 100%;
-  max-width: 600px;
+  max-width: min(92vw, 680px);
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-modal);
@@ -1011,6 +1282,8 @@ textarea:focus-visible {
     max-height: 85vh;
     border-radius: var(--radius-md) var(--radius-md) 0 0;
     padding: var(--spacing-lg);
+    padding-top: calc(var(--spacing-lg) + 3rem);
+    padding-right: calc(var(--spacing-lg) + 3rem);
   }
   .toast-container {
     left: var(--spacing-md);

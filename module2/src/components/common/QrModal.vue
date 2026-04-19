@@ -64,16 +64,16 @@ watch(
 
 .qr-modal-box {
   position: relative;
-  padding: 1.5rem;
-  max-width: 320px;
+  padding: 2.25rem 1.5rem 1.5rem;
+  max-width: 340px;
   background: var(--paper, #f5f0e6);
   color: var(--ink, #1a1a1a);
 }
 
 .qr-modal-close {
   position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
+  top: 0.65rem;
+  right: 0.65rem;
   background: transparent;
   border: 1px solid var(--gray-600, #666);
   color: inherit;

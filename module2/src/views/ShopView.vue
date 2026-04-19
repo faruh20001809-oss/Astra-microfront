@@ -420,7 +420,7 @@ function getMockProducts() {
 
 /* Product modal */
 .product-modal {
-  max-width: 760px;
+  max-width: min(94vw, 860px);
   position: relative;
   border-radius: var(--radius-md);
   border: 1px solid rgba(212, 184, 150, 0.14);
