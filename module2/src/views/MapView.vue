@@ -73,13 +73,32 @@
       <div
         v-if="mapStore.activeFollowRoute"
         class="map-route-banner"
-        role="status"
+        role="region"
+        aria-label="Активный маршрут"
       >
-        <span class="map-route-banner-label">Маршрут</span>
-        <span class="map-route-banner-title">{{ mapStore.activeFollowRoute.title }}</span>
-        <button type="button" class="btn btn-sm btn-ghost map-route-banner-close" @click="clearFollowRouteFromMap">
-          Скрыть
-        </button>
+        <div class="map-route-banner-top">
+          <span class="map-route-banner-label">Маршрут</span>
+          <span class="map-route-banner-title">{{ mapStore.activeFollowRoute.title }}</span>
+          <button type="button" class="btn btn-sm btn-ghost map-route-banner-close" @click="clearFollowRouteFromMap">
+            Скрыть
+          </button>
+        </div>
+        <p v-if="followRouteStops.length >= 2" class="map-route-banner-hint text-mono">
+          Линия по улицам — 2ГИС Routing API. Отметьте пройденные точки (сохраняется в браузере).
+        </p>
+        <ul v-if="followRouteStops.length" class="map-route-stops" aria-label="Точки маршрута">
+          <li v-for="(stop, idx) in followRouteStops" :key="stop.id" class="map-route-stop-item">
+            <label class="map-route-stop-label">
+              <input
+                type="checkbox"
+                class="map-route-stop-check"
+                :checked="isRouteStopVisited(stop.id)"
+                @change="onRouteStopChecked(stop.id, $event.target.checked)"
+              />
+              <span class="map-route-stop-text">{{ idx + 1 }}. {{ stop.name }}</span>
+            </label>
+          </li>
+        </ul>
       </div>
       <div
         ref="mapEl"
@@ -586,6 +605,72 @@ const isDescExpanded = ref(false)
 // Мобильный сайдбар с точками (выезжает слева)
 const mobileSidebarOpen = ref(false)
 
+/** ID точек маршрута, отмеченные пользователем как пройденные (localStorage на ключ маршрута). */
+const routeProgressVisited = ref([])
+
+function routeProgressStorageKey(routeId) {
+  return `astra-route-progress-${Number(routeId)}`
+}
+
+function loadRouteProgress(routeId) {
+  if (routeId == null || !Number.isFinite(Number(routeId))) {
+    routeProgressVisited.value = []
+    return
+  }
+  try {
+    const raw = localStorage.getItem(routeProgressStorageKey(routeId))
+    const arr = raw ? JSON.parse(raw) : []
+    routeProgressVisited.value = Array.isArray(arr)
+      ? [...new Set(arr.map(Number).filter(Number.isFinite))]
+      : []
+  } catch {
+    routeProgressVisited.value = []
+  }
+}
+
+function persistRouteProgress() {
+  const r = mapStore.activeFollowRoute
+  if (!r?.id) return
+  try {
+    localStorage.setItem(routeProgressStorageKey(r.id), JSON.stringify(routeProgressVisited.value))
+  } catch (_) {
+    /* quota / private mode */
+  }
+}
+
+function isRouteStopVisited(poiId) {
+  return routeProgressVisited.value.includes(Number(poiId))
+}
+
+function onRouteStopChecked(poiId, checked) {
+  const n = Number(poiId)
+  const next = new Set(routeProgressVisited.value)
+  if (checked) next.add(n)
+  else next.delete(n)
+  routeProgressVisited.value = [...next]
+  persistRouteProgress()
+  renderMarkers()
+}
+
+const followRouteStops = computed(() => {
+  const r = mapStore.activeFollowRoute
+  if (!r?.poiIds?.length) return []
+  const out = []
+  for (const pid of r.poiIds) {
+    const p = mapStore.pois.find((x) => Number(x.id) === Number(pid))
+    if (p) out.push(p)
+  }
+  return out
+})
+
+watch(
+  () => mapStore.activeFollowRoute?.id,
+  (id) => {
+    if (id != null && Number.isFinite(Number(id))) loadRouteProgress(Number(id))
+    else routeProgressVisited.value = []
+  },
+)
+
 // Screen position of marker (for connector line)
 const markerScreen = ref({ x: 0, y: 0 })
 
@@ -859,9 +944,19 @@ function renderMarkers() {
   })
   markers = {}
 
+  const followIds = mapStore.activeFollowRoute?.poiIds
+  const visitedSet = new Set(routeProgressVisited.value)
+
   for (const poi of mapStore.filteredPois) {
     const el = document.createElement('div')
     el.className = 'custom-marker'
+    if (
+      followIds?.length &&
+      followIds.some((id) => Number(id) === Number(poi.id)) &&
+      visitedSet.has(Number(poi.id))
+    ) {
+      el.classList.add('custom-marker--route-done')
+    }
     el.innerHTML = `<span class="marker-icon" aria-hidden="true">${categoryIcon(
       poi.category,
     )}</span>`
@@ -1372,16 +1467,72 @@ function categoryIcon(cat) {
   transform: translateX(-50%);
   z-index: 170;
   display: flex;
-  align-items: center;
-  gap: 0.5rem 0.75rem;
-  flex-wrap: wrap;
-  max-width: min(420px, calc(100% - 2rem));
-  padding: 0.5rem 0.75rem;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: min(440px, calc(100% - 2rem));
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  padding: 0.6rem 0.75rem;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   background: rgba(18, 16, 14, 0.92);
   border: 1px solid var(--gray-600);
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-card);
 }
+
+.map-route-banner-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  flex-wrap: wrap;
+}
+
+.map-route-banner-hint {
+  margin: 0;
+  font-size: 0.62rem;
+  line-height: 1.45;
+  color: var(--gray-400);
+  letter-spacing: 0.04em;
+}
+
+.map-route-stops {
+  list-style: none;
+  margin: 0;
+  padding: 0.15rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.map-route-stop-item {
+  margin: 0;
+}
+
+.map-route-stop-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--gray-200);
+}
+
+.map-route-stop-check {
+  flex-shrink: 0;
+  margin-top: 0.12rem;
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--accent);
+}
+
+.map-route-stop-text {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
 .map-route-banner-label {
   font-family: var(--font-mono);
   font-size: 0.65rem;
@@ -2109,6 +2260,12 @@ function categoryIcon(cat) {
 ::global(.custom-marker:focus) {
   transform: scale(1.2);
   border-color: var(--accent);
+}
+
+/* Точка маршрута отмечена как пройденная (чекбокс в баннере) */
+::global(.custom-marker--route-done) {
+  border-color: rgba(80, 160, 110, 0.95);
+  box-shadow: 0 0 0 2px rgba(80, 160, 110, 0.35);
 }
 
 ::global(.user-marker) {

@@ -351,6 +351,143 @@ body.app-light-theme .auth-page .auth-shell .form-input:focus-visible {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* ---- Light theme: баннер маршрута на карте (MapView) ---- */
+.app-light .map-wrapper .map-route-banner,
+body.app-light-theme .map-wrapper .map-route-banner {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(184, 148, 94, 0.28);
+  box-shadow: var(--shadow-subtle);
+}
+
+.app-light .map-wrapper .map-route-banner-label,
+body.app-light-theme .map-wrapper .map-route-banner-label {
+  color: var(--accent-dark);
+}
+
+.app-light .map-wrapper .map-route-banner-title,
+body.app-light-theme .map-wrapper .map-route-banner-title {
+  color: var(--paper);
+}
+
+.app-light .map-wrapper .map-route-banner-hint,
+body.app-light-theme .map-wrapper .map-route-banner-hint {
+  color: var(--gray-500);
+}
+
+.app-light .map-wrapper .map-route-stop-label,
+body.app-light-theme .map-wrapper .map-route-stop-label {
+  color: var(--paper);
+}
+
+.app-light .map-wrapper .map-route-stop-check,
+body.app-light-theme .map-wrapper .map-route-stop-check {
+  accent-color: var(--accent-dark);
+}
+
+/* ---- Light theme: модалки маршрутов (RoutesView — .route-modal, поделиться) ---- */
+.app-light .routes-page .modal-backdrop,
+body.app-light-theme .routes-page .modal-backdrop {
+  background: rgba(20, 18, 16, 0.38);
+  backdrop-filter: blur(8px);
+}
+
+.app-light .routes-page .route-modal,
+body.app-light-theme .routes-page .route-modal {
+  border-color: rgba(184, 148, 94, 0.3);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.99) 0%,
+    var(--surface-warm-nested) 100%
+  );
+  box-shadow: var(--shadow-subtle);
+  backdrop-filter: none;
+}
+
+.app-light .routes-page .route-modal__title,
+body.app-light-theme .routes-page .route-modal__title {
+  color: var(--paper);
+}
+
+.app-light .routes-page .route-modal .modal-close-btn,
+body.app-light-theme .routes-page .route-modal .modal-close-btn {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: var(--gray-300);
+  color: var(--paper);
+}
+
+.app-light .routes-page .route-modal .modal-close-btn:hover,
+body.app-light-theme .routes-page .route-modal .modal-close-btn:hover {
+  border-color: var(--accent);
+  background: var(--gray-50);
+}
+
+.app-light .routes-page .route-meta-row,
+body.app-light-theme .routes-page .route-meta-row {
+  color: var(--gray-500);
+}
+
+.app-light .routes-page .route-desc,
+body.app-light-theme .routes-page .route-desc {
+  color: var(--gray-600);
+}
+
+.app-light .routes-page .stops-list__label,
+body.app-light-theme .routes-page .stops-list__label {
+  color: var(--gray-500);
+}
+
+.app-light .routes-page .stops-timeline::before,
+body.app-light-theme .routes-page .stops-timeline::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(184, 148, 94, 0.22),
+    rgba(184, 148, 94, 0.5),
+    rgba(184, 148, 94, 0.22)
+  );
+}
+
+.app-light .routes-page .stop-item,
+body.app-light-theme .routes-page .stop-item {
+  border-bottom-color: rgba(184, 148, 94, 0.2);
+}
+
+.app-light .routes-page .stop-dot,
+body.app-light-theme .routes-page .stop-dot {
+  background: var(--gray-50);
+  border-color: rgba(184, 148, 94, 0.65);
+  color: var(--accent-dark);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.95);
+}
+
+.app-light .routes-page .stop-name,
+body.app-light-theme .routes-page .stop-name {
+  color: var(--paper);
+}
+
+.app-light .routes-page .stop-desc,
+body.app-light-theme .routes-page .stop-desc {
+  color: var(--gray-500);
+}
+
+.app-light .routes-page .route-modal .tag,
+body.app-light-theme .routes-page .route-modal .tag {
+  border-color: var(--gray-300);
+  color: var(--gray-600);
+}
+
+.app-light .routes-page .route-modal .tag-accent,
+body.app-light-theme .routes-page .route-modal .tag-accent {
+  border-color: rgba(184, 148, 94, 0.45);
+  color: var(--accent-dark);
+}
+
+.app-light .routes-page .route-share-input,
+body.app-light-theme .routes-page .route-share-input {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+  color: var(--paper);
+}
+
 /* ---- Typography ---- */
 h1, h2, h3, h4 {
   font-family: var(--font-display);
