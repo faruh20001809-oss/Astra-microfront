@@ -380,20 +380,29 @@
                 </div>
 
                 <!-- CTA: Озвучить (главная) -->
-                <div class="poi-card-actions">
+                <div class="poi-card-actions poi-card-actions--tts">
                   <button
                     type="button"
-                    :class="['btn', 'btn-tts', 'btn-action-ozvuchit', isPlaying ? 'btn-danger' : 'btn-accent']"
-                    :disabled="ttsLoading || !(aiContent || mapStore.selectedPoi.description)"
+                    class="btn btn-tts btn-action-ozvuchit btn-accent"
+                    :disabled="ttsLoading || isPlaying || !(aiContent || mapStore.selectedPoi.description)"
                     @click="toggleTTS"
-                    :aria-label="isPlaying ? 'Остановить озвучку' : 'Озвучить текст'"
+                    aria-label="Озвучить текст"
                   >
                     <span v-if="ttsLoading" class="tts-loading">
                       <span class="spinner" aria-hidden="true" />
                       Подготовка…
                     </span>
-                    <span v-else-if="isPlaying">⏹ Остановить</span>
                     <span v-else>▶ Озвучить</span>
+                  </button>
+                  <button
+                    v-show="isPlaying || ttsLoading"
+                    type="button"
+                    class="btn btn-tts btn-ghost btn-sm poi-tts-stop-btn"
+                    :disabled="!(isPlaying || ttsLoading)"
+                    aria-label="Остановить озвучку"
+                    @click="stopTtsPlayback"
+                  >
+                    ⏹ Стоп
                   </button>
                 </div>
 
@@ -609,6 +618,7 @@ const {
   resetForPoi,
   generateAiContent,
   toggleTTS,
+  stopTtsPlayback,
 } = usePoiAiTts()
 
 const newPoiDialogOpen = ref(false)
@@ -2033,6 +2043,14 @@ function categoryIcon(cat) {
   gap: var(--spacing-sm);
   margin-top: var(--spacing-sm);
   margin-bottom: var(--spacing-sm);
+}
+
+.poi-card-actions--tts {
+  align-items: center;
+}
+
+.poi-tts-stop-btn {
+  min-height: 44px;
 }
 
 .btn-action-ozvuchit {

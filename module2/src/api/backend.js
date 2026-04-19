@@ -492,13 +492,17 @@ export const nodeApi = {
      * @returns {Promise<Blob>}
      */
     synthesizeSpeech: async (text, options = {}) => {
-      const payload = { text }
-      if (options.voice) payload.voice = options.voice
-      if (options.emotion) payload.emotion = options.emotion
+      const { signal, voice, emotion } = options
+      const payload = {
+        text,
+        voice: voice ?? 'jane',
+        emotion: emotion != null && emotion !== '' ? emotion : 'good',
+      }
       const res = await fetch(`${NODE_API_BASE}/ai/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: '*/*' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
+        signal,
       })
       if (!res.ok) {
         const errText = await res.text().catch(() => '')

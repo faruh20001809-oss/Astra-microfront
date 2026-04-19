@@ -1,5 +1,5 @@
 // src/composables/usePoiAiTts.js
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import {
   generatePoiContent,
@@ -28,18 +28,61 @@ export function usePoiAiTts() {
     { key: 'street', label: 'Панорама' },
   ]
 
-  // Озвучки для Yandex TTS (голос + эмоция). По умолчанию — Джейн.
+  /**
+   * Имена голосов — ключи из yandex_tts_free.YandexFreeTTS.voices (не «ermil», а «ermilov»).
+   * Эмоции: neutral | good | evil
+   */
   const ttsVoices = [
     { voice: 'jane', emotion: 'good', label: 'Джейн (доброжелательно)' },
     { voice: 'oksana', emotion: 'good', label: 'Оксана (доброжелательно)' },
     { voice: 'oksana', emotion: 'neutral', label: 'Оксана (нейтрально)' },
     { voice: 'omazh', emotion: 'neutral', label: 'Омаж (нейтрально)' },
     { voice: 'zahar', emotion: 'good', label: 'Захар (доброжелательно)' },
-    { voice: 'ermil', emotion: 'neutral', label: 'Ермил (нейтрально)' },
+    { voice: 'ermilov', emotion: 'neutral', label: 'Ермил (нейтрально)' },
   ]
   const selectedTtsVoice = ref(0)
 
+  /** @type {HTMLAudioElement | null} */
+  let currentTtsAudio = null
+  /** @type {AbortController | null} */
+  let ttsAbortController = null
+  /** Разблокировать await после ручного стопа во время play() */
+  let pendingAudioDone = null
+
+  function ttsPresetAt(index) {
+    const i = Number(index)
+    const idx =
+      Number.isFinite(i) && i >= 0 && i < ttsVoices.length ? i : 0
+    return ttsVoices[idx]
+  }
+
+  /** Остановить озвучку (Node Audio, fetch, Web Speech). */
+  function stopTtsPlayback() {
+    if (ttsAbortController) {
+      try {
+        ttsAbortController.abort()
+      } catch (_) {}
+      ttsAbortController = null
+    }
+    if (currentTtsAudio) {
+      try {
+        currentTtsAudio.pause()
+        currentTtsAudio.removeAttribute('src')
+        currentTtsAudio.load()
+      } catch (_) {}
+      currentTtsAudio = null
+    }
+    if (pendingAudioDone) {
+      pendingAudioDone()
+      pendingAudioDone = null
+    }
+    stopAllAudio()
+    isPlaying.value = false
+    ttsLoading.value = false
+  }
+
   function resetForPoi() {
+    stopTtsPlayback()
     aiContent.value = ''
     activeTab.value = 'desc'
   }
@@ -76,50 +119,77 @@ export function usePoiAiTts() {
     const text = aiContent.value || mapStore.selectedPoi?.description || ''
     if (!text) return
 
-    if (isPlaying.value) {
-      stopAllAudio()
-      isPlaying.value = false
+    if (isPlaying.value || ttsLoading.value) {
+      stopTtsPlayback()
       return
     }
 
     ttsLoading.value = true
+    isPlaying.value = true
+    ttsAbortController = new AbortController()
+    const signal = ttsAbortController.signal
+
+    const preset = ttsPresetAt(selectedTtsVoice.value)
     let played = false
+
     try {
-      isPlaying.value = true
-      const preset = ttsVoices[selectedTtsVoice.value] || ttsVoices[0]
       try {
         const blob = await nodeApi.ai.synthesizeSpeech(text, {
           voice: preset.voice,
           emotion: preset.emotion,
+          signal,
         })
+        if (signal.aborted) return
+
         if (blob && blob.size > 0) {
           const url = URL.createObjectURL(blob)
           const audio = new Audio(url)
+          currentTtsAudio = audio
           try {
             await new Promise((resolve, reject) => {
-              audio.onended = () => { URL.revokeObjectURL(url); resolve() }
-              audio.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Playback failed')) }
+              const finish = () => {
+                pendingAudioDone = null
+                URL.revokeObjectURL(url)
+                if (currentTtsAudio === audio) currentTtsAudio = null
+                resolve()
+              }
+              pendingAudioDone = finish
+              audio.onended = finish
+              audio.onerror = () => {
+                pendingAudioDone = null
+                URL.revokeObjectURL(url)
+                if (currentTtsAudio === audio) currentTtsAudio = null
+                reject(new Error('Playback failed'))
+              }
               audio.play().catch(reject)
             })
             played = true
             return
           } catch (playErr) {
-            URL.revokeObjectURL(url)
+            pendingAudioDone = null
+            if (currentTtsAudio === audio) currentTtsAudio = null
+            try {
+              URL.revokeObjectURL(url)
+            } catch (_) {}
             console.warn('Playback failed:', playErr.message)
             toastStore.push('Не удалось воспроизвести аудио', 'error')
             return
           }
         }
       } catch (e) {
+        if (e.name === 'AbortError' || signal.aborted) return
         console.warn('Node TTS failed:', e.message)
       }
-      if (!played) {
+
+      if (!played && !signal.aborted) {
         await speakWithWebSpeech(text)
       }
     } catch (e) {
+      if (e.name === 'AbortError' || signal.aborted) return
       console.error('TTS error:', e)
       toastStore.push('Ошибка озвучки: ' + e.message, 'error')
     } finally {
+      ttsAbortController = null
       isPlaying.value = false
       ttsLoading.value = false
     }
@@ -138,5 +208,6 @@ export function usePoiAiTts() {
     resetForPoi,
     generateAiContent,
     toggleTTS,
+    stopTtsPlayback,
   }
 }
