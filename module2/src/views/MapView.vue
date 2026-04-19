@@ -1593,6 +1593,68 @@ function categoryIcon(cat) {
   pointer-events: auto;
 }
 
+/* Светлая тема: плавающая карточка POI (как map-sidebar) */
+:global(html.app-light) .poi-modal.floating {
+  background: rgba(200, 169, 110, 0.15);
+  border: 1px solid var(--header-border-color);
+  box-shadow:
+    var(--shadow-modal),
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+:global(html.app-light) .modal-close {
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  color: var(--paper);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+:global(html.app-light) .modal-close:hover {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+:global(html.app-light) .poi-fav-btn {
+  background: var(--surface-warm);
+  border-color: rgba(13, 13, 13, 0.12);
+  color: var(--gray-600);
+}
+
+:global(html.app-light) .poi-fav-btn:hover {
+  color: var(--accent);
+}
+
+:global(html.app-light) .poi-tabs {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+:global(html.app-light) .poi-tab-btn {
+  color: var(--gray-600);
+}
+
+:global(html.app-light) .poi-tab-btn:hover {
+  color: var(--paper);
+}
+
+:global(html.app-light) .poi-desc-text,
+:global(html.app-light) .poi-description,
+:global(html.app-light) .ai-content-text {
+  color: var(--gray-700);
+}
+
+:global(html.app-light) .poi-desc-fallback {
+  color: var(--gray-600);
+}
+
+:global(html.app-light) .street-view-placeholder {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--gray-600);
+}
+
 .poi-modal-body {
   display: flex;
   flex: 1 1 auto;
@@ -2241,6 +2303,13 @@ function categoryIcon(cat) {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+  }
+  :global(html.app-light) .poi-modal.floating {
+    border: 1px solid var(--header-border-color);
+    border-bottom: none;
+    box-shadow:
+      0 -12px 28px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95);
   }
   .poi-tabs .poi-tab-btn.active {
     color: var(--ink);
