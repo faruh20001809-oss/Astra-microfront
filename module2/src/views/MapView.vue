@@ -1603,146 +1603,148 @@ function categoryIcon(cat) {
   pointer-events: auto;
 }
 
-/* Светлая тема: плавающая карточка POI */
-:global(html.app-light) .poi-modal.floating {
-  background: #bb9970;
+/* Светлая тема: плавающая карточка POI (#app-root + body — класс темы из App.vue / inline script) */
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating {
+  background: #bb9970 !important;
   border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
     var(--shadow-modal),
     0 0 0 1px rgba(0, 0, 0, 0.06),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
-:global(html.app-light) .poi-modal.floating .poi-modal-title {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-modal-title {
   color: #fff;
   border-bottom-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(html.app-light) .poi-modal.floating .modal-close {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .modal-close {
   background: #bb9970;
   border: 1px solid rgba(255, 255, 255, 0.35);
   color: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
-:global(html.app-light) .poi-modal.floating .modal-close:hover {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .modal-close:hover {
   background: #a88962;
   border-color: rgba(255, 255, 255, 0.5);
   color: #fff;
 }
 
-:global(html.app-light) .poi-modal.floating .poi-fav-btn {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-fav-btn {
   background: rgba(0, 0, 0, 0.12);
   border-color: rgba(255, 255, 255, 0.35);
   color: #fff;
 }
 
-:global(html.app-light) .poi-modal.floating .poi-fav-btn:hover {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-fav-btn:hover {
   border-color: rgba(255, 255, 255, 0.55);
   color: #fff;
 }
 
-:global(html.app-light) .poi-modal.floating .poi-fav-btn.active {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-fav-btn.active {
   color: #ffe4e4;
   border-color: rgba(255, 200, 200, 0.55);
 }
 
-:global(html.app-light) .poi-modal.floating .btn.btn-ghost {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-ghost {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(html.app-light) .poi-modal.floating .btn.btn-ghost:hover {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-ghost:hover {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.55);
   background: rgba(255, 255, 255, 0.12);
 }
 
-:global(html.app-light) .poi-modal.floating .btn.btn-accent {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-accent {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(html.app-light) .poi-modal.floating .btn.btn-accent:hover {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-accent:hover {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.5);
 }
 
-:global(html.app-light) .poi-modal.floating .btn.btn-danger {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .btn.btn-danger {
   color: #fff;
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(html.app-light) .poi-modal.floating .ai-gen-btn {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .ai-gen-btn {
   background: rgba(255, 255, 255, 0.28);
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
   color: #fff !important;
 }
 
-:global(html.app-light) .poi-modal.floating .ai-gen-btn:hover:not(:disabled) {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .ai-gen-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.4);
   border-color: rgba(255, 255, 255, 0.55) !important;
   color: #fff !important;
 }
 
-:global(html.app-light) .poi-modal.floating .poi-tabs {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tabs {
   background: rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
-:global(html.app-light) .poi-modal.floating .poi-tab-btn {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tab-btn {
   color: rgba(255, 255, 255, 0.88);
 }
 
-:global(html.app-light) .poi-modal.floating .poi-tab-btn:hover {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tab-btn:hover {
   color: #fff;
 }
 
-:global(html.app-light) .poi-modal.floating .poi-tabs .poi-tab-btn.active {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tabs .poi-tab-btn.active {
   color: var(--ink);
 }
 
-:global(html.app-light) .poi-modal.floating .poi-desc-text,
-:global(html.app-light) .poi-modal.floating .poi-description,
-:global(html.app-light) .poi-modal.floating .ai-content-text {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-desc-text,
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-description,
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .ai-content-text {
   color: rgba(255, 255, 255, 0.95);
 }
 
-:global(html.app-light) .poi-modal.floating .poi-desc-fallback {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-desc-fallback {
   color: rgba(255, 255, 255, 0.88);
 }
 
-:global(html.app-light) .poi-modal.floating .poi-desc-placeholder,
-:global(html.app-light) .poi-modal.floating .empty-state {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-desc-placeholder,
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .empty-state {
   color: rgba(255, 255, 255, 0.85);
 }
 
-:global(html.app-light) .poi-modal.floating .poi-tts-voice-label,
-:global(html.app-light) .poi-modal.floating .poi-meta-list,
-:global(html.app-light) .poi-modal.floating .poi-meta-list dt {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tts-voice-label,
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-meta-list,
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-meta-list dt {
   color: rgba(255, 255, 255, 0.88);
 }
 
-:global(html.app-light) .poi-modal.floating .poi-type-badge {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-type-badge {
   color: #fff;
   background: rgba(0, 0, 0, 0.15);
   border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(html.app-light) .poi-modal.floating .street-view-placeholder {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .street-view-placeholder {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.35);
   color: rgba(255, 255, 255, 0.92);
 }
 
-:global(html.app-light) .poi-modal.floating .poi-tts-voice-select {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .poi-tts-voice-select {
   background: rgba(255, 255, 255, 0.22);
   border-color: rgba(255, 255, 255, 0.35);
   color: #fff;
 }
 
-:global(html.app-light) .poi-modal.floating .ai-content-box {
+:global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating .ai-content-box {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.28);
 }
@@ -2404,12 +2406,15 @@ function categoryIcon(cat) {
     display: flex;
     flex-direction: column;
   }
-  :global(html.app-light) .poi-modal.floating {
-    border: 1px solid var(--header-border-color);
+  :global(:is(#app-root.app-light, body.app-light-theme)) .poi-modal.floating {
+    background: #bb9970 !important;
+    border: 1px solid rgba(255, 255, 255, 0.22);
     border-bottom: none;
     box-shadow:
       0 -12px 28px rgba(0, 0, 0, 0.1),
       inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
   .poi-tabs .poi-tab-btn.active {
     color: var(--ink);
