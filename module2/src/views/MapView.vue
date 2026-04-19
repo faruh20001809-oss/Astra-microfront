@@ -1185,8 +1185,8 @@ function categoryIcon(cat) {
   flex: 0 0 auto;
   width: var(--sidebar-w, 320px);
   min-width: 0;
-  background: rgba(15, 15, 15, 0.96);
-  border-right: 1px solid var(--gray-800);
+  background: var(--header-bg);
+  border-right: 1px solid var(--header-border-color);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -1202,7 +1202,7 @@ function categoryIcon(cat) {
   justify-content: space-between;
   gap: var(--spacing-sm);
   padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--gray-800);
+  border-bottom: 1px solid var(--header-border-color);
   flex-shrink: 0;
 }
 
