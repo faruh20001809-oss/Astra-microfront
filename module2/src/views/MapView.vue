@@ -1603,66 +1603,148 @@ function categoryIcon(cat) {
   pointer-events: auto;
 }
 
-/* Светлая тема: плавающая карточка POI (как map-sidebar) */
+/* Светлая тема: плавающая карточка POI */
 :global(html.app-light) .poi-modal.floating {
-  background: rgba(200, 169, 110, 0.15);
-  border: 1px solid var(--header-border-color);
+  background: #bb9970;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   box-shadow:
     var(--shadow-modal),
-    0 0 0 1px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    0 0 0 1px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-:global(html.app-light) .modal-close {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  color: var(--paper);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+:global(html.app-light) .poi-modal.floating .poi-modal-title {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(html.app-light) .modal-close:hover {
-  border-color: var(--accent);
-  color: var(--accent-dark);
+:global(html.app-light) .poi-modal.floating .modal-close {
+  background: #bb9970;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
-:global(html.app-light) .poi-fav-btn {
-  background: var(--surface-warm);
-  border-color: rgba(13, 13, 13, 0.12);
-  color: var(--gray-600);
+:global(html.app-light) .poi-modal.floating .modal-close:hover {
+  background: #a88962;
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
 }
 
-:global(html.app-light) .poi-fav-btn:hover {
-  color: var(--accent);
+:global(html.app-light) .poi-modal.floating .poi-fav-btn {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
 }
 
-:global(html.app-light) .poi-tabs {
-  background: rgba(0, 0, 0, 0.05);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+:global(html.app-light) .poi-modal.floating .poi-fav-btn:hover {
+  border-color: rgba(255, 255, 255, 0.55);
+  color: #fff;
 }
 
-:global(html.app-light) .poi-tab-btn {
-  color: var(--gray-600);
+:global(html.app-light) .poi-modal.floating .poi-fav-btn.active {
+  color: #ffe4e4;
+  border-color: rgba(255, 200, 200, 0.55);
 }
 
-:global(html.app-light) .poi-tab-btn:hover {
-  color: var(--paper);
+:global(html.app-light) .poi-modal.floating .btn.btn-ghost {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(html.app-light) .poi-desc-text,
-:global(html.app-light) .poi-description,
-:global(html.app-light) .ai-content-text {
-  color: var(--gray-700);
+:global(html.app-light) .poi-modal.floating .btn.btn-ghost:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.12);
 }
 
-:global(html.app-light) .poi-desc-fallback {
-  color: var(--gray-600);
+:global(html.app-light) .poi-modal.floating .btn.btn-accent {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
-:global(html.app-light) .street-view-placeholder {
-  background: var(--gray-100);
-  border-color: var(--gray-300);
-  color: var(--gray-600);
+:global(html.app-light) .poi-modal.floating .btn.btn-accent:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+:global(html.app-light) .poi-modal.floating .btn.btn-danger {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+:global(html.app-light) .poi-modal.floating .ai-gen-btn {
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  color: #fff !important;
+}
+
+:global(html.app-light) .poi-modal.floating .ai-gen-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.55) !important;
+  color: #fff !important;
+}
+
+:global(html.app-light) .poi-modal.floating .poi-tabs {
+  background: rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+:global(html.app-light) .poi-modal.floating .poi-tab-btn {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+:global(html.app-light) .poi-modal.floating .poi-tab-btn:hover {
+  color: #fff;
+}
+
+:global(html.app-light) .poi-modal.floating .poi-tabs .poi-tab-btn.active {
+  color: var(--ink);
+}
+
+:global(html.app-light) .poi-modal.floating .poi-desc-text,
+:global(html.app-light) .poi-modal.floating .poi-description,
+:global(html.app-light) .poi-modal.floating .ai-content-text {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+:global(html.app-light) .poi-modal.floating .poi-desc-fallback {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+:global(html.app-light) .poi-modal.floating .poi-desc-placeholder,
+:global(html.app-light) .poi-modal.floating .empty-state {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+:global(html.app-light) .poi-modal.floating .poi-tts-voice-label,
+:global(html.app-light) .poi-modal.floating .poi-meta-list,
+:global(html.app-light) .poi-modal.floating .poi-meta-list dt {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+:global(html.app-light) .poi-modal.floating .poi-type-badge {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+:global(html.app-light) .poi-modal.floating .street-view-placeholder {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+:global(html.app-light) .poi-modal.floating .poi-tts-voice-select {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+:global(html.app-light) .poi-modal.floating .ai-content-box {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.28);
 }
 
 .poi-modal-body {
