@@ -20,7 +20,7 @@ from appl.models import Visit, User, Log, Role
 
 from fpdf import FPDF
 
-bp = Blueprint("reports", __name__, url_prefix="/api/reports")
+bp = Blueprint("reports", __name__)
 
 # Современная цветовая палитра
 COLORS = {
@@ -379,7 +379,7 @@ def generate_report():
     pdf.rect(0, 35, 297, 12, 'F')
     pdf.set_font('DejaVu', '', 10)
     pdf.set_text_color(*DARK)
-    period_text = f"📅 Период: {report_data['period_start']} — {report_data['period_end']}  |  📆 Создан: {report_data['generated_at']}"
+    period_text = f"Период: {report_data['period_start']} — {report_data['period_end']}  |  Создан: {report_data['generated_at']}"
     pdf.cell(0, 12, period_text, ln=True, align='C')
     
     pdf.ln(10)
@@ -387,15 +387,15 @@ def generate_report():
     # ===== СОВРЕМЕННЫЕ МЕТРИКИ =====
     pdf.set_font('DejaVu', 'B', 14)
     pdf.set_text_color(*PRIMARY)
-    pdf.cell(0, 8, '📊 ОСНОВНЫЕ ПОКАЗАТЕЛИ', ln=True)
+    pdf.cell(0, 8, 'ОСНОВНЫЕ ПОКАЗАТЕЛИ', ln=True)
     pdf.ln(3)
     
     # Красивые метрики с иконками
     metrics = [
-        ('👥', 'Пользователей', str(report_data['total_users']), PRIMARY),
-        ('👁️', 'Посещений', str(report_data['total_visits']), SUCCESS),
-        ('🔥', 'Сегодня', str(report_data['active_today']), WARNING),
-        ('📝', 'В логах', str(report_data['total_logs']), SECONDARY),
+        ('', 'Пользователей', str(report_data['total_users']), PRIMARY),
+        ('', 'Посещений', str(report_data['total_visits']), SUCCESS),
+        ('', 'Сегодня', str(report_data['active_today']), WARNING),
+        ('', 'В логах', str(report_data['total_logs']), SECONDARY),
     ]
     
     card_width = 68
@@ -436,7 +436,7 @@ def generate_report():
     if report_data['daily_data']:
         pdf.set_font('DejaVu', 'B', 14)
         pdf.set_text_color(*PRIMARY)
-        pdf.cell(0, 8, '📈 ДИНАМИКА ПОСЕЩЕНИЙ', ln=True)
+        pdf.cell(0, 8, 'ДИНАМИКА ПОСЕЩЕНИЙ', ln=True)
         pdf.ln(3)
         
         # Линейный график
@@ -452,7 +452,7 @@ def generate_report():
         # Столбчатая диаграмма
         pdf.set_font('DejaVu', 'B', 14)
         pdf.set_text_color(*PRIMARY)
-        pdf.cell(0, 8, '📊 ПОСЕЩЕНИЯ ПО ДНЯМ', ln=True)
+        pdf.cell(0, 8, 'ПОСЕЩЕНИЯ ПО ДНЯМ', ln=True)
         pdf.ln(3)
         
         bar_chart_path = os.path.join(os.path.dirname(__file__), 'graphs', 'bar_chart.png')
@@ -470,7 +470,7 @@ def generate_report():
         if os.path.exists(heatmap_path):
             pdf.set_font('DejaVu', 'B', 14)
             pdf.set_text_color(*PRIMARY)
-            pdf.cell(0, 8, '🗓️ АКТИВНОСТЬ ПО ДНЯМ НЕДЕЛИ', ln=True)
+            pdf.cell(0, 8, 'АКТИВНОСТЬ ПО ДНЯМ НЕДЕЛИ', ln=True)
             pdf.ln(3)
             pdf.image(heatmap_path, x=50, w=197)
             pdf.ln(3)
@@ -481,7 +481,7 @@ def generate_report():
     # ===== РАСШИРЕННАЯ СТАТИСТИКА =====
     pdf.set_font('DejaVu', 'B', 14)
     pdf.set_text_color(*PRIMARY)
-    pdf.cell(0, 8, '📋 РАСШИРЕННАЯ СТАТИСТИКА', ln=True)
+    pdf.cell(0, 8, 'РАСШИРЕННАЯ СТАТИСТИКА', ln=True)
     pdf.ln(3)
     
     # Таблица статистики
@@ -518,10 +518,10 @@ def generate_report():
     if report_data['top_days']:
         pdf.set_font('DejaVu', 'B', 14)
         pdf.set_text_color(*PRIMARY)
-        pdf.cell(0, 8, '🏆 ТОП-5 АКТИВНЫХ ДНЕЙ', ln=True)
+        pdf.cell(0, 8, 'ТОП-5 АКТИВНЫХ ДНЕЙ', ln=True)
         pdf.ln(3)
         
-        medals = ['🥇', '🥈', '🥉', '4-е', '5-е']
+        medals = ['1', '2', '3', '4', '5']
         
         # Заголовок таблицы
         pdf.set_fill_color(*WARNING)
@@ -550,7 +550,7 @@ def generate_report():
     if report_data.get('role_stats'):
         pdf.set_font('DejaVu', 'B', 14)
         pdf.set_text_color(*PRIMARY)
-        pdf.cell(0, 8, '👥 ПОЛЬЗОВАТЕЛИ ПО РОЛЯМ', ln=True)
+        pdf.cell(0, 8, 'ПОЛЬЗОВАТЕЛИ ПО РОЛЯМ', ln=True)
         pdf.ln(3)
         
         # Кольцевая диаграмма
@@ -567,7 +567,7 @@ def generate_report():
     # ===== СОВРЕМЕННАЯ СВОДКА =====
     pdf.set_font('DejaVu', 'B', 16)
     pdf.set_text_color(*PRIMARY)
-    pdf.cell(0, 10, '💡 КЛЮЧЕВЫЕ ВЫВОДЫ', ln=True)
+    pdf.cell(0, 10, 'КЛЮЧЕВЫЕ ВЫВОДЫ', ln=True)
     pdf.ln(3)
     
     # Карточка с выводами - современный стиль
@@ -583,19 +583,19 @@ def generate_report():
     
     conclusions = []
     if total_users > 100:
-        conclusions.append(f"✅ Активное сообщество: {total_users} зарегистрированных пользователей")
+        conclusions.append(f"Активное сообщество: {total_users} зарегистрированных пользователей")
     if total_visits > 1000:
-        conclusions.append(f"✅ Высокий интерес: более {total_visits} посещений музея")
+        conclusions.append(f"Высокий интерес: более {total_visits} посещений музея")
     if avg_visits > 50:
-        conclusions.append(f"📈 Стабильный трафик: в среднем {avg_visits:.0f} посетителей в день")
+        conclusions.append(f"Стабильный трафик: в среднем {avg_visits:.0f} посетителей в день")
     if active_today > 10:
-        conclusions.append(f"🔥 Активность сегодня: {active_today} активных пользователей")
+        conclusions.append(f"Активность сегодня: {active_today} активных пользователей")
     if report_data.get('top_days'):
         top_day = report_data['top_days'][0]
-        conclusions.append(f"🏆 Рекорд: {top_day['visits']} посещений ({top_day['date']})")
+        conclusions.append(f"Рекорд: {top_day['visits']} посещений ({top_day['date']})")
     
     if not conclusions:
-        conclusions.append("📊 Данные собираются. Скоро появятся первые статистические выводы.")
+        conclusions.append("Данные собираются. Скоро появятся первые статистические выводы.")
     
     pdf.set_font('DejaVu', '', 10)
     pdf.set_text_color(*DARK)
@@ -608,7 +608,7 @@ def generate_report():
     pdf.ln(25)
     pdf.set_font('DejaVu', 'B', 11)
     pdf.set_text_color(*SECONDARY)
-    pdf.cell(0, 8, '📌 Информация об отчёте:', ln=True)
+    pdf.cell(0, 8, 'Информация об отчёте:', ln=True)
     pdf.ln(3)
     
     pdf.set_font('DejaVu', '', 9)
@@ -632,9 +632,9 @@ def generate_report():
     pdf.ln(5)
     pdf.set_font('DejaVu', '', 8)
     pdf.set_text_color(156, 163, 175)
-    pdf.cell(0, 5, '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', ln=True, align='C')
-    pdf.cell(0, 5, f'🎨 Виртуальный музей | Аналитический отчёт | {report_data["generated_at"][:4]}', ln=True, align='C')
-    pdf.cell(0, 5, '🤖 Автоматически сгенерировано системой мониторинга', ln=True, align='C')
+    pdf.cell(0, 5, '-----------------------------------------------------------------', ln=True, align='C')
+    pdf.cell(0, 5, f'Виртуальный музей | Аналитический отчёт | {report_data["generated_at"][:4]}', ln=True, align='C')
+    pdf.cell(0, 5, 'Автоматически сгенерировано системой мониторинга', ln=True, align='C')
     
     # Сохраняем PDF
     pdf_buffer = BytesIO()

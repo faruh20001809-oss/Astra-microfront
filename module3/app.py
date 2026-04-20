@@ -769,7 +769,13 @@ try:
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
     log.info("Reports blueprint registered successfully", url_prefix="/api/reports")
 except Exception as e:
-    log.warning("module_not_found", module="reports", error=str(e))
+    import traceback
+    log.error(
+        "reports_blueprint_failed",
+        module="reports",
+        error=str(e),
+        traceback=traceback.format_exc(),
+    )
 
 # ------------------ APP START ------------------
 if __name__ == '__main__':

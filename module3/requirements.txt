@@ -11,5 +11,6 @@ marshmallow-sqlalchemy>=0.29
 structlog>=23.0
 psycopg2-binary>=2.9
 matplotlib>=3.7
+fpdf2>=2.7.9
 Werkzeug>=2.3
 bcrypt>=4.0
