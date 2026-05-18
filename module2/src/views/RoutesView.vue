@@ -381,37 +381,13 @@ async function onPaidRoute(route) {
 onMounted(async () => {
   isLoading.value = true
   try {
-    // Try Java API first
-    const res = await fetch('/java-api/api/v1/routes?published=true')
-
-    if (res.ok) {
-      const json = await res.json()
-
-      // 🔹 Java API возвращает { status, data } — извлекаем data!
-      if (json?.status === 'success' && Array.isArray(json.data)) {
-        routes.value = json.data.map(normalizeRouteFromApi)
-      } else if (Array.isArray(json)) {
-        routes.value = json.map(normalizeRouteFromApi)
-      } else {
-        console.warn('Unexpected API response format:', json)
-        routes.value = getMockRoutes().map(normalizeRouteFromApi)
-      }
-      if (!routes.value.length) {
-        routes.value = getMockRoutes().map(normalizeRouteFromApi)
-      }
-    } else {
-      throw new Error('Java API unavailable')
+    const data = await javaApi.routes.getList({ published: 'true' })
+    routes.value = (Array.isArray(data) ? data : []).map(normalizeRouteFromApi)
+    if (!routes.value.length) {
+      routes.value = getMockRoutes().map(normalizeRouteFromApi)
     }
   } catch (err) {
-    console.warn('Java API failed, trying fallback:', err)
-    try {
-      const res = await fetch('/api/routes')
-      if (res.ok) {
-        const json = await res.json()
-        routes.value = (Array.isArray(json) ? json : getMockRoutes()).map(normalizeRouteFromApi)
-        return
-      }
-    } catch {}
+    console.warn('Java API failed:', err)
     routes.value = getMockRoutes().map(normalizeRouteFromApi)
   } finally {
     isLoading.value = false

@@ -161,8 +161,14 @@ export const javaApi = {
       return handleJavaResponse(res)
     },
 
-    /** @param {number} poiId @param {Object} review */
+    /**
+     * @deprecated По ТЗ (раздел 6) функционал оценки точек удаляется.
+     * Метод оставлен для обратной совместимости первого этапа миграции
+     * и НЕ должен вызываться из UI. На следующем этапе будет удален.
+     * @param {number} poiId @param {Object} review
+     */
     addReview: async (poiId, review) => {
+      console.warn('[deprecated] javaApi.pois.addReview: оценки точек отключены в UI согласно ТЗ.')
       const res = await baseFetch(`${JAVA_API_BASE}/pois/${poiId}/reviews`, {
         method: 'POST',
         body: JSON.stringify(review)
@@ -429,6 +435,45 @@ export const javaApi = {
     },
   },
 
+  /** Preorders (Предзаказы корзины) */
+  preorders: {
+    /**
+     * Создает предзаказ. Сервер требует минимум один контакт (telegramUsername или maxUsername).
+     * @param {{customerName?:string, phone?:string, email?:string, telegramUsername?:string, maxUsername?:string, comment?:string, items:Array<{id?:number,name:string,price:number,qty:number,category?:string}>}} payload
+     * @returns {Promise<object>} карточка предзаказа (preorderId, items, status и т.д.)
+     */
+    create: async (payload) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/preorders`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+      const contentType = res.headers.get('content-type') || ''
+      const json = contentType.includes('application/json')
+        ? await res.json().catch(() => ({}))
+        : {}
+      if (!res.ok || json.status === 'error') {
+        const err = new Error(json.message || `Не удалось отправить предзаказ (${res.status})`)
+        if (json.errors && typeof json.errors === 'object') {
+          err.fieldErrors = json.errors
+        }
+        throw err
+      }
+      return json?.status === 'success' && json.data !== undefined ? json.data : json
+    },
+
+    /** Список предзаказов для админки (опционально по статусу). */
+    getList: async (status) => {
+      const params = status ? `?status=${encodeURIComponent(status)}` : ''
+      const res = await baseFetch(`${JAVA_API_BASE}/preorders${params}`)
+      return handleJavaResponse(res)
+    },
+
+    getById: async (preorderId) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/preorders/${encodeURIComponent(preorderId)}`)
+      return handleJavaResponse(res)
+    },
+  },
+
   /** Feedback (Обратная связь) */
   feedback: {
     /** @param {Object} feedbackData */
@@ -437,7 +482,12 @@ export const javaApi = {
         method: 'POST',
         body: JSON.stringify(feedbackData)
       })
-      return handleJavaResponse(res)
+      const contentType = res.headers.get('content-type') || ''
+      const json = contentType.includes('application/json') ? await res.json().catch(() => ({})) : {}
+      if (!res.ok || json.status === 'error') {
+        throw new Error(json.message || `Не удалось отправить сообщение (${res.status})`)
+      }
+      return json?.status === 'success' && json.data !== undefined ? json.data : json
     }
   },
 
@@ -553,6 +603,7 @@ export const apiService = {
   getRoutes: javaApi.routes.getList,
   getProducts: javaApi.products.getList,
   createOrder: javaApi.orders.create,
+  createPreorder: javaApi.preorders.create,
   sendFeedback: javaApi.feedback.send,
 
   // Node.js API shortcuts

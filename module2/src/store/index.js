@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { javaApi } from '@/api/backend.js'
 
 /* ─────────────────────────────────────────
    Cart Store
@@ -173,66 +174,14 @@ export const useMapStore = defineStore('map', {
     async fetchPois() {
       this.isLoadingPois = true
       try {
-        const res = await fetch('/java-api/api/v1/pois?status=PUBLISHED')
-    
-        const contentType = res.headers.get('content-type')
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('API returned non-JSON response')
+        const data = await javaApi.pois.getList({ status: 'PUBLISHED' })
+        const raw = Array.isArray(data) ? data : []
+        if (!raw.length) {
+          this.pois = getMockPois()
+          return
         }
     
-        const json = await res.json()
-    
-        const raw = json?.status === 'success' && Array.isArray(json.data)
-          ? json.data
-          : Array.isArray(json)
-            ? json
-            : []
-    
-        // 🔹 Нормализуем под фронт (lat/lng и дополнительные поля)
-        this.pois = raw.map(p => {
-          const extended = p.extendedInfo || {}
-          const shortDescription =
-            p.shortDescription ||
-            p.summary ||
-            p.cardDescription ||
-            extended.shortDescription ||
-            extended.summary ||
-            p.description ||
-            ''
-          const fullDescription =
-            p.fullDescription ||
-            p.articleText ||
-            p.historyText ||
-            p.longDescription ||
-            extended.fullDescription ||
-            extended.articleText ||
-            extended.historyText ||
-            extended.longDescription ||
-            p.description ||
-            ''
-          return {
-            id: p.id,
-            name: p.name,
-            description: shortDescription,
-            shortDescription,
-            mapDescription: shortDescription,
-            mapLabel: p.mapLabel || p.label || extended.mapLabel || p.name,
-            fullDescription,
-            articleText: fullDescription,
-            category: p.category,
-            // 2ГИС ожидает lon/lat — мы даём lat/lng в объекте POI
-            lat: p.latitude ?? p.coordinates?.latitude ?? 0,
-            lng: p.longitude ?? p.coordinates?.longitude ?? 0,
-            address: p.address,
-            style: p.style || extended.style || null,
-            rating: p.rating,
-            reviewsCount: p.reviewsCount,
-            year: extended.foundedYear ?? p.year ?? null,
-            architect: extended.architect ?? p.architect ?? null,
-            image: p.image || p.imageUrl || null,
-            tags: p.tags || [],
-          }
-        })
+        this.pois = raw.map(p => normalizePoi(p))
       } catch (err) {
         console.error('Failed to fetch POIs:', err)
         this.pois = getMockPois()
@@ -330,6 +279,61 @@ export const useToastStore = defineStore('toast', {
 /* ─────────────────────────────────────────
    Helpers
 ───────────────────────────────────────── */
+
+/**
+ * Нормализует POI из Java-API в форму, удобную для UI (карты, карточки, деталки).
+ * Поддерживает новые поля: detailText, maxAudioUrl, maxVideoUrl, maxPlaylistUrl
+ * (см. `docs/route-points-preorder-tech-analysis.md`, разделы 2 и 4.2).
+ */
+export function normalizePoi(p) {
+  if (!p || typeof p !== 'object') return null
+  const extended = p.extendedInfo || {}
+  const shortDescription =
+    p.shortDescription ||
+    p.summary ||
+    p.cardDescription ||
+    extended.shortDescription ||
+    extended.summary ||
+    p.description ||
+    ''
+  const detailText =
+    p.detailText ||
+    p.fullDescription ||
+    p.articleText ||
+    p.historyText ||
+    p.longDescription ||
+    extended.detailText ||
+    extended.fullDescription ||
+    extended.articleText ||
+    extended.historyText ||
+    extended.longDescription ||
+    p.description ||
+    ''
+  return {
+    id: p.id,
+    name: p.name,
+    description: shortDescription,
+    shortDescription,
+    mapDescription: shortDescription,
+    mapLabel: p.mapLabel || p.label || extended.mapLabel || p.name,
+    detailText,
+    fullDescription: detailText,
+    articleText: detailText,
+    category: p.category,
+    lat: p.latitude ?? p.coordinates?.latitude ?? 0,
+    lng: p.longitude ?? p.coordinates?.longitude ?? 0,
+    address: p.address,
+    style: p.style || extended.style || null,
+    year: extended.foundedYear ?? p.year ?? null,
+    architect: extended.architect ?? p.architect ?? null,
+    image: p.image || p.imageUrl || null,
+    tags: p.tags || [],
+    maxAudioUrl: p.maxAudioUrl || extended.maxAudioUrl || null,
+    maxVideoUrl: p.maxVideoUrl || extended.maxVideoUrl || null,
+    maxPlaylistUrl: p.maxPlaylistUrl || extended.maxPlaylistUrl || null,
+  }
+}
+
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371000
   const dLat = (lat2 - lat1) * Math.PI / 180

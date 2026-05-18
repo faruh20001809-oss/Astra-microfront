@@ -160,6 +160,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useToastStore } from '@/store/index.js'
+import { javaApi } from '@/api/backend.js'
 
 const toastStore = useToastStore()
 
@@ -178,23 +179,12 @@ async function submitForm() {
   formError.value = ''
   submitting.value = true
   try {
-    const res = await fetch('/api/contact', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form.value)
-    })
-    if (res.ok) {
-      submitted.value = true
-      form.value = { name: '', email: '', subject: '', message: '' }
-      setTimeout(() => { submitted.value = false }, 8000)
-    } else {
-      throw new Error()
-    }
-  } catch {
-    // Mock success in dev
+    await javaApi.feedback.send(form.value)
     submitted.value = true
     form.value = { name: '', email: '', subject: '', message: '' }
     setTimeout(() => { submitted.value = false }, 8000)
+  } catch (err) {
+    formError.value = err?.message || 'Не удалось отправить сообщение. Проверьте backend и попробуйте снова.'
   } finally {
     submitting.value = false
   }

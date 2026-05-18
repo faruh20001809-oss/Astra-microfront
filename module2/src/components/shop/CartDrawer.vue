@@ -10,44 +10,78 @@
       class="cart-drawer-pv"
   >
     <template #header>
-      <span class="cart-title">Корзина</span>
+      <span class="cart-title">Корзина · Предзаказ</span>
     </template>
 
     <div ref="cartDrawerIntrinsicRef" class="cart-drawer-intrinsic">
-    <!-- Empty state -->
-    <div v-if="!cartStore.items.length" class="cart-empty">
-      <span class="cart-empty-icon" aria-hidden="true">◻</span>
-      <p class="cart-empty-title">Корзина пуста</p>
-      <p class="cart-empty-hint">Добавьте товары из магазина — сувениры и мерч с историческими мотивами Астрахани.</p>
-      <Button label="Перейти в магазин" class="p-button-text p-button-secondary" @click="cartStore.isOpen = false; $router.push('/shop')" />
-    </div>
 
-    <!-- Cart with items: scrollable body -->
-    <div v-else class="cart-body">
-        <div class="cart-items">
-              <div
-                  v-for="item in cartStore.items"
-                  :key="item.id"
-                  class="cart-item"
-              >
-                <CartItemThumbnail :item="item" />
-                <div class="cart-item-info">
-                  <p class="cart-item-name">{{ item.name }}</p>
-                  <p v-if="item.variant" class="cart-item-variant">{{ item.variant }}</p>
-                  <p class="cart-item-price">{{ item.price }} ₽</p>
-                </div>
-                <div class="cart-item-controls">
-                  <button class="qty-btn" @click="cartStore.updateQty(item.id, item.qty - 1)">−</button>
-                  <span class="qty-val">{{ item.qty }}</span>
-                  <button class="qty-btn" @click="cartStore.updateQty(item.id, item.qty + 1)">+</button>
-                </div>
-                <button class="cart-item-remove" @click="cartStore.removeItem(item.id)">✕</button>
-              </div>
+      <!-- Empty state -->
+      <div v-if="!cartStore.items.length" class="cart-empty">
+        <span class="cart-empty-icon" aria-hidden="true">◻</span>
+        <p class="cart-empty-title">Корзина пуста</p>
+        <p class="cart-empty-hint">
+          Добавьте товары из магазина и оставьте предзаказ — сотрудник свяжется с вами по Telegram или MAX.
+        </p>
+        <Button
+            label="Перейти в магазин"
+            class="p-button-text p-button-secondary"
+            @click="cartStore.isOpen = false; $router.push('/shop')" />
+      </div>
+
+      <!-- Cart with items: scrollable body -->
+      <div v-else class="cart-body">
+
+        <p class="cart-section-label cart-info text-mono">
+          Корзина формирует предзаказ. Доставка и оплата согласуются с сотрудником.
+        </p>
+
+        <ul class="cart-items" aria-label="Состав предзаказа">
+          <li
+              v-for="item in cartStore.items"
+              :key="`${item.id}-${item.variant || ''}`"
+              class="cart-item"
+          >
+            <div class="cart-item__thumb">
+              <CartItemThumbnail :item="item" />
             </div>
+            <div class="cart-item__info">
+              <p class="cart-item__name">{{ item.name }}</p>
+              <p v-if="item.variant" class="cart-item__variant">{{ item.variant }}</p>
+              <p class="cart-item__price">{{ item.price }} ₽</p>
+            </div>
+            <div class="cart-item__controls" role="group" :aria-label="`Количество — ${item.name}`">
+              <button
+                type="button"
+                class="qty-btn"
+                :aria-label="`Уменьшить количество товара ${item.name}`"
+                @click="cartStore.updateQty(item.id, item.qty - 1)"
+              >−</button>
+              <span class="qty-val" aria-live="polite">{{ item.qty }}</span>
+              <button
+                type="button"
+                class="qty-btn"
+                :aria-label="`Увеличить количество товара ${item.name}`"
+                @click="cartStore.updateQty(item.id, item.qty + 1)"
+              >+</button>
+            </div>
+            <button
+              type="button"
+              class="cart-item__remove"
+              :aria-label="`Удалить из предзаказа: ${item.name}`"
+              @click="cartStore.removeItem(item.id)"
+            >✕</button>
+          </li>
+        </ul>
 
-            <div class="cart-footer">
-              <p class="cart-section-label">Данные для доставки</p>
-              <div class="customer-form">
+        <div class="cart-footer">
+
+          <p class="cart-section-label">Контакты для связи</p>
+          <p class="cart-hint">
+            Заполните минимум один контакт — Telegram или MAX. По нему сотрудник подтвердит предзаказ.
+          </p>
+
+          <div class="customer-form">
+
             <div class="form-row">
               <div class="form-group">
                 <label for="firstName" class="form-label">Имя *</label>
@@ -62,21 +96,68 @@
                 <span v-if="errors.firstName" class="error-msg">{{ errors.firstName }}</span>
               </div>
               <div class="form-group">
-                <label for="lastName" class="form-label">Фамилия *</label>
+                <label for="lastName" class="form-label">Фамилия</label>
                 <input
                     id="lastName"
                     v-model="customerForm.lastName"
                     type="text"
                     placeholder="Иванов"
-                    :class="{ error: errors.lastName }"
-                    @blur="validateField('lastName')"
                 />
-                <span v-if="errors.lastName" class="error-msg">{{ errors.lastName }}</span>
               </div>
             </div>
 
             <div class="form-group">
-              <label for="phone" class="form-label">Телефон *</label>
+              <label for="telegramUsername" class="form-label">Telegram</label>
+              <div class="input-with-prefix">
+                <span class="input-prefix" aria-hidden="true">@</span>
+                <input
+                    id="telegramUsername"
+                    v-model="customerForm.telegramUsername"
+                    type="text"
+                    placeholder="username"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-describedby="telegramUsernameHelp"
+                    :aria-invalid="!!(errors.telegramUsername || errors.contact)"
+                    :class="{ error: errors.telegramUsername || errors.contact }"
+                    @blur="validateField('telegramUsername'); validateContacts()"
+                />
+              </div>
+              <span id="telegramUsernameHelp" class="form-hint">
+                Логин без символа «@» — например, <code>ivan_petrov</code>.
+              </span>
+              <span v-if="errors.telegramUsername" class="error-msg">{{ errors.telegramUsername }}</span>
+            </div>
+
+            <div class="form-group">
+              <label for="maxUsername" class="form-label">MAX</label>
+              <div class="input-with-prefix">
+                <span class="input-prefix" aria-hidden="true">@</span>
+                <input
+                    id="maxUsername"
+                    v-model="customerForm.maxUsername"
+                    type="text"
+                    placeholder="username"
+                    autocomplete="off"
+                    spellcheck="false"
+                    aria-describedby="maxUsernameHelp"
+                    :aria-invalid="!!(errors.maxUsername || errors.contact)"
+                    :class="{ error: errors.maxUsername || errors.contact }"
+                    @blur="validateField('maxUsername'); validateContacts()"
+                />
+              </div>
+              <span id="maxUsernameHelp" class="form-hint">
+                Логин без символа «@».
+              </span>
+              <span v-if="errors.maxUsername" class="error-msg">{{ errors.maxUsername }}</span>
+            </div>
+
+            <p v-if="errors.contact" class="error-msg error-msg--block" role="alert">
+              {{ errors.contact }}
+            </p>
+
+            <div class="form-group">
+              <label for="phone" class="form-label">Телефон</label>
               <input
                   id="phone"
                   v-model="customerForm.phone"
@@ -97,177 +178,97 @@
                   type="email"
                   placeholder="example@mail.ru"
                   :class="{ error: errors.email }"
+                  @blur="validateField('email')"
+              />
+              <span v-if="errors.email" class="error-msg">{{ errors.email }}</span>
+            </div>
+
+            <div class="form-group">
+              <label for="comment" class="form-label">Комментарий</label>
+              <textarea
+                  id="comment"
+                  v-model="customerForm.comment"
+                  rows="3"
+                  placeholder="Если есть пожелания по составу или времени связи"
+                  class="form-textarea"
               />
             </div>
 
-            <div class="form-group newsletter-opt">
-              <label class="checkbox-inline">
-                <input v-model="newsletterSubscribe" type="checkbox" />
-                <span>Уведомлять о новых точках на карте по email</span>
-              </label>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="city" class="form-label">Город *</label>
-                <input
-                    id="city"
-                    v-model="customerForm.city"
-                    type="text"
-                    placeholder="Астрахань"
-                    :class="{ error: errors.city }"
-                    @blur="validateField('city')"
-                />
-                <span v-if="errors.city" class="error-msg">{{ errors.city }}</span>
-              </div>
-              <div class="form-group">
-                <label for="zip" class="form-label">Индекс</label>
-                <input
-                    id="zip"
-                    v-model="customerForm.zip"
-                    type="text"
-                    placeholder="414000"
-                    maxlength="6"
-                />
-              </div>
-            </div>
-
-            <div v-if="delivery !== 'pickup'" class="form-group">
-              <label for="address" class="form-label">Адрес доставки *</label>
-              <input
-                  id="address"
-                  v-model="customerForm.address"
-                  type="text"
-                  placeholder="ул. Кремлёвская, д. 1, кв. 10"
-                  :class="{ error: errors.address }"
-                  @blur="validateField('address')"
-              />
-              <span v-if="errors.address" class="error-msg">{{ errors.address }}</span>
-            </div>
-
-            <div v-else class="form-group pickup-block">
-              <label for="pickupPoint" class="form-label">Пункт самовывоза *</label>
-              <select
-                  v-if="!pickupPointsLoading && pickupPoints.length"
-                  id="pickupPoint"
-                  v-model="selectedPickupId"
-                  class="form-select"
-                  :class="{ error: errors.pickupPointId }"
-                  @change="validateField('pickupPointId')"
-              >
-                <option v-for="p in pickupPoints" :key="p.id" :value="p.id">{{ p.label }}</option>
-              </select>
-              <p v-else-if="pickupPointsLoading" class="pickup-hint text-mono">Загрузка пунктов…</p>
-              <p v-else class="error-msg">Пункты самовывоза недоступны. Проверьте подключение к серверу.</p>
-              <template v-if="!pickupPointsLoading && pickupPoints.length">
-                <p class="pickup-hint text-mono">
-                  Забрать заказ можно по адресу: {{ selectedPickupAddress }}
-                </p>
-                <p v-if="selectedPickupHours" class="pickup-hint text-mono">{{ selectedPickupHours }}</p>
-              </template>
-              <span v-if="errors.pickupPointId" class="error-msg">{{ errors.pickupPointId }}</span>
-            </div>
-          </div>
-
-          <!-- Delivery & totals -->
-          <div class="delivery-info">
-            <span class="text-mono" style="color:var(--gray-400)">Доставка</span>
-            <span>{{ deliveryPrice === 0 ? 'Бесплатно' : deliveryPrice + ' ₽' }}</span>
           </div>
 
           <div class="cart-total-row">
-            <span class="cart-total-label">Итого</span>
-            <span class="cart-total-price">{{ cartStore.totalPrice + deliveryPrice }} ₽</span>
+            <span class="cart-total-label">Сумма позиций</span>
+            <span class="cart-total-price">{{ cartStore.totalPrice }} ₽</span>
           </div>
 
-          <!-- Delivery method -->
-          <div class="form-group">
-            <label class="form-label">Способ доставки</label>
-            <select v-model="delivery" class="form-select">
-              <option value="pickup">Самовывоз — бесплатно</option>
-              <option value="courier">Курьер по городу — 300 ₽</option>
-              <option value="post">Почта России — 450 ₽</option>
-            </select>
-          </div>
+          <Button
+              label="Очистить корзину"
+              class="p-button-text p-button-secondary p-button-sm"
+              @click="cartStore.clearCart()" />
 
-          <!-- Payment method (опционально) -->
-          <div class="form-group">
-            <label class="form-label">Оплата</label>
-            <div class="radio-inline">
-              <label :class="{ active: paymentMethod === 'card' }">
-                <input type="radio" v-model="paymentMethod" value="card" />
-                <span>💳 Карта</span>
-              </label>
-              <label :class="{ active: paymentMethod === 'cash' }">
-                <input type="radio" v-model="paymentMethod" value="cash" />
-                <span>💵 При получении</span>
-              </label>
-            </div>
-          </div>
-
-              <Button label="Очистить корзину" class="p-button-text p-button-secondary p-button-sm" @click="cartStore.clearCart()" />
-
-              <p class="consent-text">
-                Нажимая кнопку ниже, вы соглашаетесь с
-                <a href="/privacy" target="_blank">политикой конфиденциальности</a>
-              </p>
-            </div>
+          <p class="consent-text">
+            Отправляя предзаказ, вы соглашаетесь с
+            <a href="/privacy" target="_blank" rel="noopener">политикой конфиденциальности</a>.
+            Сумма доставки уточняется сотрудником и не входит в эту сумму.
+          </p>
+        </div>
       </div>
     </div>
 
-    <!-- Кнопка оплаты в футере Drawer — всегда видна -->
     <template #footer>
       <Button
           v-if="cartStore.items.length"
-          :label="checkoutLoading ? 'Обработка…' : `Оформить заказ — ${cartStore.totalPrice + deliveryPrice} ₽`"
+          :label="checkoutLoading ? 'Отправляем…' : `Оставить предзаказ — ${cartStore.totalPrice} ₽`"
           :loading="checkoutLoading"
           :disabled="!isFormValid"
           class="w-full cart-checkout-btn"
-          @click="checkout"
+          @click="submitPreorder"
       />
     </template>
   </Drawer>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, watch, onBeforeUnmount, nextTick } from 'vue'
 import { useCartStore, useToastStore } from '@/store/index.js'
 import { javaApi } from '@/api/backend'
 import CartItemThumbnail from '@/components/shop/CartItemThumbnail.vue'
 
-/** Пункты выдачи с бэкенда (тот же список, что в модалке заказа Java-админки) */
-const pickupPoints = ref([])
-const pickupPointsLoading = ref(false)
-
+/**
+ * CartDrawer — корзина модуля 2 в режиме PREORDER (ТЗ, раздел 5).
+ *
+ * Что изменилось относительно прошлой версии корзины (заказ + онлайн-оплата):
+ *  - убран блок «Способ доставки»: предзаказ не считает доставку (5.4),
+ *    сотрудник согласует её отдельно;
+ *  - убран блок «Оплата»: онлайн-кассы тут больше нет;
+ *  - убраны поля адреса/индекса/города/пункта самовывоза;
+ *  - добавлены поля telegramUsername и maxUsername; обязателен ХОТЯ БЫ один;
+ *  - submitPreorder отправляет POST /api/v1/preorders.
+ */
 const cartStore = useCartStore()
 const toastStore = useToastStore()
 
-/** Ширина панели на desktop: подстраивается под контент, чтобы заголовки/кнопки не ломались на два ряда */
 const cartDrawerRootRef = ref(null)
 const cartDrawerIntrinsicRef = ref(null)
 
-/** DOM-элемент (не Comment/Text и т.д.) — у Drawer с Teleport `$el` может быть не HTMLElement */
 function asElement(node) {
   return node && typeof node === 'object' && node.nodeType === Node.ELEMENT_NODE ? node : null
 }
 
-/** Сама выдвижная панель `.p-drawer` (Teleport: `$el` может быть не Element — не вызываем querySelector на нём) */
 function drawerSlidePanelEl() {
   if (typeof document === 'undefined') return null
   const byId = asElement(document.getElementById('astra-cart-drawer'))
   const fromRef = asElement(cartDrawerRootRef.value?.$el)
   let root = byId ?? fromRef
   if (!root) {
-    root = asElement(
-      document.querySelector('.p-drawer-right .p-drawer.cart-drawer-pv')
-    )
+    root = asElement(document.querySelector('.p-drawer-right .p-drawer.cart-drawer-pv'))
   }
   if (!root) return null
   if (root.classList?.contains('p-drawer')) return root
   const inner = asElement(root.querySelector?.('.p-drawer'))
   return inner ?? root
 }
-/** PrimeVue часто пишет width inline на `.p-drawer` — фиксируем 29rem с !important после монтирования панели */
+
 const CART_DRAWER_PANEL_W = '29rem'
 const CART_DRAWER_PANEL_MAX = 'min(29rem, 100vw)'
 
@@ -290,7 +291,6 @@ function clearCartDrawerDesktopWidth() {
   el.style.removeProperty('max-width')
 }
 
-/** Несколько попыток: Teleport + PrimeVue выставляют стили чуть позже nextTick */
 function scheduleApplyCartDrawerDesktopWidth() {
   if (cartDrawerWidthTimer) clearTimeout(cartDrawerWidthTimer)
   const run = () => {
@@ -309,75 +309,48 @@ function scheduleApplyCartDrawerDesktopWidth() {
   }, 120)
 }
 
-// Delivery & payment
-const delivery = ref('pickup')
-const selectedPickupId = ref('')
-const paymentMethod = ref('card')
 const checkoutLoading = ref(false)
-const newsletterSubscribe = ref(false)
 
-// Customer form
 const customerForm = ref({
   firstName: '',
   lastName: '',
   phone: '',
   email: '',
-  city: 'Астрахань',
-  address: '',
-  zip: ''
+  telegramUsername: '',
+  maxUsername: '',
+  comment: '',
 })
 
-// Validation errors
 const errors = ref({})
 
-// Computed
-const deliveryPrice = computed(() => {
-  if (delivery.value === 'courier') return 300
-  if (delivery.value === 'post') return 450
-  return 0
-})
+const USERNAME_PATTERN = /^[A-Za-z0-9_.\-]{3,64}$/
 
-const selectedPickupAddress = computed(() => {
-  const p = pickupPoints.value.find((x) => x.id === selectedPickupId.value)
-  return p?.address || ''
-})
-
-const selectedPickupHours = computed(() => {
-  const p = pickupPoints.value.find((x) => x.id === selectedPickupId.value)
-  return p?.hours || ''
-})
-
-function syncPickupSelection() {
-  if (!pickupPoints.value.length) return
-  if (!pickupPoints.value.some((x) => x.id === selectedPickupId.value)) {
-    selectedPickupId.value = pickupPoints.value[0].id
-  }
+function normalizeUsername(value) {
+  if (!value) return ''
+  const v = String(value).trim()
+  return v.startsWith('@') ? v.slice(1).trim() : v
 }
 
-async function loadPickupPoints() {
-  pickupPointsLoading.value = true
-  try {
-    const list = await javaApi.pickupPoints.getList()
-    if (Array.isArray(list) && list.length > 0) {
-      pickupPoints.value = list.map((p) => ({
-        id: p.id,
-        label: p.label,
-        address: p.address || '',
-        hours: p.hours || ''
-      }))
-      syncPickupSelection()
-    }
-  } catch (e) {
-    console.warn('pickup points:', e)
-    toastStore.push('Не удалось загрузить пункты самовывоза', 'error')
-  } finally {
-    pickupPointsLoading.value = false
-    if (cartStore.isOpen) scheduleApplyCartDrawerDesktopWidth()
-  }
+function hasAnyContact() {
+  const tg = normalizeUsername(customerForm.value.telegramUsername)
+  const mx = normalizeUsername(customerForm.value.maxUsername)
+  return Boolean(tg || mx)
 }
 
-onMounted(() => {
-  loadPickupPoints()
+const isFormValid = computed(() => {
+  if (!cartStore.items.length) return false
+  if (!customerForm.value.firstName.trim()) return false
+  if (!hasAnyContact()) return false
+
+  const tg = normalizeUsername(customerForm.value.telegramUsername)
+  const mx = normalizeUsername(customerForm.value.maxUsername)
+  if (tg && !USERNAME_PATTERN.test(tg)) return false
+  if (mx && !USERNAME_PATTERN.test(mx)) return false
+
+  const email = customerForm.value.email?.trim() || ''
+  if (email && !/^\S+@\S+\.\S+$/.test(email)) return false
+
+  return true
 })
 
 onBeforeUnmount(() => {
@@ -388,9 +361,6 @@ onBeforeUnmount(() => {
 watch(
   () => cartStore.isOpen,
   async (open) => {
-    if (open && !pickupPoints.value.length && !pickupPointsLoading.value) {
-      loadPickupPoints()
-    }
     if (open) {
       await nextTick()
       scheduleApplyCartDrawerDesktopWidth()
@@ -400,25 +370,6 @@ watch(
   }
 )
 
-const isFormValid = computed(() => {
-  const c = customerForm.value
-  if (!c.firstName.trim() || !c.lastName.trim() || !c.phone.trim() || !c.city.trim()) {
-    return false
-  }
-  if (delivery.value === 'pickup') {
-    if (pickupPointsLoading.value || !pickupPoints.value.length) return false
-    return !!selectedPickupId.value
-  }
-  return !!c.address.trim()
-})
-
-watch(delivery, (v) => {
-  if (v === 'pickup') {
-    errors.value.address = ''
-  }
-})
-
-// Phone formatting: +7 (XXX) XXX-XX-XX
 function formatPhone() {
   let digits = customerForm.value.phone.replace(/\D/g, '')
   if (digits.startsWith('8')) digits = '7' + digits.slice(1)
@@ -433,172 +384,109 @@ function formatPhone() {
   customerForm.value.phone = f.slice(0, 18)
 }
 
-// Validate single field
 function validateField(field) {
   const value = customerForm.value[field]?.trim()
-
   switch (field) {
     case 'firstName':
-    case 'lastName':
-      errors.value[field] = !value ? 'Обязательное поле' : ''
+      errors.value.firstName = !value ? 'Обязательное поле' : ''
       break
     case 'phone':
-      if (!value) errors.value.phone = 'Обязательное поле'
-      else if (value.replace(/\D/g, '').length < 11) errors.value.phone = 'Неверный формат'
-      else errors.value.phone = ''
-      break
-    case 'city':
-      errors.value[field] = !value ? 'Обязательное поле' : ''
-      break
-    case 'address':
-      if (delivery.value === 'pickup') {
-        errors.value.address = ''
+      if (!value) {
+        errors.value.phone = ''
+      } else if (value.replace(/\D/g, '').length < 11) {
+        errors.value.phone = 'Введите телефон в формате +7 (___) ___-__-__'
       } else {
-        errors.value[field] = !value ? 'Обязательное поле' : ''
-      }
-      break
-    case 'pickupPointId':
-      if (delivery.value === 'pickup' && !selectedPickupId.value) {
-        errors.value.pickupPointId = 'Выберите пункт самовывоза'
-      } else {
-        errors.value.pickupPointId = ''
+        errors.value.phone = ''
       }
       break
     case 'email':
       errors.value.email = value && !/^\S+@\S+\.\S+$/.test(value) ? 'Некорректный email' : ''
       break
+    case 'telegramUsername': {
+      const v = normalizeUsername(customerForm.value.telegramUsername)
+      errors.value.telegramUsername = v && !USERNAME_PATTERN.test(v)
+        ? '3–64 символа: латиница, цифры, _ . -'
+        : ''
+      break
+    }
+    case 'maxUsername': {
+      const v = normalizeUsername(customerForm.value.maxUsername)
+      errors.value.maxUsername = v && !USERNAME_PATTERN.test(v)
+        ? '3–64 символа: латиница, цифры, _ . -'
+        : ''
+      break
+    }
   }
 }
 
-// Full form validation
-function validateForm() {
-  ;['firstName', 'lastName', 'phone', 'city'].forEach(validateField)
-  if (delivery.value === 'pickup') {
-    validateField('pickupPointId')
-    errors.value.address = ''
-  } else {
-    validateField('address')
-    errors.value.pickupPointId = ''
-  }
-  validateField('email')
-  return !Object.values(errors.value).some(e => e)
+function validateContacts() {
+  errors.value.contact = hasAnyContact()
+    ? ''
+    : 'Укажите Telegram или MAX — сотрудник свяжется по нему'
 }
 
-// Checkout handler
-async function checkout() {
-  if (!validateForm()) {
-    toastStore.push('Заполните обязательные поля', 'error')
-    // Scroll to first error
+function validateAll() {
+  ['firstName', 'phone', 'email', 'telegramUsername', 'maxUsername'].forEach(validateField)
+  validateContacts()
+  return !Object.values(errors.value).some(Boolean)
+}
+
+async function submitPreorder() {
+  if (!validateAll()) {
+    toastStore.push('Заполните поля корректно', 'error')
     const firstError = Object.entries(errors.value).find(([_, msg]) => msg)
     if (firstError) {
-      document.getElementById(firstError[0])?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const el = document.getElementById(firstError[0])
+      if (el?.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
     return
   }
-
-  if (cartStore.items.length === 0) {
+  if (!cartStore.items.length) {
     toastStore.push('Корзина пуста', 'error')
     return
   }
 
   checkoutLoading.value = true
 
-  const ORDER_TIMEOUT_MS = 20000
-  const timeoutPromise = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('Сервер не ответил. Проверьте подключение и попробуйте снова.')), ORDER_TIMEOUT_MS)
-  )
-
   try {
-    const isPickup = delivery.value === 'pickup'
-    const pickupAddr = selectedPickupAddress.value
-    const orderPayload = {
-      userId: 'guest-' + Date.now(),
-      shippingAddress: {
-        firstName: customerForm.value.firstName.trim(),
-        lastName: customerForm.value.lastName.trim(),
-        phone: customerForm.value.phone.trim(),
-        email: customerForm.value.email?.trim() || null,
-        city: customerForm.value.city.trim(),
-        address: isPickup ? '' : customerForm.value.address.trim(),
-        zip: customerForm.value.zip?.trim() || null,
-        ...(isPickup
-          ? {
-              pickupPointId: selectedPickupId.value,
-              pickupAddress: pickupAddr,
-            }
-          : {}),
-      },
-      shippingMethod: delivery.value,
-      pickupPointId: isPickup ? selectedPickupId.value : undefined,
-      pickupAddress: isPickup ? pickupAddr : undefined,
-      paymentMethod: paymentMethod.value,
+    const payload = {
+      customerName: [customerForm.value.firstName.trim(), customerForm.value.lastName.trim()]
+        .filter(Boolean).join(' '),
+      phone: customerForm.value.phone?.trim() || null,
+      email: customerForm.value.email?.trim() || null,
+      telegramUsername: normalizeUsername(customerForm.value.telegramUsername) || null,
+      maxUsername: normalizeUsername(customerForm.value.maxUsername) || null,
+      comment: customerForm.value.comment?.trim() || null,
       items: cartStore.items.map(item => ({
         id: item.id,
         name: item.name,
         price: item.price,
         qty: item.qty || 1,
-        category: item.category
+        category: item.category,
       })),
-      newsletterSubscribe:
-        newsletterSubscribe.value && !!(customerForm.value.email && customerForm.value.email.trim()),
     }
 
-    const result = await Promise.race([
-      javaApi.orders.create(orderPayload),
-      timeoutPromise
-    ])
-    const orderId = result?.orderId ?? result?.data?.orderId ?? ''
+    const data = await javaApi.preorders.create(payload)
+    const preorderId = data?.preorderId || data?.data?.preorderId
+    toastStore.push(
+      preorderId ? `Предзаказ #${preorderId} создан. Сотрудник свяжется с вами.` : 'Предзаказ отправлен',
+      'success',
+      6000
+    )
 
-    // Оплата картой: редирект на страницу оплаты или на страницу успеха с номером заказа (если касса не привязана)
-    if (paymentMethod.value === 'card' && orderId) {
-      try {
-        const base = window.location.origin + (import.meta.env.BASE_URL || '/').replace(/\/$/, '')
-        const paymentData = await javaApi.orders.createPaymentLink(orderId, {
-          returnUrl: `${base}/payment/success`,
-          cancelUrl: `${base}/shop`
-        })
-        cartStore.clearCart()
-        cartStore.isOpen = false
-        customerForm.value = { firstName: '', lastName: '', phone: '', email: '', city: 'Астрахань', address: '', zip: '' }
-        selectedPickupId.value = pickupPoints.value[0]?.id || ''
-        newsletterSubscribe.value = false
-        delivery.value = 'pickup'
-        paymentMethod.value = 'card'
-        window.location.href = paymentData.redirectUrl
-        return
-      } catch (payErr) {
-        console.warn('Payment link failed, order created:', payErr)
-        // Пока касса не привязана — показываем страницу успешной оплаты с id заказа
-        cartStore.clearCart()
-        cartStore.isOpen = false
-        customerForm.value = { firstName: '', lastName: '', phone: '', email: '', city: 'Астрахань', address: '', zip: '' }
-        selectedPickupId.value = pickupPoints.value[0]?.id || ''
-        newsletterSubscribe.value = false
-        delivery.value = 'pickup'
-        paymentMethod.value = 'card'
-        const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '') || ''
-        window.location.href = `${base ? base + '/' : '/'}payment/success?orderId=${encodeURIComponent(orderId)}`
-        return
-      }
-    }
-
-    toastStore.push(orderId ? `✅ Заказ #${orderId} оформлен!` : '✅ Заказ оформлен!', 'success', 6000)
     cartStore.clearCart()
     cartStore.isOpen = false
-
-    // Reset form
     customerForm.value = {
       firstName: '', lastName: '', phone: '', email: '',
-      city: 'Астрахань', address: '', zip: ''
+      telegramUsername: '', maxUsername: '', comment: '',
     }
-    selectedPickupId.value = pickupPoints.value[0]?.id || ''
-    newsletterSubscribe.value = false
-    delivery.value = 'pickup'
-    paymentMethod.value = 'card'
-
+    errors.value = {}
   } catch (err) {
-    console.error('Order error:', err)
-    toastStore.push('❌ Ошибка: ' + err.message, 'error')
+    console.error('Preorder error:', err)
+    if (err?.fieldErrors && typeof err.fieldErrors === 'object') {
+      Object.assign(errors.value, err.fieldErrors)
+    }
+    toastStore.push(err?.message || 'Не удалось отправить предзаказ', 'error')
   } finally {
     checkoutLoading.value = false
   }
@@ -614,13 +502,12 @@ async function checkout() {
   min-height: 0;
 }
 
-.cart-drawer-pv .p-drawer-content {
+.cart-drawer-pv :deep(.p-drawer-content) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* Тема PrimeVue часто задаёт узкую width у колонки контента — тянем на всю панель */
 .cart-drawer-pv :deep(.p-drawer-header),
 .cart-drawer-pv :deep(.p-drawer-content),
 .cart-drawer-pv :deep(.p-drawer-footer) {
@@ -628,256 +515,423 @@ async function checkout() {
   max-width: none;
   box-sizing: border-box;
 }
-.cart-drawer-pv .cart-body { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; }
-.cart-drawer-pv .cart-checkout-btn { width: 100%; }
-.cart-drawer-pv .p-drawer-footer { padding: var(--spacing-md); padding-bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom, 0)); border-top: 1px solid var(--gray-600); }
 
-.cart-title { font-family: var(--font-display); font-size: 1.25rem; }
-.cart-empty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: var(--spacing-md); color: var(--gray-400);
+.cart-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
 }
-.cart-empty-icon { font-size: 3rem; opacity: 0.35; }
-.cart-empty-title { font-family: var(--font-display); font-size: 1.1rem; margin: 0; color: var(--paper); }
-.cart-empty-hint { font-size: 0.8rem; color: var(--gray-400); max-width: 260px; margin: 0; line-height: 1.5; }
+
+/* Empty state */
+.cart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-2xl) var(--spacing-md);
+  text-align: center;
+  color: var(--gray-400);
+}
+
+.cart-empty-icon {
+  font-size: 3rem;
+  color: var(--gray-600);
+}
+
+.cart-empty-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--paper);
+  margin: 0;
+}
+
+.cart-empty-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  max-width: 32ch;
+}
+
+.cart-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.cart-info {
+  margin: 0;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: rgba(200, 169, 110, 0.08);
+  border: 1px solid rgba(212, 184, 150, 0.2);
+  color: var(--paper, #f0e5cd);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  line-height: 1.5;
+}
+
+.cart-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/**
+ * Карточка позиции корзины.
+ * Desktop / wide drawer: thumb | info | controls | remove (1 ряд).
+ * Mobile (<= 480px):       thumb | info
+ *                          (заполняется)| controls + remove (второй ряд).
+ * Используется flex-wrap вместо grid-template-areas — это проще
+ * поддерживать и не зависит от точного именования внутренних компонентов.
+ */
+.cart-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border: 1px solid rgba(212, 184, 150, 0.14);
+  border-radius: var(--radius-sm);
+  background: rgba(20, 16, 13, 0.45);
+}
+
+.cart-item__thumb {
+  flex: 0 0 auto;
+  width: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-item__info {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.cart-item__name {
+  margin: 0;
+  font-size: 0.92rem;
+  color: var(--paper);
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+.cart-item__variant {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--gray-400);
+}
+
+.cart-item__price {
+  margin: 0.2rem 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.cart-item__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+
+/**
+ * Кнопки изменения количества и удаления — touch-target ≥ 40×40 на десктопе
+ * и ≥ 44×44 на мобильных (см. responsive-design skill: «Maintain 44×44 minimum on mobile»).
+ */
+.qty-btn {
+  width: 40px;
+  height: 40px;
+  background: var(--gray-800, #2a231e);
+  border: 1px solid var(--gray-600);
+  color: var(--paper);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.qty-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.qty-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.qty-val {
+  font-family: var(--font-mono);
+  min-width: 28px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+
+.cart-item__remove {
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--gray-400);
+  cursor: pointer;
+  font-size: 1rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.cart-item__remove:hover {
+  color: var(--danger, #b84a3c);
+  border-color: rgba(184, 74, 60, 0.45);
+}
+
+.cart-item__remove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.cart-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid rgba(212, 184, 150, 0.14);
+}
+
 .cart-section-label {
+  margin: 0;
   font-family: var(--font-mono);
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--gray-400);
-  margin-bottom: var(--spacing-sm);
-  margin-top: 0;
+  color: var(--accent);
 }
 
-.cart-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+.cart-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--gray-400);
+  line-height: 1.45;
+}
+
+.customer-form {
   display: flex;
   flex-direction: column;
-}
-
-.cart-items {
-  padding: var(--spacing-md) var(--spacing-xl);
-  display: flex; flex-direction: column; gap: var(--spacing-md);
-  flex-shrink: 0;
-}
-
-.cart-item {
-  display: flex; align-items: center; gap: var(--spacing-sm);
-  padding: var(--spacing-md) 0; border-bottom: 1px solid var(--gray-800);
-}
-.cart-item-info { flex: 1; min-width: 0; }
-.cart-item-name { font-size: 0.8rem; line-height: 1.3; }
-.cart-item-variant { font-size: 0.65rem; color: var(--gray-400); margin-top: 2px; }
-.cart-item-price { font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent); margin-top: 4px; }
-
-.cart-item-controls { display: flex; align-items: center; gap: 6px; }
-.qty-btn {
-  width: 24px; height: 24px; background: var(--ink);
-  border: 1px solid var(--gray-600); color: var(--paper);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; border-radius: var(--radius-sm); font-size: 0.85rem;
-  transition: all var(--transition);
-}
-.qty-btn:hover { border-color: var(--accent); color: var(--accent); }
-.qty-val { font-family: var(--font-mono); font-size: 0.8rem; min-width: 20px; text-align: center; }
-
-.cart-item-remove {
-  background: transparent; border: none; color: var(--gray-600);
-  cursor: pointer; font-size: 0.75rem; padding: 4px;
-  transition: color var(--transition);
-}
-.cart-item-remove:hover { color: var(--danger); }
-
-.cart-footer {
-  padding: var(--spacing-lg) var(--spacing-xl);
-  border-top: 1px solid var(--gray-600);
-  display: flex; flex-direction: column; gap: var(--spacing-md);
-  flex-shrink: 0;
-}
-.cart-checkout-btn { width: 100%; justify-content: center; }
-.delivery-info {
-  display: flex; justify-content: space-between;
-  font-size: 0.75rem; color: var(--gray-400);
-}
-.cart-total-row {
-  display: flex; justify-content: space-between; align-items: baseline;
-}
-.cart-total-label { font-family: var(--font-mono); font-size: 0.8rem; color: var(--gray-400); }
-.cart-total-price { font-family: var(--font-mono); font-size: 1.5rem; color: var(--paper); }
-.w-full { width: 100%; justify-content: center; }
-
-/* ===== Customer form styles ===== */
-.customer-form {
-  padding: var(--spacing-md) 0;
-  border-top: 1px solid var(--gray-700);
-  border-bottom: 1px solid var(--gray-700);
-  margin: var(--spacing-md) 0;
+  gap: var(--spacing-sm);
 }
 
 .form-row {
-  display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
 }
 
-.form-group { margin-bottom: var(--spacing-sm); }
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
 
 .form-label {
-  display: block; font-family: var(--font-mono);
-  font-size: 0.65rem; color: var(--gray-400);
-  margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  color: var(--gray-400);
 }
 
-.form-group input, .form-select {
-  width: 100%; padding: 0.5rem 0.75rem;
-  background: var(--gray-900); border: 1px solid var(--gray-700);
-  border-radius: var(--radius-sm); color: var(--paper);
-  font-size: 0.85rem; transition: border-color 0.2s;
-}
-.form-group input:focus, .form-select:focus {
-  outline: none; border-color: var(--accent);
-}
-.form-group input.error { border-color: #ef4444; }
-
-.error-msg {
-  display: block; font-size: 0.65rem; color: #ef4444;
-  margin-top: 0.2rem; min-height: 1em;
+.customer-form input,
+.customer-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.55rem 0.75rem;
+  background: var(--gray-800, #2a231e);
+  border: 1px solid var(--gray-600);
+  border-radius: var(--radius-sm);
+  color: var(--paper);
+  font-size: 0.92rem;
+  transition: border-color 0.15s ease;
 }
 
-/* Radio inline for payment */
-.radio-inline {
-  display: flex; gap: var(--spacing-sm);
-}
-.radio-inline label {
-  display: flex; align-items: center; gap: 0.35rem;
-  padding: 0.4rem 0.75rem; background: var(--gray-900);
-  border: 1px solid var(--gray-700); border-radius: var(--radius-sm);
-  font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
-}
-.radio-inline label.active {
-  border-color: var(--accent); background: rgba(200,169,110,0.08);
-}
-.radio-inline input { display: none; }
-
-/* Consent text */
-.consent-text {
-  font-size: 0.65rem; color: var(--gray-500);
-  text-align: center; margin-top: var(--spacing-sm);
-}
-.consent-text a { color: var(--gray-400); text-decoration: underline; }
-
-/* Desktop: 29rem (дублируется глобальным блоком ниже + inline important в скрипте из-за PrimeVue) */
-@media (min-width: 769px) {
-  .cart-drawer-pv.p-drawer {
-    display: flex;
-    flex-direction: column;
-    width: 29rem;
-    min-width: 29rem;
-    max-width: min(29rem, 100vw);
-    transition: width 0.42s var(--ease-spring, cubic-bezier(0.22, 1, 0.36, 1));
-  }
-
-  .cart-drawer-pv :deep(.p-drawer-content) {
-    flex: 1 1 auto;
-    min-height: 0;
-    min-width: 0;
-    width: 100%;
-    align-self: stretch;
-  }
-
-  .cart-drawer-intrinsic {
-    width: 100%;
-    min-width: 100%;
-    max-width: 100%;
-    align-self: stretch;
-  }
-
-  .cart-drawer-pv .cart-item-name {
-    white-space: nowrap;
-  }
-
-  .cart-drawer-pv :deep(.cart-checkout-btn .p-button-label) {
-    white-space: nowrap;
-  }
+.customer-form textarea {
+  resize: vertical;
+  min-height: 78px;
 }
 
-@media (min-width: 769px) and (prefers-reduced-motion: reduce) {
-  .cart-drawer-pv.p-drawer {
-    transition: none;
-  }
+.customer-form input:focus,
+.customer-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200, 169, 110, 0.18);
 }
 
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .cart-drawer-pv .p-drawer { width: 100%; max-width: 100vw; }
-  .cart-body { min-height: 0; }
-  .cart-items {
-    padding: var(--spacing-md) var(--spacing-lg);
-    padding-left: env(safe-area-inset-left, var(--spacing-lg));
-    padding-right: env(safe-area-inset-right, var(--spacing-lg));
-  }
-  .cart-footer {
-    padding: var(--spacing-lg);
-    padding-left: env(safe-area-inset-left, var(--spacing-lg));
-    padding-right: env(safe-area-inset-right, var(--spacing-lg));
-  }
-  .cart-drawer-pv .p-drawer-footer {
-    padding-left: env(safe-area-inset-left, var(--spacing-lg));
-    padding-right: env(safe-area-inset-right, var(--spacing-lg));
-  }
-  .cart-item { padding: var(--spacing-sm) 0; }
-  .qty-btn {
-    min-width: 36px;
-    min-height: 36px;
-    width: 36px;
-    height: 36px;
-  }
-  .form-group input,
-  .form-select {
-    min-height: 44px;
-    font-size: 16px;
-  }
-  .radio-inline { flex-wrap: wrap; }
-  .radio-inline label { min-height: 44px; }
+.customer-form input.error,
+.customer-form textarea.error {
+  border-color: var(--danger, #b84a3c);
 }
 
-@media (max-width: 480px) {
-  .form-row { grid-template-columns: 1fr; }
-  .cart-footer { padding: var(--spacing-md); }
+.input-with-prefix {
+  position: relative;
+  display: flex;
+  align-items: stretch;
 }
 
-.newsletter-opt { margin-bottom: 0.5rem; }
-.checkbox-inline {
-  display: block;
-  font-size: 0.8rem;
-  color: var(--gray-300);
-  cursor: pointer;
-  line-height: 1.4;
-}
-.checkbox-inline input {
-  margin-top: 0.2rem;
-  margin-right: 0.5rem;
-  vertical-align: top;
+.input-prefix {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.65rem;
+  background: var(--gray-800, #2a231e);
+  border: 1px solid var(--gray-600);
+  border-right: none;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  color: var(--gray-400);
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
 }
 
-.pickup-block { margin-top: var(--spacing-sm); }
-.pickup-hint {
-  margin: var(--spacing-sm) 0 0;
+.input-with-prefix input {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.form-hint {
   font-size: 0.72rem;
   line-height: 1.45;
   color: var(--gray-400);
 }
-</style>
 
-<style>
-@media (min-width: 769px) {
-  .p-drawer-right .p-drawer.p-component.cart-drawer-pv {
-    width: 29rem !important;
-    min-width: 29rem !important;
-    max-width: min(29rem, 100vw) !important;
+.form-hint code {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  background: rgba(212, 184, 150, 0.12);
+  color: var(--accent);
+}
+
+.error-msg {
+  font-size: 0.7rem;
+  color: var(--danger, #b84a3c);
+  line-height: 1.3;
+}
+
+.error-msg--block {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--danger, #b84a3c);
+  background: rgba(184, 74, 60, 0.08);
+  color: var(--danger, #b84a3c);
+  font-size: 0.78rem;
+}
+
+.cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid rgba(212, 184, 150, 0.14);
+}
+
+.cart-total-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.cart-total-price {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  color: var(--accent);
+}
+
+.consent-text {
+  font-size: 0.7rem;
+  color: var(--gray-500, #786454);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.consent-text a {
+  color: var(--gray-300);
+  text-decoration: underline;
+}
+
+.cart-checkout-btn {
+  min-height: 48px;
+}
+
+@media (max-width: 480px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .cart-item__info {
+    /* На узких — info занимает оставшуюся строку рядом с thumb,
+       а controls + remove переходят на новый ряд (flex-wrap). */
+    flex-basis: calc(100% - 60px - var(--spacing-sm));
+  }
+  .qty-btn,
+  .cart-item__remove {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Light-тема: переопределяем тёмные поверхности корзины. */
+:root.app-light .cart-item {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+:root.app-light .customer-form input,
+:root.app-light .customer-form textarea,
+:root.app-light .input-prefix {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.18);
+  color: var(--paper);
+}
+
+:root.app-light .qty-btn {
+  background: #f5f5f5;
+}
+
+:root.app-light .cart-info {
+  background: rgba(184, 148, 94, 0.1);
+  border-color: rgba(184, 148, 94, 0.35);
+}
+
+:root.app-light .error-msg--block {
+  background: rgba(192, 57, 43, 0.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .customer-form input,
+  .customer-form textarea,
+  .qty-btn,
+  .cart-item__remove {
+    transition: none;
   }
 }
 </style>

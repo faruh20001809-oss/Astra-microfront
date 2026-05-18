@@ -11,6 +11,16 @@ public class PointOfInterest {
     private Long id;
     @Column(nullable = false) private String name;
     @Column(columnDefinition = "TEXT") private String description;
+    /** Краткое описание (карточный текст). Fallback: description. */
+    @Column(name = "short_description", columnDefinition = "TEXT") private String shortDescription;
+    /** Расширенный текст для страницы деталей точки (`/pois/:id`). Может содержать форматирование. */
+    @Column(name = "detail_text", columnDefinition = "TEXT") private String detailText;
+    /** Прямая ссылка на аудио для встроенного плеера MAX (опционально). */
+    @Column(name = "max_audio_url", length = 1024) private String maxAudioUrl;
+    /** Прямая ссылка на видео для встроенного плеера MAX (опционально). */
+    @Column(name = "max_video_url", length = 1024) private String maxVideoUrl;
+    /** Ссылка на сборный плейлист MAX, который точка показывает на странице деталей (опционально). */
+    @Column(name = "max_playlist_url", length = 1024) private String maxPlaylistUrl;
     @Column(nullable = false) private String category;
     private Double latitude;
     private Double longitude;

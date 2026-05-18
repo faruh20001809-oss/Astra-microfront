@@ -20,10 +20,28 @@ public class Route {
     @Builder.Default private Boolean paid = false;
     @Builder.Default private Double price = 0.0;
     @Builder.Default private Double rating = 0.0;
+    /** Чем выше — тем выше маршрут в публичной выдаче. По умолчанию 0. */
+    @Column(nullable = false) @Builder.Default private Integer priority = 0;
+    /**
+     * Жизненный цикл маршрута:
+     *  - DRAFT — черновик, не виден гостям;
+     *  - ACTIVE — все обязательные точки валидны, маршрут публикуется;
+     *  - OUTDATED — обнаружены проблемы (см. {@link #outdatedReason}), маршрут скрывается из публичной выдачи.
+     */
+    @Column(nullable = false) @Enumerated(EnumType.STRING)
+    @Builder.Default private RouteStatus status = RouteStatus.DRAFT;
+    /** Человекочитаемая причина деактулизации (для админки и логов). */
+    @Column(name = "outdated_reason", columnDefinition = "TEXT") private String outdatedReason;
     @Column(name = "poi_ids") private String poiIds;
     @Column(name = "waypoints", columnDefinition = "TEXT") private String waypoints;
     @Column(name = "created_at") private LocalDateTime createdAt;
     @Column(name = "updated_at") private LocalDateTime updatedAt;
-    @PrePersist protected void onCreate() { createdAt = LocalDateTime.now(); updatedAt = LocalDateTime.now(); }
+    @PrePersist protected void onCreate() {
+        createdAt = LocalDateTime.now(); updatedAt = LocalDateTime.now();
+        if (priority == null) priority = 0;
+        if (status == null) status = RouteStatus.DRAFT;
+    }
     @PreUpdate protected void onUpdate() { updatedAt = LocalDateTime.now(); }
+
+    public enum RouteStatus { DRAFT, ACTIVE, OUTDATED }
 }

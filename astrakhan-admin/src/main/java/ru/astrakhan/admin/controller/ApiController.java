@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.astrakhan.admin.entity.*;
 import ru.astrakhan.admin.repository.ReviewRepository;
 import ru.astrakhan.admin.dto.CreateOrderRequest;
+import ru.astrakhan.admin.dto.CreatePreorderRequest;
 import ru.astrakhan.admin.dto.OrderItemRequest;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class ApiController {
     private final RouteProgressService routeProgressService;
     private final SharedUserSyncService sharedUserSyncService;
     private final PickupPointsService pickupPointsService;
+    private final PreorderService preorderService;
 
     /** Тот же справочник пунктов самовывоза, что в админке (модалка заказа). */
     @GetMapping("/pickup-points")
@@ -151,6 +153,27 @@ public class ApiController {
     public ResponseEntity<Map<String, Object>> getRoutes(@RequestParam(required = false) String published, @RequestParam(required = false) String category) {
         List<Route> routes = "true".equals(published) ? routeService.findPublished() : routeService.findAll();
         if (category != null && !category.isEmpty()) routes = routes.stream().filter(r -> category.equals(r.getCategory())).collect(Collectors.toList());
+        // Гостям не показываем OUTDATED маршруты (только ACTIVE/DRAFT, как и раньше; published-флаг сохраняется).
+        if ("true".equals(published)) {
+            routes = routes.stream()
+                .filter(r -> r.getStatus() != Route.RouteStatus.OUTDATED)
+                .collect(Collectors.toList());
+        }
+        // Сортировка: priority DESC, затем updatedAt DESC.
+        routes = routes.stream()
+            .sorted((a, b) -> {
+                int pa = a.getPriority() != null ? a.getPriority() : 0;
+                int pb = b.getPriority() != null ? b.getPriority() : 0;
+                int cmp = Integer.compare(pb, pa);
+                if (cmp != 0) return cmp;
+                LocalDateTime ua = a.getUpdatedAt();
+                LocalDateTime ub = b.getUpdatedAt();
+                if (ua == null && ub == null) return 0;
+                if (ua == null) return 1;
+                if (ub == null) return -1;
+                return ub.compareTo(ua);
+            })
+            .collect(Collectors.toList());
         return ok(routes.stream().map(this::routeMap).collect(Collectors.toList()));
     }
 
@@ -181,6 +204,36 @@ public class ApiController {
                             .body(r.getImageData());
                 })
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Ручная смена статуса маршрута оператором (например, перевод из OUTDATED в ACTIVE после починки точек).
+     * Тело: { "status": "ACTIVE" | "DRAFT" | "OUTDATED", "outdatedReason": "..." }
+     */
+    @PatchMapping("/routes/{id}/status")
+    public ResponseEntity<Map<String, Object>> updateRouteStatus(
+            @PathVariable Long id,
+            @RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String statusStr = b.get("status") instanceof String ? (String) b.get("status") : "";
+        String reason = b.get("outdatedReason") instanceof String ? (String) b.get("outdatedReason") : null;
+        return routeService.findById(id).map(r -> {
+            try {
+                Route.RouteStatus newStatus = Route.RouteStatus.valueOf(statusStr);
+                r.setStatus(newStatus);
+                if (newStatus == Route.RouteStatus.OUTDATED) {
+                    r.setOutdatedReason(reason != null ? reason : "Установлено вручную оператором");
+                } else {
+                    r.setOutdatedReason(null);
+                }
+                routeService.save(r);
+                log.info("Route {} status changed to {} (reason: {})", id, newStatus, reason);
+                return okSingle(routeMap(r));
+            } catch (IllegalArgumentException e) {
+                return apiError(HttpStatus.BAD_REQUEST,
+                        "Недопустимый статус: " + statusStr + ". Допустимы: DRAFT, ACTIVE, OUTDATED.");
+            }
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/routes/{id}/complete")
@@ -460,6 +513,72 @@ public class ApiController {
         }
     }
 
+    // ===== Preorders (корзина -> заявка сотруднику) =====
+    /**
+     * Создание предзаказа из корзины модуля 2.
+     *
+     * Контракт ТЗ (раздел 5):
+     *  - сумма доставки не учитывается;
+     *  - обязателен хотя бы один из telegramUsername/maxUsername;
+     *  - статусная модель: NEW_PREORDER -> IN_PROCESS -> CONFIRMED/REJECTED.
+     */
+    @PostMapping("/preorders")
+    public ResponseEntity<Map<String, Object>> createPreorder(@RequestBody CreatePreorderRequest request) {
+        try {
+            Preorder saved = preorderService.create(request);
+            analyticsService.trackEvent("preorder_created", saved.getId(), saved.getPreorderId());
+            return okSingle(preorderMap(saved));
+        } catch (PreorderService.ValidationException ve) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", "error");
+            body.put("message", "Ошибка валидации");
+            body.put("errors", ve.getErrors());
+            return ResponseEntity.badRequest().body(body);
+        } catch (Exception e) {
+            log.error("Failed to create preorder", e);
+            return apiError(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Не удалось создать предзаказ. Попробуйте позже.");
+        }
+    }
+
+    @GetMapping("/preorders")
+    public ResponseEntity<Map<String, Object>> listPreorders(@RequestParam(required = false) String status) {
+        List<Preorder> list;
+        if (status != null && !status.isBlank()) {
+            try {
+                list = preorderService.findByStatus(Preorder.PreorderStatus.valueOf(status));
+            } catch (IllegalArgumentException ex) {
+                return apiError(HttpStatus.BAD_REQUEST, "Недопустимый статус: " + status);
+            }
+        } else {
+            list = preorderService.findAll();
+        }
+        return ok(list.stream().map(this::preorderMap).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/preorders/{preorderId}")
+    public ResponseEntity<Map<String, Object>> getPreorder(@PathVariable String preorderId) {
+        return preorderService.findByPreorderId(preorderId)
+                .map(p -> okSingle(preorderMap(p)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Переключение статуса предзаказа (для админки). */
+    @PatchMapping("/preorders/{preorderId}/status")
+    public ResponseEntity<Map<String, Object>> updatePreorderStatus(
+            @PathVariable String preorderId,
+            @RequestBody(required = false) Map<String, Object> body) {
+        Map<String, Object> b = body != null ? body : Collections.emptyMap();
+        String statusStr = b.get("status") instanceof String ? (String) b.get("status") : "";
+        try {
+            Preorder.PreorderStatus next = Preorder.PreorderStatus.valueOf(statusStr);
+            Preorder saved = preorderService.updateStatus(preorderId, next);
+            return okSingle(preorderMap(saved));
+        } catch (IllegalArgumentException e) {
+            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
+    }
+
     // ===== Telegram link (deep-link account confirmation / order notifications) =====
     @PostMapping("/telegram/link/request")
     public ResponseEntity<Map<String, Object>> requestTelegramLink(@RequestBody(required = false) Map<String, Object> body) {
@@ -698,10 +817,10 @@ public class ApiController {
     private Map<String, Object> poiMap(PointOfInterest p) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", p.getId()); m.put("name", p.getName()); m.put("description", p.getDescription());
+        m.put("shortDescription", p.getShortDescription() != null ? p.getShortDescription() : p.getDescription());
         m.put("category", p.getCategory()); m.put("latitude", p.getLatitude()); m.put("longitude", p.getLongitude());
         m.put("address", p.getAddress());
         m.put("image", poiCoverImageUrl(p));
-        m.put("rating", p.getRating()); m.put("reviewsCount", p.getReviewsCount());
         m.put("phone", p.getPhone()); m.put("website", p.getWebsite());
         m.put("tags", p.getTags() != null ? Arrays.asList(p.getTags().split(",")) : List.of());
         return m;
@@ -709,10 +828,21 @@ public class ApiController {
     private Map<String, Object> poiDetailMap(PointOfInterest p) {
         Map<String, Object> m = poiMap(p);
         m.put("email", p.getEmail());
-        m.put("extendedInfo", Map.of("foundedYear", p.getFoundedYear() != null ? p.getFoundedYear() : 0,
-            "architect", p.getArchitect() != null ? p.getArchitect() : "", "material", p.getMaterial() != null ? p.getMaterial() : "",
-            "style", p.getStyle() != null ? p.getStyle() : ""));
-        m.put("coordinates", Map.of("latitude", p.getLatitude() != null ? p.getLatitude() : 0, "longitude", p.getLongitude() != null ? p.getLongitude() : 0));
+        m.put("detailText", p.getDetailText());
+        m.put("maxAudioUrl", p.getMaxAudioUrl());
+        m.put("maxVideoUrl", p.getMaxVideoUrl());
+        m.put("maxPlaylistUrl", p.getMaxPlaylistUrl());
+        Map<String, Object> extended = new LinkedHashMap<>();
+        extended.put("foundedYear", p.getFoundedYear() != null ? p.getFoundedYear() : 0);
+        extended.put("architect", p.getArchitect() != null ? p.getArchitect() : "");
+        extended.put("material", p.getMaterial() != null ? p.getMaterial() : "");
+        extended.put("style", p.getStyle() != null ? p.getStyle() : "");
+        extended.put("shortDescription", p.getShortDescription() != null ? p.getShortDescription() : "");
+        extended.put("detailText", p.getDetailText() != null ? p.getDetailText() : "");
+        m.put("extendedInfo", extended);
+        m.put("coordinates", Map.of(
+            "latitude", p.getLatitude() != null ? p.getLatitude() : 0,
+            "longitude", p.getLongitude() != null ? p.getLongitude() : 0));
         return m;
     }
 
@@ -742,6 +872,10 @@ public class ApiController {
         m.put("paid", r.getPaid() != null && r.getPaid());
         m.put("isPaid", r.getPaid() != null && r.getPaid());
         m.put("price", r.getPrice() != null ? r.getPrice() : 0.0);
+        m.put("priority", r.getPriority() != null ? r.getPriority() : 0);
+        m.put("status", r.getStatus() != null ? r.getStatus().name() : Route.RouteStatus.DRAFT.name());
+        m.put("outdatedReason", r.getOutdatedReason());
+        m.put("isActual", r.getStatus() == null || r.getStatus() != Route.RouteStatus.OUTDATED);
         if (r.getPoiIds() != null && !r.getPoiIds().isEmpty()) {
             List<Long> poiIdList = Arrays.stream(r.getPoiIds().split(",")).map(s -> Long.parseLong(s.trim())).collect(Collectors.toList());
             m.put("pois", poiIdList);
@@ -818,6 +952,32 @@ public class ApiController {
     private Map<String, Object> orderDetailMap(Order o) {
         Map<String, Object> m = orderMap(o);
         m.put("items", o.getItemsList());
+        return m;
+    }
+
+    /** Сериализация предзаказа для публичного API. Безопасна для null-полей. */
+    private Map<String, Object> preorderMap(Preorder p) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", p.getId());
+        m.put("preorderId", p.getPreorderId());
+        m.put("customerName", p.getCustomerName());
+        m.put("phone", p.getPhone());
+        m.put("email", p.getEmail());
+        m.put("telegramUsername", p.getTelegramUsername());
+        m.put("maxUsername", p.getMaxUsername());
+        m.put("comment", p.getComment());
+        m.put("total", p.getTotal() != null ? p.getTotal() : 0.0);
+        m.put("status", p.getStatus() != null ? p.getStatus().name() : Preorder.PreorderStatus.NEW_PREORDER.name());
+        m.put("createdAt", p.getCreatedAt() != null ? p.getCreatedAt().toString() : "");
+        m.put("updatedAt", p.getUpdatedAt() != null ? p.getUpdatedAt().toString() : "");
+        try {
+            List<Map<String, Object>> items = objectMapper.readValue(
+                    p.getItemsJson() != null ? p.getItemsJson() : "[]",
+                    new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+            m.put("items", items);
+        } catch (Exception e) {
+            m.put("items", List.of());
+        }
         return m;
     }
 

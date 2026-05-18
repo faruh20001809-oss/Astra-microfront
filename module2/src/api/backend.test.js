@@ -91,4 +91,53 @@ describe('module2 backend api client', () => {
     )
     await expect(javaApi.profile.login({ loginOrEmail: 'client1', password: 'bad' })).rejects.toThrow('Неверный пароль.')
   })
+
+  it('feedback send throws backend message on failure', async () => {
+    const { javaApi } = await loadApi()
+    globalThis.fetch.mockResolvedValueOnce(
+      jsonResponse({
+        status: 500,
+        body: { status: 'error', message: 'Feedback unavailable' },
+      }),
+    )
+    await expect(javaApi.feedback.send({ name: 'A', email: 'a@b.ru', message: 'Hi' })).rejects.toThrow('Feedback unavailable')
+  })
+
+  it('preorders.create returns preorderId on success', async () => {
+    const { javaApi } = await loadApi()
+    globalThis.fetch.mockResolvedValueOnce(
+      jsonResponse({
+        status: 200,
+        body: { status: 'success', data: { preorderId: 'PRE-ABCD1234', status: 'NEW_PREORDER' } },
+      }),
+    )
+    const data = await javaApi.preorders.create({
+      customerName: 'Иван',
+      telegramUsername: 'ivan',
+      items: [{ id: 1, name: 'Кружка', price: 890, qty: 1 }],
+    })
+    expect(data.preorderId).toBe('PRE-ABCD1234')
+    expect(data.status).toBe('NEW_PREORDER')
+  })
+
+  it('preorders.create surfaces validation field errors from backend', async () => {
+    const { javaApi } = await loadApi()
+    globalThis.fetch.mockResolvedValueOnce(
+      jsonResponse({
+        status: 400,
+        body: {
+          status: 'error',
+          message: 'Ошибка валидации',
+          errors: { contact: 'Заполните Telegram или MAX' },
+        },
+      }),
+    )
+    try {
+      await javaApi.preorders.create({ items: [] })
+      throw new Error('expected to throw')
+    } catch (err) {
+      expect(err.message).toBe('Ошибка валидации')
+      expect(err.fieldErrors).toEqual({ contact: 'Заполните Telegram или MAX' })
+    }
+  })
 })
