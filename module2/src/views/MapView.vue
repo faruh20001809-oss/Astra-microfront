@@ -595,7 +595,7 @@ const NEW_POI_POLL_MS = 75_000
 
 /** Один JSON из `VITE_DGIS_MAP`: `{ "key": "…", "style": "…" }` (ключ как `DGIS_MAP_KEY` / `app.dgis.map-key` в админке). */
 const DGIS_MAP_DEFAULT = Object.freeze({
-  key: '2fa2df2d-9b29-4877-ac65-818e02de807d',
+  key: 'e9f7375c-7ad1-4258-854a-399d99eb65cb',
   style: '0651ff51-79b6-409c-8b90-37a9be2e97ad',
 })
 
