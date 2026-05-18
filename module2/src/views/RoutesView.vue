@@ -6,9 +6,10 @@
       <section class="routes-hero motion-reveal" aria-labelledby="routes-hero-title">
         <div class="routes-hero__accent" aria-hidden="true" />
         <p class="routes-eyebrow text-mono">Исследование города</p>
-        <h1 id="routes-hero-title" class="routes-hero-title">Исторические маршруты</h1>
+        <h1 id="routes-hero-title" class="routes-hero-title">Онлайн-маршруты</h1>
         <p class="routes-subtitle">
-          Готовые экскурсионные маршруты по историческим местам Астрахани — пешеходные, автомобильные и тематические.
+          Испытайте атмосферу города так, как это делают местные жители, и откройте для себя уникальные
+          тайны, которые остаются за кадром стандартных экскурсий.
         </p>
       </section>
 
@@ -60,8 +61,27 @@
         <span>Загрузка маршрутов…</span>
       </div>
 
+      <section v-if="!isLoading && featuredRoute" class="route-feature" aria-label="Главный маршрут">
+        <div class="route-feature__media">
+          <img v-if="featuredRoute.coverImage" :src="featuredRoute.coverImage" :alt="featuredRoute.title" />
+          <div v-else class="route-feature__placeholder" aria-hidden="true"></div>
+        </div>
+        <div class="route-feature__content">
+          <h2>{{ featuredRoute.title }}</h2>
+          <p>{{ featuredRoute.description }}</p>
+          <div class="route-feature__actions">
+            <span>{{ featuredRoute.isPaid ? `${featuredRoute.price} ₽` : 'Бесплатно' }}</span>
+            <button type="button" class="btn btn-primary btn-sm" @click="openRoute(featuredRoute)">
+              Эксклюзивно на Vizitastra →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <h2 v-if="!isLoading && filteredRoutes.length" class="reference-section-title">Другие маршруты</h2>
+
       <!-- Routes grid -->
-      <transition-group v-else name="slide-up" tag="div" class="routes-grid">
+      <transition-group v-if="!isLoading && filteredRoutes.length" name="slide-up" tag="div" class="routes-grid">
         <RouteCard
           v-for="r in filteredRoutes"
           :key="r.id"
@@ -253,6 +273,8 @@ const filteredRoutes = computed(() => {
   return list
 })
 
+const featuredRoute = computed(() => filteredRoutes.value[0] || null)
+
 function buildRouteShareUrl(route) {
   const base = window.location.origin + (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/')
   return `${base}routes/${route.id}?utm_source=share&utm_medium=route&utm_campaign=route_${route.id}`
@@ -372,6 +394,9 @@ onMounted(async () => {
         routes.value = json.map(normalizeRouteFromApi)
       } else {
         console.warn('Unexpected API response format:', json)
+        routes.value = getMockRoutes().map(normalizeRouteFromApi)
+      }
+      if (!routes.value.length) {
         routes.value = getMockRoutes().map(normalizeRouteFromApi)
       }
     } else {

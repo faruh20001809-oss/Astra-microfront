@@ -1,5 +1,89 @@
 <template>
-  <div class="map-page">
+  <div class="museum-home-page">
+    <section class="museum-hero" aria-labelledby="museum-hero-title">
+      <img
+        class="museum-hero__image"
+        src="https://commons.wikimedia.org/wiki/Special:FilePath/%D0%90%D1%81%D1%82%D1%80%D0%B0%D1%85%D0%B0%D0%BD%D1%8C._%D0%94%D0%BE%D0%BC_%D0%A2%D0%B5%D1%82%D1%8E%D1%88%D0%B8%D0%BD%D0%BE%D0%B2%D0%B0._%D0%A4%D0%B0%D1%81%D0%B0%D0%B4.JPG?width=1400"
+        alt="Деревянная архитектура Астраханской области"
+      />
+      <div class="museum-hero__content">
+        <h1 id="museum-hero-title">Виртуальный музей деревянной архитектуры Астраханской области</h1>
+        <a class="museum-pill-link" href="#museum-map" @click.prevent="scrollToMuseumMap">Перейти к карте →</a>
+      </div>
+    </section>
+
+    <section class="museum-about" aria-labelledby="museum-about-title">
+      <h2 id="museum-about-title">Почему деревяшки?</h2>
+      <div class="museum-about__copy">
+        <p>
+          Астраханская область — уникальный регион, где сохранились редкие образцы деревянной архитектуры.
+          Эти дома и их резные элементы рассказывают живую историю края.
+        </p>
+        <p>
+          Сегодня деревянные дома массово сносятся в рамках программы переселения из аварийного жилья,
+          и с каждым годом исчезают части архитектурного наследия.
+        </p>
+        <p>
+          Проект сохраняет уникальное деревянное зодчество региона в виртуальном и общедоступном формате.
+        </p>
+      </div>
+    </section>
+
+    <section class="museum-preview-section" aria-labelledby="museum-routes-title">
+      <div class="museum-section-head">
+        <h2 id="museum-routes-title">Онлайн-маршруты по городу</h2>
+        <router-link class="museum-outline-link" to="/routes">Больше маршрутов →</router-link>
+      </div>
+      <div class="museum-card-row museum-card-row--routes">
+        <article v-for="route in previewRoutes" :key="route.title" class="museum-preview-card museum-preview-card--dark">
+          <div class="museum-card-media" aria-hidden="true"></div>
+          <p>{{ route.title }}</p>
+          <div class="museum-card-foot">
+            <span>{{ route.price }}</span>
+            <router-link to="/routes">Подробнее →</router-link>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="museum-preview-section" aria-labelledby="museum-shop-title">
+      <div class="museum-section-head">
+        <h2 id="museum-shop-title">Наш мерч</h2>
+        <router-link class="museum-outline-link" to="/shop">Больше товаров →</router-link>
+      </div>
+      <div class="museum-card-row">
+        <article v-for="item in previewProducts" :key="item.title" class="museum-preview-card museum-preview-card--shop">
+          <div class="museum-card-media" aria-hidden="true"></div>
+          <p>{{ item.title }}</p>
+          <div class="museum-card-foot">
+            <span>{{ item.price }}</span>
+            <router-link to="/shop">Купить →</router-link>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="museum-map" class="map-page" aria-label="Виртуальный музей на карте">
+      <div v-if="featuredPois.length" class="museum-map-recs" aria-labelledby="museum-recs-title">
+        <h2 id="museum-recs-title">Обязательно посмотрите</h2>
+        <div class="museum-map-recs__grid">
+          <article
+            v-for="poi in featuredPois"
+            :key="poi.id"
+            class="museum-poi-card"
+            @click="selectAndFlyTo(poi)"
+          >
+            <div class="museum-poi-card__media">
+              <img v-if="poi.image" :src="poi.image" :alt="poi.name" loading="lazy" />
+            </div>
+            <div class="museum-poi-card__body">
+              <h3>{{ poi.name }}</h3>
+              <p>{{ poi.address || poi.year || poi.category }}</p>
+              <button type="button">Подробнее →</button>
+            </div>
+          </article>
+        </div>
+      </div>
     <!-- Sidebar: на десктопе — слева в потоке; на мобильных скрыт, контент в Drawer -->
     <aside class="map-sidebar">
       <div class="sidebar-header motion-reveal">
@@ -354,8 +438,8 @@
               <!-- Вкладка: Описание -->
               <div v-if="activeTab === 'desc'" class="poi-tab-content" role="tabpanel" aria-labelledby="tab-desc">
                 <!-- Описание: сначала краткий текст POI, затем AI (по запросу) -->
-                <p v-if="mapStore.selectedPoi.description" class="poi-desc-text poi-desc-fallback">
-                  {{ mapStore.selectedPoi.description }}
+                <p v-if="selectedPoiCardText" class="poi-desc-text poi-desc-fallback">
+                  {{ selectedPoiCardText }}
                 </p>
 
                 <div v-if="aiContent || aiLoading" class="ai-content-box">
@@ -474,11 +558,17 @@
         </div>
       </transition>
     </div>
+    <article v-if="museumArticleParagraphs.length" class="museum-poi-article">
+      <p v-for="(paragraph, index) in museumArticleParagraphs" :key="index">
+        {{ paragraph }}
+      </p>
+    </article>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import { usePoiAiTts } from '@/composables/usePoiAiTts.js'
@@ -486,6 +576,18 @@ import { useFavorites } from '@/composables/useFavorites.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import { javaApi } from '@/api/backend.js'
 import { fetch2gisRouteCoordinates, isDgisRoutingConfigured } from '@/api/dgisRouting.js'
+
+const previewRoutes = [
+  { title: 'Маршрут по району Закутумье', price: '800 ₽' },
+  { title: 'Маршрут по району Закутумье', price: 'Бесплатно' },
+  { title: 'Маршрут по району Закутумье', price: 'Бесплатно' },
+]
+
+const previewProducts = [
+  { title: 'Футболка оверсайз с оттиском реального деревянного элемента', price: '2 500 ₽' },
+  { title: 'Футболка оверсайз с оттиском реального деревянного элемента', price: '2 500 ₽' },
+  { title: 'Футболка оверсайз с оттиском реального деревянного элемента', price: '2 500 ₽' },
+]
 
 const LS_POI_CATALOG_MAX = 'astra-poi-catalog-max-id'
 const LS_POI_DISMISSED = 'astra-poi-dismissed-new-ids'
@@ -578,6 +680,22 @@ let lastFollowRouteAppliedId = null
 
 // Floating modal position (near selected marker)
 const modalPosition = ref({ top: 0, left: 0 })
+const featuredPois = computed(() => (Array.isArray(mapStore.pois) ? mapStore.pois.slice(0, 4) : []))
+const activeMuseumPoi = computed(() => mapStore.selectedPoi || featuredPois.value[0] || null)
+const selectedPoiCardText = computed(() => {
+  const poi = activeMuseumPoi.value
+  return poi?.mapDescription || poi?.shortDescription || poi?.description || ''
+})
+const selectedPoiArticleText = computed(() => {
+  const poi = activeMuseumPoi.value
+  return poi?.articleText || poi?.fullDescription || poi?.longDescription || poi?.description || ''
+})
+const museumArticleParagraphs = computed(() =>
+  String(selectedPoiArticleText.value || '')
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean),
+)
 
 // Current map zoom for responsive modal sizing
 const zoomLevel = ref(14)
@@ -812,6 +930,9 @@ async function openNewPoiOnMap() {
   newPoiHighlight.value = null
   newPoiDialogOpen.value = false
   await mapStore.fetchPois()
+  if (!mapStore.selectedPoi && mapStore.pois[0]) {
+    mapStore.setSelected(mapStore.pois[0])
+  }
   syncCatalogPointerFromPois()
   const poi = mapStore.pois.find((p) => p.id === id)
   if (poi) {
@@ -826,6 +947,18 @@ async function openNewPoiOnMap() {
 
 // Constants
 const ASTRAKHAN_CENTER = [48.0408, 46.3497] // [lng, lat]
+
+function scrollToMuseumMap() {
+  const target = document.getElementById('museum-map')
+  if (!target) return
+  target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
+async function scrollToRouteHash(hash) {
+  if (hash !== '#museum-map') return
+  await nextTick()
+  requestAnimationFrame(scrollToMuseumMap)
+}
 
 // ── Lifecycle ──
 onMounted(async () => {
@@ -853,7 +986,13 @@ onMounted(async () => {
       }
     }, 200)
   }
+  scrollToRouteHash(vueRoute.hash)
 })
+
+watch(
+  () => vueRoute.hash,
+  (hash) => scrollToRouteHash(hash)
+)
 
 onUnmounted(() => {
   if (newPoiPollTimer) {
@@ -950,6 +1089,9 @@ function renderMarkers() {
   for (const poi of mapStore.filteredPois) {
     const el = document.createElement('div')
     el.className = 'custom-marker'
+    if (Number(mapStore.selectedPoi?.id) === Number(poi.id)) {
+      el.classList.add('custom-marker--active')
+    }
     if (
       followIds?.length &&
       followIds.some((id) => Number(id) === Number(poi.id)) &&
@@ -957,9 +1099,10 @@ function renderMarkers() {
     ) {
       el.classList.add('custom-marker--route-done')
     }
+    const markerLabel = String(poi.mapLabel || poi.name || '').trim()
     el.innerHTML = `<span class="marker-icon" aria-hidden="true">${categoryIcon(
       poi.category,
-    )}</span>`
+    )}</span><span class="marker-label">${markerLabel}</span>`
     el.title = poi.name
     el.setAttribute('role', 'button')
     el.setAttribute('tabindex', '0')
@@ -988,11 +1131,13 @@ function openPoi(poi) {
   mapStore.setSelected(poi)
   resetForPoi()
   isDescExpanded.value = false
+  renderMarkers()
   if (map) updateModalPosition(poi)
 }
 
 function selectAndFlyTo(poi) {
   mapStore.setSelected(poi)
+  renderMarkers()
   if (map) {
     map.setCenter([poi.lng, poi.lat], { animate: true, duration: 600 })
     map.setZoom(16, { animate: true })
@@ -1274,6 +1419,286 @@ function categoryIcon(cat) {
 </script>
 
 <style scoped>
+.museum-home-page {
+  width: 100%;
+  background: #fff;
+  color: #1d1d1b;
+  padding: calc(var(--nav-h, 64px) + 1rem) max(1.5rem, calc((100vw - 1180px) / 2)) 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.museum-hero {
+  position: relative;
+  min-height: min(62vw, 520px);
+  overflow: hidden;
+  background: #d9d9d9;
+}
+
+.museum-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.66) 34%, rgba(255, 255, 255, 0.08) 72%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.museum-hero__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 42%;
+  filter: saturate(0.82) contrast(0.95) brightness(0.98);
+}
+
+.museum-hero__content {
+  position: relative;
+  z-index: 1;
+  width: min(680px, 88%);
+  padding: clamp(1.35rem, 3vw, 2.75rem);
+}
+
+.museum-hero h1 {
+  max-width: 11.8em;
+  margin: 0 0 0.95rem;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(2.6rem, 4.4vw, 5.35rem);
+  font-weight: 900;
+  line-height: 0.86;
+  letter-spacing: 0;
+  text-wrap: balance;
+  text-shadow:
+    0 1px 0 #fff,
+    0 0 18px rgba(255, 255, 255, 0.96),
+    0 0 36px rgba(255, 255, 255, 0.82);
+}
+
+.museum-pill-link,
+.museum-outline-link,
+.museum-card-foot a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0 1.3rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.museum-pill-link {
+  background: #1d1d1b;
+  color: #fff;
+}
+
+.museum-about {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.9fr) minmax(320px, 1fr);
+  gap: clamp(2rem, 8vw, 10rem);
+  min-height: 470px;
+  padding: 1.5rem 0 2.5rem;
+}
+
+.museum-about h2,
+.museum-preview-section h2 {
+  margin: 0;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(2rem, 2vw + 1rem, 3.4rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.museum-about__copy {
+  display: grid;
+  align-content: start;
+  gap: 1.35rem;
+  padding-top: 1.8rem;
+  font-size: clamp(0.95rem, 0.22vw + 0.9rem, 1.05rem);
+  line-height: 1.22;
+}
+
+.museum-preview-section {
+  margin: 0 0 2rem;
+}
+
+.museum-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.museum-outline-link {
+  border: 2px solid #1d1d1b;
+  color: #1d1d1b;
+  background: #fff;
+}
+
+.museum-card-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.museum-preview-card {
+  min-width: 0;
+}
+
+.museum-preview-card--dark {
+  padding: 1rem;
+  background: #191716;
+  color: #fff;
+}
+
+.museum-preview-card--shop {
+  border: 2px solid #5f5f5f;
+  background: #fff;
+  color: #1d1d1b;
+}
+
+.museum-card-media {
+  aspect-ratio: 1.55 / 1;
+  background: #c9c9c9;
+}
+
+.museum-preview-card p {
+  margin: 0.75rem 0 0;
+  min-height: 2.1em;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.museum-card-foot {
+  display: grid;
+  grid-template-columns: auto minmax(7rem, 9rem);
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.65rem;
+}
+
+.museum-card-foot span {
+  font-size: 1.2rem;
+}
+
+.museum-card-foot a {
+  min-height: 2rem;
+  padding: 0 1rem;
+  background: #1d1d1b;
+  color: #fff;
+  font-size: 0.78rem;
+}
+
+.museum-preview-card--dark .museum-card-foot a {
+  background: #fff;
+  color: #1d1d1b;
+}
+
+.museum-preview-card--dark .museum-card-foot span {
+  color: #fff;
+}
+
+@media (max-width: 900px) {
+  .museum-home-page {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .museum-about {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    min-height: 0;
+  }
+
+  .museum-card-row {
+    grid-template-columns: 1fr;
+  }
+
+  .museum-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .museum-home-page .map-page {
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+
+  .museum-home-page .map-page {
+    grid-template-rows: auto auto auto;
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .museum-home-page .map-wrapper {
+    grid-template-columns: 1fr;
+    grid-template-rows: 460px auto;
+  }
+
+  .museum-home-page .map-wrapper,
+  .museum-map-recs,
+  .museum-poi-article {
+    grid-column: 1 / -1;
+  }
+
+  .museum-home-page .map-container {
+    grid-column: 1 / -1;
+    grid-row: 1 / 2;
+  }
+
+  .museum-home-page .poi-modal.floating {
+    grid-column: 1 / -1;
+    grid-row: 2 / 3;
+    border-left: 12px solid #fff;
+  }
+
+  .museum-poi-article {
+    grid-row: 3 / 4;
+  }
+
+  .museum-map-recs {
+    grid-row: 4 / 5;
+  }
+
+  .museum-map-recs__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .museum-home-page {
+    padding-top: calc(var(--nav-h, 56px) + 0.75rem);
+  }
+
+  .museum-hero {
+    min-height: 420px;
+  }
+
+  .museum-hero__content {
+    width: 100%;
+  }
+
+  .museum-hero h1 {
+    font-size: clamp(2.25rem, 13vw, 3.6rem);
+    line-height: 0.9;
+  }
+
+  .museum-card-foot {
+    grid-template-columns: 1fr;
+  }
+}
+
 .map-page {
   display: flex;
   flex-direction: row;
@@ -1283,6 +1708,279 @@ function categoryIcon(cat) {
   max-width: 100vw;
   position: relative;
   overflow: hidden;
+}
+
+.museum-home-page .map-page {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: minmax(520px, min(64vw, 650px)) auto auto;
+  gap: 1.4rem 0;
+  height: auto;
+  min-height: 0;
+  max-width: 100%;
+  margin-top: 2.5rem;
+  overflow: visible;
+  scroll-margin-top: calc(var(--nav-h, 64px) + 0.75rem);
+}
+
+.museum-home-page .map-sidebar {
+  display: none;
+}
+
+.museum-home-page .map-wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(290px, 0.36fr);
+  grid-template-rows: 1fr;
+  grid-column: 1 / -1;
+  grid-row: 1 / 2;
+  width: auto;
+  min-height: 0;
+  border: 12px solid #fff;
+  background: #ededed;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.museum-home-page .map-container {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  min-height: 0;
+}
+
+.museum-home-page .map-container {
+  filter: grayscale(1) contrast(0.72) brightness(1.18);
+}
+
+.museum-home-page .map-poins-btn {
+  display: flex;
+  top: 1rem;
+  left: 1rem;
+  right: auto;
+  bottom: auto;
+  background: #fff;
+  border: 2px solid #1d1d1b;
+  color: #1d1d1b;
+}
+
+.museum-home-page .map-controls {
+  right: 1rem;
+  bottom: 1rem;
+}
+
+.museum-home-page .poi-connector {
+  display: none;
+}
+
+.museum-home-page .poi-modal.floating {
+  position: relative !important;
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  min-height: 0;
+  margin: 0;
+  border: 12px solid #fff;
+  border-left: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  color: #1d1d1b;
+  overflow: hidden;
+}
+
+.museum-home-page .poi-modal.floating .poi-modal-body {
+  flex-direction: column;
+  height: 100%;
+}
+
+.museum-home-page .poi-modal.floating .poi-photo-col {
+  flex: 0 0 42%;
+  max-width: none;
+  min-width: 0;
+  min-height: 0;
+  background: #c9c9c9;
+}
+
+.museum-home-page .poi-modal.floating .poi-photo,
+.museum-home-page .poi-modal.floating .poi-photo-placeholder {
+  min-height: 0;
+  height: 100%;
+  border-radius: 0;
+  background: #c9c9c9;
+  color: transparent;
+}
+
+.museum-home-page .poi-modal.floating .poi-card-divider,
+.museum-home-page .poi-modal.floating .poi-sheet-handle,
+.museum-home-page .poi-modal.floating .poi-tabs-shell,
+.museum-home-page .poi-modal.floating .poi-card-actions,
+.museum-home-page .poi-modal.floating .poi-tts-voice-row,
+.museum-home-page .poi-modal.floating .ai-gen-btn,
+.museum-home-page .poi-modal.floating .poi-fav-btn,
+.museum-home-page .poi-modal.floating .modal-close {
+  display: none;
+}
+
+.museum-home-page .poi-modal.floating .poi-content-col {
+  padding: 1.1rem 1.05rem;
+  overflow: hidden;
+  color: #1d1d1b;
+}
+
+.museum-home-page .poi-modal.floating .poi-modal-title {
+  margin: 0 0 0.55rem;
+  color: #1d1d1b;
+  border: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.05rem, 0.6vw + 0.9rem, 1.4rem);
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.museum-home-page .poi-modal.floating .poi-type-badge {
+  display: none;
+}
+
+.museum-home-page .poi-modal.floating .poi-meta-list {
+  display: block;
+  margin: 0 0 0.65rem;
+  color: #1d1d1b;
+  font-size: 0.92rem;
+  line-height: 1.1;
+}
+
+.museum-home-page .poi-modal.floating .poi-meta-list dt,
+.museum-home-page .poi-modal.floating .poi-meta-list dd {
+  display: inline;
+  color: #1d1d1b;
+  margin: 0;
+}
+
+.museum-home-page .poi-modal.floating .poi-meta-list dt {
+  font-weight: 900;
+}
+
+.museum-home-page .poi-modal.floating .poi-meta-list dd::after {
+  content: '\A';
+  white-space: pre;
+}
+
+.museum-home-page .poi-modal.floating .poi-desc-text,
+.museum-home-page .poi-modal.floating .poi-description {
+  color: #1d1d1b;
+  font-size: 0.92rem;
+  line-height: 1.1;
+  max-width: none;
+  display: -webkit-box;
+  -webkit-line-clamp: 7;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.museum-home-page .poi-modal.floating .poi-tab-content:not(:first-of-type) {
+  display: none;
+}
+
+.museum-map-recs {
+  grid-column: 1 / -1;
+  grid-row: 3 / 4;
+  margin-top: 0.8rem;
+}
+
+.museum-poi-article {
+  grid-column: 1 / -1;
+  grid-row: 2 / 3;
+  max-width: 1080px;
+  margin: 1rem auto 0;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.05rem, 0.5vw + 0.95rem, 1.28rem);
+  line-height: 1.08;
+  text-align: justify;
+}
+
+.museum-poi-article p {
+  margin: 0 0 1.4rem;
+  text-indent: 1.4rem;
+}
+
+.museum-map-recs h2 {
+  margin: 0 0 1rem;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(2rem, 2vw + 1rem, 3.4rem);
+  font-weight: 900;
+  line-height: 0.98;
+}
+
+.museum-map-recs__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+
+.museum-poi-card {
+  display: grid;
+  background: #191716;
+  color: #fff;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.museum-poi-card__media {
+  aspect-ratio: 2.3 / 1;
+  background: #c9c9c9;
+  overflow: hidden;
+}
+
+.museum-poi-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1);
+}
+
+.museum-poi-card__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.3rem 1rem;
+  margin-top: 0.75rem;
+}
+
+.museum-poi-card__body h3,
+.museum-poi-card__body p {
+  grid-column: 1 / 2;
+  margin: 0;
+}
+
+.museum-poi-card__body h3 {
+  font-size: 1rem;
+  line-height: 1.05;
+}
+
+.museum-poi-card__body p {
+  font-size: 0.9rem;
+  line-height: 1.05;
+}
+
+.museum-poi-card__body button {
+  grid-column: 2 / 3;
+  grid-row: 1 / 3;
+  align-self: end;
+  min-height: 2rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #1d1d1b;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 /* Sidebar: в потоке слева, не перекрывает карту */
@@ -2241,6 +2939,7 @@ function categoryIcon(cat) {
 
 /* ===== Custom markers (2GIS) ===== */
 ::global(.custom-marker) {
+  position: relative;
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -2256,10 +2955,39 @@ function categoryIcon(cat) {
   touch-action: manipulation;
 }
 
+::global(.custom-marker .marker-label) {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 6px);
+  max-width: 170px;
+  padding: 0.28rem 0.45rem;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 2px solid #1d1d1b;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
 ::global(.custom-marker:hover),
 ::global(.custom-marker:focus) {
   transform: scale(1.2);
   border-color: var(--accent);
+}
+
+::global(.custom-marker:hover .marker-label),
+::global(.custom-marker:focus .marker-label),
+::global(.custom-marker--active .marker-label) {
+  opacity: 1;
+  transform: translateX(-50%) translateY(2px) scale(0.84);
 }
 
 /* Точка маршрута отмечена как пройденная (чекбокс в баннере) */
@@ -2716,6 +3444,253 @@ body.app-light-theme .poi-modal.floating .ai-content-box {
       inset 0 1px 0 rgba(255, 255, 255, 0.95);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+}
+
+/* Reference cleanup: map points, POI modal and route/sidebar surfaces */
+#app-root.app-light .map-page,
+body.app-light-theme .map-page {
+  font-family: Arial, Helvetica, sans-serif;
+  background: #fff;
+  color: #1d1d1b;
+}
+
+#app-root.app-light .map-sidebar,
+body.app-light-theme .map-sidebar,
+#app-root.app-light .map-sidebar-drawer-content,
+body.app-light-theme .map-sidebar-drawer-content,
+#app-root.app-light .route-follow-banner,
+body.app-light-theme .route-follow-banner,
+#app-root.app-light .suggest-poi-success,
+body.app-light-theme .suggest-poi-success {
+  background: #fff !important;
+  border: 2px solid #1d1d1b !important;
+  border-radius: 0 !important;
+  color: #1d1d1b !important;
+  box-shadow: none !important;
+}
+
+#app-root.app-light .map-container,
+body.app-light-theme .map-container {
+  background: #c9c9c9;
+}
+
+#app-root.app-light .map-poins-btn,
+body.app-light-theme .map-poins-btn,
+#app-root.app-light .drawer-suggest-btn,
+body.app-light-theme .drawer-suggest-btn,
+#app-root.app-light .map-control-btn,
+body.app-light-theme .map-control-btn,
+#app-root.app-light .location-btn,
+body.app-light-theme .location-btn {
+  background: #fff !important;
+  border: 2px solid #1d1d1b !important;
+  border-radius: 999px !important;
+  color: #1d1d1b !important;
+  box-shadow: none !important;
+}
+
+#app-root.app-light .map-poins-btn:hover,
+body.app-light-theme .map-poins-btn:hover,
+#app-root.app-light .drawer-suggest-btn:hover,
+body.app-light-theme .drawer-suggest-btn:hover,
+#app-root.app-light .map-control-btn:hover,
+body.app-light-theme .map-control-btn:hover,
+#app-root.app-light .location-btn:hover,
+body.app-light-theme .location-btn:hover {
+  background: #1d1d1b !important;
+  color: #fff !important;
+}
+
+#app-root.app-light .poi-list-item,
+body.app-light-theme .poi-list-item,
+#app-root.app-light .map-route-stop,
+body.app-light-theme .map-route-stop {
+  border: 2px solid #1d1d1b !important;
+  border-radius: 0 !important;
+  background: #fff !important;
+  color: #1d1d1b !important;
+  box-shadow: none !important;
+}
+
+#app-root.app-light .poi-list-item.active,
+body.app-light-theme .poi-list-item.active,
+#app-root.app-light .poi-list-item:hover,
+body.app-light-theme .poi-list-item:hover {
+  background: #1d1d1b !important;
+  color: #fff !important;
+}
+
+#app-root.app-light .poi-list-item.active *,
+body.app-light-theme .poi-list-item.active *,
+#app-root.app-light .poi-list-item:hover *,
+body.app-light-theme .poi-list-item:hover * {
+  color: inherit !important;
+}
+
+#app-root.app-light .custom-marker,
+body.app-light-theme .custom-marker {
+  width: 30px;
+  height: 30px;
+  background: #fff !important;
+  border: 3px solid #1d1d1b !important;
+  border-radius: 50%;
+  color: #1d1d1b !important;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.92);
+}
+
+#app-root.app-light .custom-marker:hover,
+body.app-light-theme .custom-marker:hover,
+#app-root.app-light .custom-marker:focus,
+body.app-light-theme .custom-marker:focus,
+#app-root.app-light .custom-marker--active,
+body.app-light-theme .custom-marker--active {
+  background: #1d1d1b !important;
+  color: #fff !important;
+  transform: scale(1.08);
+}
+
+#app-root.app-light .custom-marker .marker-label,
+body.app-light-theme .custom-marker .marker-label {
+  top: calc(100% + 8px);
+  min-width: 110px;
+  max-width: 190px;
+  background: #fff !important;
+  border: 2px solid #1d1d1b !important;
+  border-radius: 0;
+  color: #1d1d1b !important;
+  box-shadow: none;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+#app-root.app-light .custom-marker--route-done,
+body.app-light-theme .custom-marker--route-done {
+  background: #1d1d1b !important;
+  color: #fff !important;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.92);
+}
+
+#app-root.app-light .user-marker,
+body.app-light-theme .user-marker {
+  background: #1d1d1b !important;
+  border: 3px solid #fff !important;
+  color: #fff !important;
+}
+
+#app-root.app-light .poi-modal.floating,
+body.app-light-theme .poi-modal.floating {
+  background: #fff !important;
+  border: 2px solid #1d1d1b !important;
+  border-radius: 0 !important;
+  color: #1d1d1b !important;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.16) !important;
+}
+
+#app-root.app-light .museum-home-page .poi-modal.floating,
+body.app-light-theme .museum-home-page .poi-modal.floating {
+  border: 12px solid #fff !important;
+  border-left: 0 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14) !important;
+}
+
+#app-root.app-light .poi-modal.floating .poi-modal-title,
+body.app-light-theme .poi-modal.floating .poi-modal-title,
+#app-root.app-light .poi-modal.floating .poi-desc-text,
+body.app-light-theme .poi-modal.floating .poi-desc-text,
+#app-root.app-light .poi-modal.floating .poi-description,
+body.app-light-theme .poi-modal.floating .poi-description,
+#app-root.app-light .poi-modal.floating .ai-content-text,
+body.app-light-theme .poi-modal.floating .ai-content-text,
+#app-root.app-light .poi-modal.floating .poi-meta-list,
+body.app-light-theme .poi-modal.floating .poi-meta-list,
+#app-root.app-light .poi-modal.floating .poi-meta-list dt,
+body.app-light-theme .poi-modal.floating .poi-meta-list dt,
+#app-root.app-light .poi-modal.floating .poi-desc-fallback,
+body.app-light-theme .poi-modal.floating .poi-desc-fallback,
+#app-root.app-light .poi-modal.floating .poi-desc-placeholder,
+body.app-light-theme .poi-modal.floating .poi-desc-placeholder,
+#app-root.app-light .poi-modal.floating .empty-state,
+body.app-light-theme .poi-modal.floating .empty-state {
+  color: #1d1d1b !important;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+#app-root.app-light .poi-modal.floating .poi-tabs,
+body.app-light-theme .poi-modal.floating .poi-tabs,
+#app-root.app-light .poi-modal.floating .ai-content-box,
+body.app-light-theme .poi-modal.floating .ai-content-box,
+#app-root.app-light .poi-modal.floating .street-view-placeholder,
+body.app-light-theme .poi-modal.floating .street-view-placeholder {
+  background: #fff !important;
+  border: 2px solid #1d1d1b !important;
+  border-radius: 0 !important;
+  color: #1d1d1b !important;
+  box-shadow: none !important;
+}
+
+#app-root.app-light .poi-modal.floating .poi-tab-btn,
+body.app-light-theme .poi-modal.floating .poi-tab-btn,
+#app-root.app-light .poi-modal.floating .poi-type-badge,
+body.app-light-theme .poi-modal.floating .poi-type-badge,
+#app-root.app-light .poi-modal.floating .poi-tts-voice-select,
+body.app-light-theme .poi-modal.floating .poi-tts-voice-select,
+#app-root.app-light .poi-modal.floating .ai-gen-btn,
+body.app-light-theme .poi-modal.floating .ai-gen-btn,
+#app-root.app-light .poi-modal.floating .btn,
+body.app-light-theme .poi-modal.floating .btn {
+  border: 2px solid #1d1d1b !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: #1d1d1b !important;
+  box-shadow: none !important;
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+}
+
+#app-root.app-light .poi-modal.floating .poi-tabs .poi-tab-btn.active,
+body.app-light-theme .poi-modal.floating .poi-tabs .poi-tab-btn.active,
+#app-root.app-light .poi-modal.floating .ai-gen-btn:hover:not(:disabled),
+body.app-light-theme .poi-modal.floating .ai-gen-btn:hover:not(:disabled),
+#app-root.app-light .poi-modal.floating .btn:hover,
+body.app-light-theme .poi-modal.floating .btn:hover {
+  background: #1d1d1b !important;
+  color: #fff !important;
+}
+
+#app-root.app-light .poi-modal.floating .modal-close,
+body.app-light-theme .poi-modal.floating .modal-close,
+#app-root.app-light .poi-modal.floating .poi-fav-btn,
+body.app-light-theme .poi-modal.floating .poi-fav-btn {
+  background: #fff !important;
+  border: 2px solid #1d1d1b !important;
+  border-radius: 50% !important;
+  color: #1d1d1b !important;
+  box-shadow: none !important;
+}
+
+#app-root.app-light .poi-modal.floating .modal-close:hover,
+body.app-light-theme .poi-modal.floating .modal-close:hover,
+#app-root.app-light .poi-modal.floating .poi-fav-btn:hover,
+body.app-light-theme .poi-modal.floating .poi-fav-btn:hover,
+#app-root.app-light .poi-modal.floating .poi-fav-btn.active,
+body.app-light-theme .poi-modal.floating .poi-fav-btn.active {
+  background: #1d1d1b !important;
+  color: #fff !important;
+}
+
+@media (max-width: 768px) {
+  #app-root.app-light .poi-modal.floating,
+  body.app-light-theme .poi-modal.floating {
+    border: 2px solid #1d1d1b !important;
+    border-bottom: 0 !important;
+    box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.14) !important;
+  }
+
+  #app-root.app-light .museum-home-page .poi-modal.floating,
+  body.app-light-theme .museum-home-page .poi-modal.floating {
+    border: 12px solid #fff !important;
   }
 }
 </style>

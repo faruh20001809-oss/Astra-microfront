@@ -287,4 +287,125 @@ async function submitRegister() {
 .auth-feedback {
   margin: 1rem 0 0;
 }
+
+/* Customer reference: flat black/white auth screen */
+.auth-page {
+  background: #fff;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.auth-container {
+  max-width: 620px;
+}
+
+.auth-shell {
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border: 2px solid #1d1d1b;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+}
+
+.auth-eyebrow {
+  margin: 0 0 0.45rem;
+  color: #1d1d1b;
+  letter-spacing: 0;
+  text-transform: lowercase;
+}
+
+.auth-title {
+  margin: 0 0 0.65rem;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(2.1rem, 4vw, 3.2rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.auth-lead {
+  color: #1d1d1b;
+  font-size: 1rem;
+  line-height: 1.18;
+}
+
+.auth-segmented {
+  gap: 0;
+  padding: 0;
+  border: 2px solid #1d1d1b;
+  border-radius: 999px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.auth-tab {
+  min-height: 44px;
+  border-radius: 0;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: lowercase;
+}
+
+.auth-tab:hover {
+  color: #1d1d1b;
+  background: #efefef;
+}
+
+.auth-tab.active {
+  background: #1d1d1b;
+  color: #fff;
+  box-shadow: none;
+}
+
+.auth-tab:focus-visible {
+  outline: 2px solid #1d1d1b;
+  outline-offset: 2px;
+}
+
+.auth-form {
+  gap: 0.95rem;
+}
+
+.auth-page :deep(.form-label) {
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.auth-page :deep(.form-input) {
+  min-height: 48px;
+  border: 2px solid #1d1d1b;
+  border-radius: 0;
+  background: #fff;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.auth-page :deep(.form-input:focus) {
+  border-color: #1d1d1b;
+  box-shadow: 0 0 0 3px rgba(29, 29, 27, 0.12);
+}
+
+.auth-submit {
+  min-height: 48px;
+  border-radius: 999px;
+  background: #1d1d1b;
+  border-color: #1d1d1b;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.auth-feedback {
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+}
 </style>

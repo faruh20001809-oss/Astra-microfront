@@ -6,9 +6,10 @@
       <section class="shop-hero motion-reveal" aria-labelledby="shop-hero-title">
         <div class="shop-hero__accent" aria-hidden="true" />
         <p class="shop-eyebrow text-mono">Магазин</p>
-        <h1 id="shop-hero-title" class="shop-hero-title">Мерч Астрахани</h1>
+        <h1 id="shop-hero-title" class="shop-hero-title">Магазин мерча</h1>
         <p class="shop-subtitle">
-          Товары с историческими мотивами города — футболки, кружки, открытки и сувениры.
+          Мы создали мерч, вдохновленный уникальным архитектурным наследием нашего региона.
+          Каждый ваш выбор поддерживает проект, направленный на сохранение культурного наследия.
         </p>
       </section>
 
@@ -58,8 +59,35 @@
         <button type="button" class="btn btn-ghost btn-sm" @click="activeCategory = null">Сбросить фильтр</button>
       </div>
 
+      <section v-if="sortedProducts.length" class="shop-feature" aria-label="Главный товар">
+        <div class="shop-feature__media">
+          <img
+            v-if="heroProductImageUrl"
+            :src="heroProductImageUrl"
+            :alt="heroProduct.name"
+          />
+          <div v-else class="shop-feature__placeholder" aria-hidden="true"></div>
+        </div>
+        <div class="shop-feature__content">
+          <h2>{{ heroProduct.name }}</h2>
+          <p>{{ heroProduct.description }}</p>
+          <div v-if="heroProduct.variants?.length" class="shop-feature__sizes">
+            <strong>Размеры:</strong>
+            <span>{{ heroProduct.variants.join(' / ') }}</span>
+          </div>
+          <div class="shop-feature__actions">
+            <span>{{ heroProduct.price }} ₽</span>
+            <button type="button" class="btn btn-primary btn-sm" @click="addToCart(heroProduct)">
+              Заказать →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <h2 v-if="sortedProducts.length" class="reference-section-title">Смотрите также</h2>
+
       <!-- Product grid -->
-      <transition-group v-else name="fade" tag="div" class="product-grid">
+      <transition-group v-if="sortedProducts.length" name="fade" tag="div" class="product-grid">
         <ProductCard
           v-for="p in sortedProducts"
           :key="p.id"
@@ -177,11 +205,17 @@ const sortedProducts = computed(() => {
   return list
 })
 
+const heroProduct = computed(() => sortedProducts.value[0] || {})
+const heroProductImageUrl = useProductImage(heroProduct)
+
 async function loadProducts() {
   isLoading.value = true
   error.value = null
   try {
     products.value = await javaApi.products.getList()
+    if (!Array.isArray(products.value) || products.value.length === 0) {
+      products.value = getMockProducts()
+    }
   } catch (err) {
     console.warn('Java API недоступен, используем mock-данные:', err)
     error.value = 'Не удалось загрузить товары. Показываем демо-данные.'

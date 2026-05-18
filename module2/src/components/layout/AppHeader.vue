@@ -20,6 +20,7 @@
             v-if="item.external"
             :href="item.to"
             class="nav-link"
+            :class="{ 'nav-link-current': isNavCurrent(item.to) }"
           >
             <NavIcon :name="item.icon" :size="18" class="nav-icon-el" />
             {{ item.label }}
@@ -28,6 +29,7 @@
             v-else
             :to="item.to"
             class="nav-link"
+            :class="{ 'nav-link-current': isNavCurrent(item.to) }"
             :aria-current="isNavCurrent(item.to) ? 'page' : undefined"
           >
             <NavIcon :name="item.icon" :size="18" class="nav-icon-el" />
@@ -37,6 +39,15 @@
       </nav>
 
       <div class="header-actions">
+        <router-link
+          to="/profile"
+          class="profile-nav-btn"
+          :class="{ 'router-link-active': route.path.startsWith('/profile') }"
+          aria-label="Личный кабинет"
+          title="Личный кабинет"
+        >
+          <NavIcon name="profile" :size="20" />
+        </router-link>
         <Button
             :icon="uiStore.isDark ? 'pi pi-sun' : 'pi pi-moon'"
             class="p-button-text p-button-secondary theme-btn"
@@ -107,6 +118,16 @@
             {{ item.label }}
           </router-link>
         </template>
+        <router-link
+          to="/profile"
+          class="nav-drawer-link nav-drawer-link--profile"
+          :class="{ 'router-link-active': route.path.startsWith('/profile') }"
+          :aria-current="route.path.startsWith('/profile') ? 'page' : undefined"
+          @click="closeDrawer"
+        >
+          <NavIcon name="profile" :size="22" class="nav-icon-el" />
+          Личный кабинет
+        </router-link>
       </nav>
     </Drawer>
   </header>
@@ -128,16 +149,17 @@ let lastScrollY = 0
 let hoverTimeout = null
 
 const navItems = [
-  { to: '/', label: 'Карта', icon: 'map' },
-  { to: '/routes', label: 'Маршруты', icon: 'routes' },
-  { to: '/shop', label: 'Магазин', icon: 'shop' },
-  { to: '/profile', label: 'Профиль', icon: 'profile' },
-  { to: '/contact', label: 'Контакты', icon: 'contact' },
+  { to: '/', label: 'главная', icon: 'map' },
+  { to: '/#museum-map', label: 'виртуальный музей', icon: 'map' },
+  { to: '/routes', label: 'онлайн-маршруты', icon: 'routes' },
+  { to: '/shop', label: 'магазин мерча', icon: 'shop' },
+  { to: '/contact', label: 'помощь проекту', icon: 'contact' },
 ]
 
 function isNavCurrent(path) {
-  if (path === '/') return route.path === '/'
-  return route.path === path || route.path.startsWith(`${path}/`)
+  const [targetPath, targetHash = ''] = path.split('#')
+  if (targetPath === '/') return route.path === '/' && route.hash === (targetHash ? `#${targetHash}` : '')
+  return route.path === targetPath || route.path.startsWith(`${targetPath}/`)
 }
 
 function closeDrawer() {
@@ -389,6 +411,33 @@ onUnmounted(() => {
   gap: var(--spacing-sm);
 }
 
+.profile-nav-btn {
+  display: inline-flex;
+  width: 44px;
+  min-width: 44px;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--gray-600);
+  border-radius: 999px;
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.profile-nav-btn:hover,
+.profile-nav-btn.router-link-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
 .cart-btn {
   display: flex;
   align-items: center;
@@ -497,6 +546,10 @@ onUnmounted(() => {
     flex-shrink: 0;
   }
   .header-actions { margin-left: auto; }
+  .profile-nav-btn {
+    min-width: 42px;
+    padding: 0 0.75rem;
+  }
   .cart-btn {
     min-height: 44px;
     min-width: 44px;

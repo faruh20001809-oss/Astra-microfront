@@ -189,22 +189,50 @@ export const useMapStore = defineStore('map', {
             : []
     
         // 🔹 Нормализуем под фронт (lat/lng и дополнительные поля)
-        this.pois = raw.map(p => ({
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          category: p.category,
-          // 2ГИС ожидает lon/lat — мы даём lat/lng в объекте POI
-          lat: p.latitude ?? p.coordinates?.latitude ?? 0,
-          lng: p.longitude ?? p.coordinates?.longitude ?? 0,
-          address: p.address,
-          rating: p.rating,
-          reviewsCount: p.reviewsCount,
-          year: p.extendedInfo?.foundedYear ?? null,
-          architect: p.extendedInfo?.architect ?? null,
-          image: p.image || p.imageUrl || null,
-          tags: p.tags || [],
-        }))
+        this.pois = raw.map(p => {
+          const extended = p.extendedInfo || {}
+          const shortDescription =
+            p.shortDescription ||
+            p.summary ||
+            p.cardDescription ||
+            extended.shortDescription ||
+            extended.summary ||
+            p.description ||
+            ''
+          const fullDescription =
+            p.fullDescription ||
+            p.articleText ||
+            p.historyText ||
+            p.longDescription ||
+            extended.fullDescription ||
+            extended.articleText ||
+            extended.historyText ||
+            extended.longDescription ||
+            p.description ||
+            ''
+          return {
+            id: p.id,
+            name: p.name,
+            description: shortDescription,
+            shortDescription,
+            mapDescription: shortDescription,
+            mapLabel: p.mapLabel || p.label || extended.mapLabel || p.name,
+            fullDescription,
+            articleText: fullDescription,
+            category: p.category,
+            // 2ГИС ожидает lon/lat — мы даём lat/lng в объекте POI
+            lat: p.latitude ?? p.coordinates?.latitude ?? 0,
+            lng: p.longitude ?? p.coordinates?.longitude ?? 0,
+            address: p.address,
+            style: p.style || extended.style || null,
+            rating: p.rating,
+            reviewsCount: p.reviewsCount,
+            year: extended.foundedYear ?? p.year ?? null,
+            architect: extended.architect ?? p.architect ?? null,
+            image: p.image || p.imageUrl || null,
+            tags: p.tags || [],
+          }
+        })
       } catch (err) {
         console.error('Failed to fetch POIs:', err)
         this.pois = getMockPois()
@@ -320,6 +348,8 @@ function getMockPois() {
       name: 'Астраханский Кремль',
       category: 'архитектура',
       description: 'Астраханский кремль — выдающийся памятник русского оборонного зодчества XVI–XVII веков.',
+      shortDescription: 'Выдающийся памятник русского оборонного зодчества XVI–XVII веков.',
+      fullDescription: 'История этого места уходит глубоко в прошлое и хранит множество городских легенд. Кремль стал главной цитаделью Астрахани и точкой, вокруг которой складывался исторический центр.\n\nСтены, башни и соборы формировали силуэт города на протяжении столетий. Каждый элемент ансамбля рассказывает о ремесле мастеров, оборонительной архитектуре и культурной памяти региона.',
       year: 1582,
       architect: 'Михаил Вельяминов',
       photos: []
@@ -329,6 +359,8 @@ function getMockPois() {
       name: 'Успенский собор',
       category: 'архитектура',
       description: 'Главный православный храм Астраханской епархии, построенный в стиле русского барокко.',
+      shortDescription: 'Главный православный храм Астраханской епархии в стиле русского барокко.',
+      fullDescription: 'Собор занимает важное место в архитектурном ансамбле города. Его объем, декоративные детали и исторический контекст связывают религиозную жизнь Астрахани с развитием городской среды.\n\nСегодня это один из ключевых объектов, через который можно читать историю региона: от строительных традиций до изменений в облике исторического центра.',
       year: 1710,
       architect: 'Дорофей Мякишев',
       photos: []

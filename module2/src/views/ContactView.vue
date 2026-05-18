@@ -500,6 +500,298 @@ function donate() {
   .section-heading { font-size: 1.125rem; }
   .donation-amounts { grid-template-columns: 1fr; }
   .donation-btn { min-height: 44px; padding: 0.75rem; }
-  .contact-link { padding: var(--spacing-sm); min-height: 48px; }
+.contact-link { padding: var(--spacing-sm); min-height: 48px; }
+}
+
+/* Customer reference: flat project support page */
+.contact-page {
+  background: #fff;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.contact-page__inner {
+  max-width: 1180px;
+}
+
+.contact-hero {
+  max-width: 980px;
+  padding: 0 0 1.15rem;
+}
+
+.contact-hero__accent {
+  display: none;
+}
+
+.contact-eyebrow {
+  margin: 0 0 0.35rem;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: lowercase;
+}
+
+.contact-hero-title {
+  margin: 0 0 0.55rem;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(2.3rem, 4.5vw, 4.6rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
+.contact-hero-lead {
+  max-width: 860px;
+  margin: 0;
+  color: #1d1d1b;
+  font-size: clamp(1rem, 0.45vw + 0.92rem, 1.3rem);
+  line-height: 1.06;
+}
+
+.contact-bento {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.55fr);
+  gap: 1.25rem;
+}
+
+.contact-panel--form,
+.info-card {
+  border: 2px solid #1d1d1b;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+  color: #1d1d1b;
+}
+
+.contact-panel--form {
+  padding: clamp(1rem, 2vw, 1.35rem);
+}
+
+.info-card {
+  padding: clamp(1rem, 2vw, 1.25rem);
+}
+
+.info-card::before {
+  display: none;
+}
+
+.contact-panel--aside {
+  gap: 1rem;
+}
+
+.section-heading,
+.info-card__title {
+  margin: 0 0 0.65rem;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: clamp(1.5rem, 1.8vw + 1rem, 2.6rem);
+  font-weight: 900;
+  line-height: 0.98;
+  letter-spacing: 0;
+}
+
+.section-desc,
+.donation-desc {
+  max-width: none;
+  margin: 0 0 1rem;
+  color: #1d1d1b;
+  font-size: 1rem;
+  line-height: 1.16;
+}
+
+.contact-form {
+  gap: 0.9rem;
+}
+
+.contact-page :deep(.form-label),
+.contact-page .form-label {
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.contact-page :deep(.form-input),
+.contact-page :deep(.form-select),
+.contact-page :deep(.form-textarea),
+.contact-page .form-input,
+.contact-page .form-select,
+.contact-page .form-textarea {
+  min-height: 48px;
+  border: 2px solid #1d1d1b;
+  border-radius: 0;
+  background: #fff;
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  box-shadow: none;
+}
+
+.contact-page :deep(.form-textarea),
+.contact-page .form-textarea {
+  resize: vertical;
+}
+
+.contact-page :deep(.form-input:focus),
+.contact-page :deep(.form-select:focus),
+.contact-page :deep(.form-textarea:focus),
+.contact-page .form-input:focus,
+.contact-page .form-select:focus,
+.contact-page .form-textarea:focus {
+  border-color: #1d1d1b;
+  box-shadow: 0 0 0 3px rgba(29, 29, 27, 0.12);
+  outline: none;
+}
+
+.contact-page .btn {
+  border-radius: 999px;
+  background: #1d1d1b;
+  border-color: #1d1d1b;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.form-success {
+  border: 2px solid #1d1d1b;
+  border-radius: 0;
+  background: #fff;
+  color: #1d1d1b;
+}
+
+.form-success__mark {
+  background: #1d1d1b;
+  box-shadow: none;
+}
+
+.form-error {
+  border: 2px solid #1d1d1b;
+  border-radius: 0;
+  color: #1d1d1b;
+}
+
+.contact-links {
+  gap: 0.65rem;
+}
+
+.contact-link {
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-top: 2px solid #d0d0d0;
+  border-radius: 0;
+  color: #1d1d1b;
+}
+
+.contact-link:hover {
+  background: transparent;
+}
+
+.contact-link-icon {
+  width: 34px;
+  height: 34px;
+  border: 2px solid #1d1d1b;
+  border-radius: 50%;
+  color: #1d1d1b;
+}
+
+.contact-link-label,
+.donation-eyebrow,
+.donation-methods__label {
+  color: #1d1d1b;
+  font-family: Arial, Helvetica, sans-serif;
+  letter-spacing: 0;
+  text-transform: lowercase;
+}
+
+.donation-card {
+  gap: 0.9rem;
+  background: #191716;
+  border-color: #191716;
+  color: #fff;
+}
+
+.donation-card .info-card__title,
+.donation-card .donation-eyebrow,
+.donation-card .donation-desc,
+.donation-card .form-label,
+.donation-card .donation-methods__label {
+  color: #fff;
+}
+
+.donation-amounts {
+  gap: 0.55rem;
+}
+
+.donation-btn {
+  min-height: 2.3rem;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.donation-btn:hover,
+.donation-btn.active {
+  background: #fff;
+  border-color: #fff;
+  color: #1d1d1b;
+}
+
+.donation-card .form-input {
+  border-color: #fff;
+  background: #fff;
+  color: #1d1d1b;
+}
+
+.donation-methods {
+  border: 2px solid #fff;
+  border-radius: 0;
+  background: transparent;
+}
+
+.method-item {
+  padding: 0.35rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+.method-item:first-child {
+  border-top: 0;
+}
+
+.method-val {
+  color: #fff;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+}
+
+.donation-card .btn {
+  background: #fff;
+  border-color: #fff;
+  color: #1d1d1b;
+}
+
+@media (max-width: 900px) {
+  .contact-bento {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .contact-hero-title {
+    font-size: clamp(2.1rem, 13vw, 3.2rem);
+  }
+
+  .donation-amounts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 </style>

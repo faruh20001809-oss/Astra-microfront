@@ -52,6 +52,7 @@
       </div>
 
       <div class="route-footer">
+        <span class="route-price-inline">{{ route.isPaid ? `${route.price} ₽` : 'Бесплатно' }}</span>
         <div class="rating" v-if="route.rating">
           <span class="star">★</span> {{ route.rating.toFixed(1) }}
         </div>
@@ -221,6 +222,10 @@ const categoryGlyph = computed(() => {
   gap: 0.3rem;
   font-size: 0.75rem;
   color: var(--gray-400);
+}
+
+.route-price-inline {
+  display: none;
 }
 
 .star { color: var(--accent); }
