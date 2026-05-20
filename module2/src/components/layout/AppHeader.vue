@@ -150,7 +150,7 @@ let hoverTimeout = null
 
 const navItems = [
   { to: '/', label: 'главная', icon: 'map' },
-  { to: '/#museum-map', label: 'виртуальный музей', icon: 'map' },
+  { to: '/virtual-museum', label: 'виртуальный музей', icon: 'map' },
   { to: '/routes', label: 'онлайн-маршруты', icon: 'routes' },
   { to: '/shop', label: 'магазин мерча', icon: 'shop' },
   { to: '/contact', label: 'помощь проекту', icon: 'contact' },
@@ -158,7 +158,10 @@ const navItems = [
 
 function isNavCurrent(path) {
   const [targetPath, targetHash = ''] = path.split('#')
-  if (targetPath === '/') return route.path === '/' && route.hash === (targetHash ? `#${targetHash}` : '')
+  // Главная подсвечивается только когда мы строго на корне (без хэша и без подпутей).
+  if (targetPath === '/') {
+    return route.path === '/' && route.hash === (targetHash ? `#${targetHash}` : '')
+  }
   return route.path === targetPath || route.path.startsWith(`${targetPath}/`)
 }
 
