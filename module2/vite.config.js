@@ -24,6 +24,13 @@ export default defineConfig(({ mode }) => {
           target: 'http://localhost:8080',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/java-api/, ''),
+          timeout: 120_000,
+          proxyTimeout: 120_000,
+          configure: (proxy) => {
+            proxy.on('error', (err, req) => {
+              console.warn('[vite proxy /java-api]', req?.url, err?.message)
+            })
+          },
         },
 
         '/api/ai/chat': {
@@ -54,6 +61,13 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
           rewrite: (path) => path.replace(/^\/api\/dgis-routing/, ''),
+        },
+        /** 2GIS Static API — превью карт в карточках; VITE_DGIS_STATIC_BASE=/api/dgis-static */
+        '/api/dgis-static': {
+          target: 'https://static.maps.2gis.com',
+          changeOrigin: true,
+          secure: true,
+          rewrite: (path) => path.replace(/^\/api\/dgis-static/, '/2.0'),
         },
       }
     }

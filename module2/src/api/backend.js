@@ -12,8 +12,29 @@
 // В dev с Vite прокси: /java-api → localhost:8080. Если заказы не доходят — задайте VITE_JAVA_API_BASE=http://localhost:8080/api/v1
 const JAVA_API_BASE = import.meta.env.VITE_JAVA_API_BASE || '/java-api/api/v1'
 const NODE_API_BASE = '/api/node'          // Прокси на Node.js:3001
+const IS_DEV = import.meta.env.DEV
 
-// ===== УТИЛИТЫ =====
+/** Однократные предупреждения по URL, чтобы не засорять консоль. */
+const apiWarnedUrls = new Set()
+
+function warnApiOnce(url, message, detail) {
+  const key = `${url}|${message}`
+  if (apiWarnedUrls.has(key)) return
+  apiWarnedUrls.add(key)
+  if (IS_DEV) {
+    console.warn(`[API] ${message}`, detail ?? '')
+  }
+}
+
+function backendHintFromHtml(text, status) {
+  if (status === 502 || status === 503 || status === 504) {
+    return 'Сервер API недоступен (502/503/504). Проверьте, что Spring Boot запущен на :8080 и прокси /java-api настроен.'
+  }
+  if (text.includes('<!DOCTYPE') || text.includes('<html')) {
+    return 'Вместо JSON пришла HTML-страница. Обычно backend не запущен или неверный прокси /java-api.'
+  }
+  return null
+}
 
 /**
  * Универсальный обработчик ответов Java API
@@ -21,64 +42,58 @@ const NODE_API_BASE = '/api/node'          // Прокси на Node.js:3001
  * @returns {Promise<any>} - данные (data) или fallback
  */
 const handleJavaResponse = async (response) => {
+  const url = response.url || ''
   try {
-    // 🔹 1. Проверка Content-Type
-    const contentType = response.headers.get('content-type')
-    if (!contentType || !contentType.includes('application/json')) {
-      // Попробуем прочитать как текст для отладки
-      const text = await response.clone().text().catch(() => '')
-      console.error('❌ API returned non-JSON:', {
-        url: response.url,
-        status: response.status,
-        contentType,
-        preview: text.substring(0, 300)
-      })
+    const contentType = response.headers.get('content-type') || ''
+    const rawText = await response.text()
+    const trimmed = rawText.trim()
 
-      // Если это HTML-страница ошибки Vite/Spring
-      if (text.startsWith('<!DOCTYPE') || text.startsWith('<html')) {
-        throw new Error('API returned HTML page instead of JSON. Check proxy configuration.')
-      }
-
-      throw new Error(`Expected JSON, got ${contentType || 'unknown'}`)
-    }
-
-    // 🔹 2. Проверка HTTP статуса
     if (!response.ok) {
-      const error = await response.json().catch(() => ({
-        message: response.statusText,
-        status: response.status
-      }))
-      throw new Error(error.message || `HTTP ${response.status}: ${response.statusText}`)
+      const hint = backendHintFromHtml(trimmed, response.status)
+      warnApiOnce(url, `HTTP ${response.status}`, hint || trimmed.slice(0, 200))
+      throw new Error(hint || `HTTP ${response.status}: ${response.statusText}`)
     }
 
-    // 🔹 3. Парсинг JSON
-    const json = await response.json()
+    if (!trimmed) {
+      warnApiOnce(url, 'Пустой ответ API (возможен обрыв chunked-передачи)', null)
+      throw new Error('Пустой ответ сервера')
+    }
 
-    // 🔹 4. Обработка формата Java API: { status, data }
+    let json
+    const looksJson = trimmed.startsWith('{') || trimmed.startsWith('[')
+    if (looksJson) {
+      try {
+        json = JSON.parse(trimmed)
+      } catch (parseErr) {
+        warnApiOnce(url, 'Не удалось разобрать JSON', parseErr?.message)
+        throw parseErr
+      }
+    } else {
+      const hint = backendHintFromHtml(trimmed, response.status)
+        || `Ожидался JSON, получен ${contentType || 'неизвестный тип'}`
+      warnApiOnce(url, hint, trimmed.slice(0, 200))
+      throw new Error(hint)
+    }
+
     if (json?.status === 'success' && json.data !== undefined) {
       return json.data
     }
-
-    // 🔹 5. Если ответ уже массив — возвращаем
     if (Array.isArray(json)) {
       return json
     }
-
-    // 🔹 6. Если ответ — объект с данными
     if (json && typeof json === 'object' && !json.status) {
       return json
     }
 
-    // 🔹 7. Fallback: предупреждение и пустой массив
-    console.warn('⚠️ Unexpected API response format:', json)
+    warnApiOnce(url, 'Неожиданный формат ответа API', json)
     return []
-
   } catch (err) {
-    console.error('❌ handleJavaResponse error:', err)
-    // Возвращаем пустой массив для устойчивости UI
+    warnApiOnce(url, err?.message || 'Ошибка API', null)
     return []
   }
 }
+
+const RETRYABLE_STATUS = new Set([502, 503, 504])
 
 /**
  * Базовый fetch-запрос с обработкой ошибок
@@ -86,23 +101,32 @@ const handleJavaResponse = async (response) => {
  * @param {RequestInit} options
  * @returns {Promise<Response>}
  */
-const baseFetch = async (url, options = {}) => {
-  // 🔹 Безопасное объединение headers (избегаем TypeScript конфликтов)
+const baseFetch = async (url, options = {}, attempt = 0) => {
   const headers = new Headers(options.headers)
-  headers.set('Content-Type', 'application/json')
+  if (!headers.has('Content-Type') && options.body) {
+    headers.set('Content-Type', 'application/json')
+  }
   headers.set('Accept', 'application/json')
 
   const fetchOptions = {
     ...options,
-    headers
+    headers,
   }
 
   try {
     const response = await fetch(url, fetchOptions)
+    if (attempt < 1 && RETRYABLE_STATUS.has(response.status)) {
+      await new Promise((r) => setTimeout(r, 400))
+      return baseFetch(url, options, attempt + 1)
+    }
     return response
   } catch (networkError) {
-    console.error('Network error:', networkError)
-    throw new Error('Нет соединения с сервером. Проверьте, запущен ли backend.')
+    if (attempt < 1) {
+      await new Promise((r) => setTimeout(r, 400))
+      return baseFetch(url, options, attempt + 1)
+    }
+    warnApiOnce(url, 'Нет соединения с API', networkError?.message)
+    throw new Error('Нет соединения с сервером. Запустите Spring Boot (порт 8080) и dev-прокси /java-api.')
   }
 }
 

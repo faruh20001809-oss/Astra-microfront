@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { javaApi } from '@/api/backend.js'
+import { CACHE_KEYS, cacheGet, cacheSet } from '@/utils/appCache.js'
 
 /* ─────────────────────────────────────────
    Cart Store
@@ -171,23 +172,48 @@ export const useMapStore = defineStore('map', {
   },
 
   actions: {
-    async fetchPois() {
+    async fetchPois({ force = false } = {}) {
+      if (!force) {
+        const cached = cacheGet(CACHE_KEYS.poisPublished)
+        if (Array.isArray(cached) && cached.length) {
+          this.pois = cached
+          return
+        }
+      }
+
       this.isLoadingPois = true
       try {
         const data = await javaApi.pois.getList({ status: 'PUBLISHED' })
         const raw = Array.isArray(data) ? data : []
         if (!raw.length) {
           this.pois = getMockPois()
-          return
+        } else {
+          this.pois = raw.map((p) => normalizePoi(p))
         }
-    
-        this.pois = raw.map(p => normalizePoi(p))
+        cacheSet(CACHE_KEYS.poisPublished, this.pois)
       } catch (err) {
         console.error('Failed to fetch POIs:', err)
         this.pois = getMockPois()
       } finally {
         this.isLoadingPois = false
       }
+    },
+
+    /** Одна точка для страницы /pois/:id (кэш в sessionStorage). */
+    async fetchPoiById(id, { force = false } = {}) {
+      const numId = Number(id)
+      if (!Number.isFinite(numId) || numId <= 0) return null
+
+      const cacheKey = CACHE_KEYS.poiDetail(numId)
+      if (!force) {
+        const cached = cacheGet(cacheKey)
+        if (cached?.id) return cached
+      }
+
+      const raw = await javaApi.pois.getById(numId)
+      const normalized = normalizePoi(raw)
+      if (normalized?.id) cacheSet(cacheKey, normalized)
+      return normalized
     },
 
     setSelected(poi) {
@@ -324,9 +350,10 @@ export function normalizePoi(p) {
     lng: p.longitude ?? p.coordinates?.longitude ?? 0,
     address: p.address,
     style: p.style || extended.style || null,
-    year: extended.foundedYear ?? p.year ?? null,
+    year: extended.foundedYear ?? p.year ?? p.foundedYear ?? null,
     architect: extended.architect ?? p.architect ?? null,
     image: p.image || p.imageUrl || null,
+    photos: Array.isArray(p.photos) ? p.photos : [],
     tags: p.tags || [],
     maxAudioUrl: p.maxAudioUrl || extended.maxAudioUrl || null,
     maxVideoUrl: p.maxVideoUrl || extended.maxVideoUrl || null,

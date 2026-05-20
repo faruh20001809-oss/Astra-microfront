@@ -8,18 +8,7 @@
 
 const ROUTING_API_VERSION = '7.0.0'
 
-const DGIS_MAP_DEFAULT_KEY = '2fa2df2d-9b29-4877-ac65-818e02de807d'
-
-function loadMapKeyFromEnv() {
-  const raw = import.meta.env.VITE_DGIS_MAP
-  if (!raw || typeof raw !== 'string') return DGIS_MAP_DEFAULT_KEY
-  try {
-    const o = JSON.parse(raw)
-    return typeof o.key === 'string' && o.key.trim() ? o.key.trim() : DGIS_MAP_DEFAULT_KEY
-  } catch {
-    return DGIS_MAP_DEFAULT_KEY
-  }
-}
+import { getDgisMapKey } from '@/api/dgisConfig.js'
 
 /** Есть ли непустой ключ для запросов к Routing API. */
 export function isDgisRoutingConfigured() {
@@ -30,7 +19,7 @@ export function isDgisRoutingConfigured() {
 export function getRoutingApiKey() {
   const explicit = import.meta.env.VITE_DGIS_ROUTING_KEY
   if (explicit != null && String(explicit).trim() !== '') return String(explicit).trim()
-  return loadMapKeyFromEnv()
+  return getDgisMapKey()
 }
 
 function getRoutingBaseUrl() {

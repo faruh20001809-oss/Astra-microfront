@@ -1,43 +1,6 @@
 <template>
-  <div
-    class="museum-map-page-wrapper"
-    :class="{ 'museum-map-page-wrapper--with-catalog': showPoiCatalog }"
-  >
-    <section
-      v-if="showPoiCatalog"
-      class="museum-map-recs"
-      aria-labelledby="museum-recs-title"
-    >
-      <h2 id="museum-recs-title">Все объекты на карте</h2>
-      <p v-if="mapStore.isLoadingPois" class="museum-map-recs__status text-mono">Загрузка объектов…</p>
-      <p v-else-if="!catalogPois.length" class="museum-map-recs__status text-mono">Объекты скоро появятся.</p>
-      <div v-else class="museum-map-recs__grid">
-        <article
-          v-for="poi in catalogPois"
-          :key="poi.id"
-          class="museum-poi-card"
-          @click="onCatalogPoiClick(poi)"
-        >
-          <div class="museum-poi-card__media">
-            <img v-if="poi.image" :src="poi.image" :alt="poi.name" loading="lazy" />
-          </div>
-          <div class="museum-poi-card__body">
-            <h3>{{ poi.name }}</h3>
-            <p>{{ poi.address || poi.year || poi.category }}</p>
-            <router-link
-              :to="{ name: 'poi-details', params: { id: poi.id } }"
-              class="museum-poi-card__cta"
-              @click.stop
-            >
-              Подробнее →
-            </router-link>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section id="museum-map" class="map-page" :class="{ 'map-page--with-catalog': showPoiCatalog }" aria-label="Виртуальный музей на карте">
-    <!-- Sidebar: на десктопе — слева в потоке; на мобильных скрыт, контент в Drawer -->
+  <div class="museum-map-page-wrapper">
+    <section class="map-page" aria-label="Интерактивная карта исторических объектов">
     <aside class="map-sidebar">
       <div class="sidebar-header motion-reveal">
         <h2 class="sidebar-title">Исторические объекты</h2>
@@ -105,7 +68,6 @@
       </div>
     </aside>
 
-    <!-- Map container -->
     <div class="map-wrapper">
       <div
         v-if="mapStore.activeFollowRoute"
@@ -154,10 +116,10 @@
 
       <!-- Кнопка «Точки» на мобильных — открывает список слева -->
       <button
-          type="button"
-          class="map-poins-btn"
-          aria-label="Список точек"
-          @click="mobileSidebarOpen = true"
+        type="button"
+        class="map-poins-btn"
+        aria-label="Список точек"
+        @click="mobileSidebarOpen = true"
       >
         ◎ Точки
       </button>
@@ -226,7 +188,7 @@
         </div>
       </Dialog>
 
-      <!-- Мобильный сайдбар: выезжает слева, при выборе точки закрывается -->
+      <!-- Мобильный сайдбар (только полноэкранная карта /map) -->
       <Drawer
           v-model:visible="mobileSidebarOpen"
           position="left"
@@ -299,14 +261,14 @@
           </div>
         </div>
       </Drawer>
-      <!-- Connector line from marker to card -->
+      <!-- Connector line from marker to card (полноэкранная карта) -->
       <div
         v-if="mapStore.selectedPoi"
         class="poi-connector"
         :style="connectorStyle"
       />
 
-      <!-- Floating POI detail card (UI/UX 2026: чёткая структура, CTA озвучки) -->
+      <!-- Всплывающая карточка — только на /map, на /virtual-museum описание в боковой панели -->
       <transition name="fade">
         <div
           v-if="mapStore.selectedPoi"
@@ -524,11 +486,6 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
-
-const props = defineProps({
-  /** Каталог всех точек над картой (маршрут /virtual-museum). */
-  showPoiCatalog: { type: Boolean, default: false },
-})
 import { useRoute, useRouter } from 'vue-router'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import { usePoiAiTts } from '@/composables/usePoiAiTts.js'
@@ -628,11 +585,9 @@ let lastFollowRouteAppliedId = null
 
 // Floating modal position (near selected marker)
 const modalPosition = ref({ top: 0, left: 0 })
-const catalogPois = computed(() => (Array.isArray(mapStore.pois) ? mapStore.pois : []))
-const featuredPois = computed(() => catalogPois.value.slice(0, 4))
-const activeMuseumPoi = computed(() => mapStore.selectedPoi || featuredPois.value[0] || null)
+
 const selectedPoiCardText = computed(() => {
-  const poi = activeMuseumPoi.value
+  const poi = mapStore.selectedPoi
   return poi?.mapDescription || poi?.shortDescription || poi?.description || ''
 })
 
@@ -1114,20 +1069,6 @@ function onSelectPoiMobile(poi) {
   isDescExpanded.value = false
 }
 
-function onCatalogPoiClick(poi) {
-  selectAndFlyTo(poi)
-  resetForPoi()
-  isDescExpanded.value = false
-  scrollToMuseumMapSection()
-}
-
-async function scrollToMuseumMapSection() {
-  await nextTick()
-  requestAnimationFrame(() => {
-    document.getElementById('museum-map')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  })
-}
-
 function flyToAstrakhan() {
   if (map) {
     map.setCenter(ASTRAKHAN_CENTER, { animate: true })
@@ -1393,144 +1334,8 @@ function categoryIcon(cat) {
 </script>
 
 <style scoped>
-/*
-  Лендинговые блоки (museum-hero / museum-about / museum-preview-section
-  / museum-pill-link / museum-card-row / @media для них) переехали в HomeView.vue
-  вместе с самим контентом главной страницы.
-
-  Этот файл теперь отвечает только за карту (`/virtual-museum`, `/map`).
-*/
-
 .museum-map-page-wrapper {
   width: 100%;
-}
-
-.museum-map-page-wrapper--with-catalog {
-  background: #fff;
-  color: #1d1d1b;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-.museum-map-recs {
-  padding: calc(var(--nav-h, 64px) + 1rem) max(1.5rem, calc((100vw - 1180px) / 2)) 1.25rem;
-}
-
-.museum-map-recs h2 {
-  margin: 0 0 1rem;
-  color: #1d1d1b;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: clamp(2rem, 2vw + 1rem, 3.4rem);
-  font-weight: 900;
-  line-height: 0.98;
-}
-
-.museum-map-recs__status {
-  margin: 0;
-  color: #5f5f5f;
-  font-size: 0.85rem;
-}
-
-.museum-map-recs__grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.25rem;
-}
-
-.museum-poi-card {
-  display: grid;
-  background: #191716;
-  color: #fff;
-  padding: 1rem;
-  cursor: pointer;
-}
-
-.museum-poi-card__media {
-  aspect-ratio: 2.3 / 1;
-  background: #c9c9c9;
-  overflow: hidden;
-}
-
-.museum-poi-card__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: grayscale(1);
-}
-
-.museum-poi-card__body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 0.3rem 1rem;
-  margin-top: 0.75rem;
-}
-
-.museum-poi-card__body h3,
-.museum-poi-card__body p {
-  grid-column: 1 / 2;
-  margin: 0;
-}
-
-.museum-poi-card__body h3 {
-  font-size: 1rem;
-  line-height: 1.05;
-}
-
-.museum-poi-card__body p {
-  font-size: 0.9rem;
-  line-height: 1.05;
-  opacity: 0.9;
-}
-
-.museum-poi-card__cta {
-  grid-column: 2 / 3;
-  grid-row: 1 / 3;
-  align-self: end;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2rem;
-  padding: 0 1rem;
-  border-radius: 999px;
-  background: #fff;
-  color: #1d1d1b;
-  font-size: 0.78rem;
-  font-weight: 700;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.museum-poi-card__cta:hover {
-  background: #d4d4d4;
-}
-
-.museum-poi-card__cta:focus-visible {
-  outline: 2px solid #1d1d1b;
-  outline-offset: 2px;
-}
-
-.map-page--with-catalog {
-  margin-top: 0;
-  height: min(72vh, 680px);
-  min-height: 420px;
-}
-
-@media (max-width: 900px) {
-  .museum-map-recs {
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  .museum-map-recs__grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .map-page--with-catalog {
-    height: min(68vh, 560px);
-    min-height: 360px;
-  }
 }
 
 .map-page {
@@ -1543,18 +1348,6 @@ function categoryIcon(cat) {
   position: relative;
   overflow: hidden;
 }
-
-/*
-  Все ранее существовавшие правила вида `.museum-home-page X` (специфические
-  оверрайды карты внутри лендинга) удалены: лендинг переехал в HomeView.vue,
-  а карта на /virtual-museum рендерится в полноэкранном flex-режиме.
-*/
-
-/*
-  Блоки .museum-map-recs / .museum-poi-article / .museum-poi-card удалены
-  вместе с шаблонной частью — они были специфичны для лендинговой компоновки
-  карты и теперь живут (если понадобятся) в HomeView.
-*/
 
 /* Sidebar: в потоке слева, не перекрывает карту */
 .map-sidebar {

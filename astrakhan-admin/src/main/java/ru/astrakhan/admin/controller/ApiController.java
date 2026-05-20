@@ -174,12 +174,12 @@ public class ApiController {
                 return ub.compareTo(ua);
             })
             .collect(Collectors.toList());
-        return ok(routes.stream().map(this::routeMap).collect(Collectors.toList()));
+        return ok(routes.stream().map(this::routeMapListItem).collect(Collectors.toList()));
     }
 
     @GetMapping("/routes/{id}")
     public ResponseEntity<Map<String, Object>> getRoute(@PathVariable Long id) {
-        return routeService.findById(id).map(r -> { analyticsService.trackEvent("route_view", r.getId(), r.getName()); return okSingle(routeMap(r)); })
+        return routeService.findById(id).map(r -> { analyticsService.trackEvent("route_view", r.getId(), r.getName()); return okSingle(routeMapDetail(r)); })
             .orElse(ResponseEntity.notFound().build());
     }
 
@@ -228,7 +228,7 @@ public class ApiController {
                 }
                 routeService.save(r);
                 log.info("Route {} status changed to {} (reason: {})", id, newStatus, reason);
-                return okSingle(routeMap(r));
+                return okSingle(routeMapDetail(r));
             } catch (IllegalArgumentException e) {
                 return apiError(HttpStatus.BAD_REQUEST,
                         "Недопустимый статус: " + statusStr + ". Допустимы: DRAFT, ACTIVE, OUTDATED.");
@@ -820,6 +820,7 @@ public class ApiController {
         m.put("shortDescription", p.getShortDescription() != null ? p.getShortDescription() : p.getDescription());
         m.put("category", p.getCategory()); m.put("latitude", p.getLatitude()); m.put("longitude", p.getLongitude());
         m.put("address", p.getAddress());
+        m.put("style", p.getStyle() != null ? p.getStyle() : "");
         m.put("image", poiCoverImageUrl(p));
         m.put("phone", p.getPhone()); m.put("website", p.getWebsite());
         m.put("tags", p.getTags() != null ? Arrays.asList(p.getTags().split(",")) : List.of());
@@ -829,6 +830,7 @@ public class ApiController {
         Map<String, Object> m = poiMap(p);
         m.put("email", p.getEmail());
         m.put("detailText", p.getDetailText());
+        m.put("style", p.getStyle() != null ? p.getStyle() : "");
         m.put("maxAudioUrl", p.getMaxAudioUrl());
         m.put("maxVideoUrl", p.getMaxVideoUrl());
         m.put("maxPlaylistUrl", p.getMaxPlaylistUrl());
@@ -857,7 +859,36 @@ public class ApiController {
         return null;
     }
 
-    private Map<String, Object> routeMap(Route r) {
+    /** Публичный список маршрутов — без N+1 загрузки ТОИ (снижает риск обрыва chunked-ответа). */
+    private Map<String, Object> routeMapListItem(Route r) {
+        return routeMapCore(r, false);
+    }
+
+    /** Детальная карточка маршрута — с остановками по связанным ТОИ. */
+    private Map<String, Object> routeMapDetail(Route r) {
+        return routeMapCore(r, true);
+    }
+
+    private static List<Long> parseRoutePoiIds(String poiIds) {
+        if (poiIds == null || poiIds.isBlank()) {
+            return List.of();
+        }
+        List<Long> out = new ArrayList<>();
+        for (String part : poiIds.split(",")) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            try {
+                out.add(Long.parseLong(trimmed));
+            } catch (NumberFormatException ignored) {
+                /* пропускаем битые id в строке poi_ids */
+            }
+        }
+        return out;
+    }
+
+    private Map<String, Object> routeMapCore(Route r, boolean withStops) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", r.getId());
         m.put("name", r.getName());
@@ -876,16 +907,17 @@ public class ApiController {
         m.put("status", r.getStatus() != null ? r.getStatus().name() : Route.RouteStatus.DRAFT.name());
         m.put("outdatedReason", r.getOutdatedReason());
         m.put("isActual", r.getStatus() == null || r.getStatus() != Route.RouteStatus.OUTDATED);
-        if (r.getPoiIds() != null && !r.getPoiIds().isEmpty()) {
-            List<Long> poiIdList = Arrays.stream(r.getPoiIds().split(",")).map(s -> Long.parseLong(s.trim())).collect(Collectors.toList());
-            m.put("pois", poiIdList);
+        List<Long> poiIdList = parseRoutePoiIds(r.getPoiIds());
+        m.put("pois", poiIdList);
+        if (withStops && !poiIdList.isEmpty()) {
             List<Map<String, Object>> stops = new ArrayList<>();
             for (Long poiId : poiIdList) {
-                poiService.findById(poiId).ifPresent(poi -> stops.add(Map.of("name", poi.getName(), "description", poi.getDescription() != null ? poi.getDescription() : "")));
+                poiService.findById(poiId).ifPresent(poi -> stops.add(Map.of(
+                        "name", poi.getName(),
+                        "description", poi.getDescription() != null ? poi.getDescription() : "")));
             }
             m.put("stops", stops);
         } else {
-            m.put("pois", List.of());
             m.put("stops", List.of());
         }
         String coverImage = (r.getImageUrl() != null && !r.getImageUrl().isEmpty())

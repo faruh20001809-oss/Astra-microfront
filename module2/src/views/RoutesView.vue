@@ -387,7 +387,7 @@ onMounted(async () => {
       routes.value = getMockRoutes().map(normalizeRouteFromApi)
     }
   } catch (err) {
-    console.warn('Java API failed:', err)
+    if (import.meta.env.DEV) console.warn('Java API failed:', err)
     routes.value = getMockRoutes().map(normalizeRouteFromApi)
   } finally {
     isLoading.value = false
@@ -400,7 +400,18 @@ onMounted(async () => {
   }
 })
 
-function openRoute(r) { selected.value = r }
+async function openRoute(r) {
+  selected.value = r
+  if (!r?.id) return
+  const needsStops = !Array.isArray(r.stops) || r.stops.length === 0
+  if (!needsStops) return
+  try {
+    const full = await javaApi.routes.getById(r.id)
+    if (full) selected.value = normalizeRouteFromApi(full)
+  } catch (e) {
+    console.warn('Route details:', e)
+  }
+}
 
 function getMockRoutes() {
   return [

@@ -36,7 +36,7 @@ const routes = [
     path: '/pois/:id',
     name: 'poi-details',
     component: PoiDetailsView,
-    meta: { title: 'Точка интереса — полная информация' },
+    meta: { title: 'Виртуальный музей' },
     props: true
   },
   {
