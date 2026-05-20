@@ -41,11 +41,32 @@ function backendHintFromHtml(text, status) {
  * @param {Response} response - fetch Response
  * @returns {Promise<any>} - данные (data) или fallback
  */
+async function readResponseTextWithRetry(response, url, maxAttempts = 2) {
+  let lastError
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      return await response.text()
+    } catch (err) {
+      lastError = err
+      const msg = String(err?.message || err)
+      const retryable =
+        msg.includes('chunked') ||
+        msg.includes('network') ||
+        msg.includes('Failed to fetch') ||
+        err?.name === 'TypeError'
+      if (!retryable || attempt >= maxAttempts - 1) break
+      warnApiOnce(url, 'Обрыв ответа API, повтор…', msg)
+      await new Promise((r) => setTimeout(r, 450))
+    }
+  }
+  throw lastError
+}
+
 const handleJavaResponse = async (response) => {
   const url = response.url || ''
   try {
     const contentType = response.headers.get('content-type') || ''
-    const rawText = await response.text()
+    const rawText = await readResponseTextWithRetry(response, url)
     const trimmed = rawText.trim()
 
     if (!response.ok) {
