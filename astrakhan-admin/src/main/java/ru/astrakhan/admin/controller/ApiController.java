@@ -151,30 +151,43 @@ public class ApiController {
     // ===== Routes =====
     @GetMapping("/routes")
     public ResponseEntity<Map<String, Object>> getRoutes(@RequestParam(required = false) String published, @RequestParam(required = false) String category) {
-        List<Route> routes = "true".equals(published) ? routeService.findPublished() : routeService.findAll();
-        if (category != null && !category.isEmpty()) routes = routes.stream().filter(r -> category.equals(r.getCategory())).collect(Collectors.toList());
-        // Гостям не показываем OUTDATED маршруты (только ACTIVE/DRAFT, как и раньше; published-флаг сохраняется).
-        if ("true".equals(published)) {
+        try {
+            List<Route> routes = "true".equals(published) ? routeService.findPublished() : routeService.findAll();
+            if (category != null && !category.isEmpty()) {
+                routes = routes.stream().filter(r -> category.equals(r.getCategory())).collect(Collectors.toList());
+            }
+            if ("true".equals(published)) {
+                routes = routes.stream()
+                        .filter(r -> r.getStatus() == null || r.getStatus() != Route.RouteStatus.OUTDATED)
+                        .collect(Collectors.toList());
+            }
             routes = routes.stream()
-                .filter(r -> r.getStatus() != Route.RouteStatus.OUTDATED)
-                .collect(Collectors.toList());
+                    .sorted((a, b) -> {
+                        int pa = a.getPriority() != null ? a.getPriority() : 0;
+                        int pb = b.getPriority() != null ? b.getPriority() : 0;
+                        int cmp = Integer.compare(pb, pa);
+                        if (cmp != 0) return cmp;
+                        LocalDateTime ua = a.getUpdatedAt();
+                        LocalDateTime ub = b.getUpdatedAt();
+                        if (ua == null && ub == null) return 0;
+                        if (ua == null) return 1;
+                        if (ub == null) return -1;
+                        return ub.compareTo(ua);
+                    })
+                    .collect(Collectors.toList());
+            List<Map<String, Object>> items = new ArrayList<>();
+            for (Route r : routes) {
+                try {
+                    items.add(routeMapListItem(r));
+                } catch (Exception one) {
+                    log.warn("Skip route id={} in public list: {}", r.getId(), one.getMessage());
+                }
+            }
+            return ok(items);
+        } catch (Exception e) {
+            log.error("getRoutes failed", e);
+            return apiError(HttpStatus.INTERNAL_SERVER_ERROR, "Не удалось загрузить маршруты: " + e.getMessage());
         }
-        // Сортировка: priority DESC, затем updatedAt DESC.
-        routes = routes.stream()
-            .sorted((a, b) -> {
-                int pa = a.getPriority() != null ? a.getPriority() : 0;
-                int pb = b.getPriority() != null ? b.getPriority() : 0;
-                int cmp = Integer.compare(pb, pa);
-                if (cmp != 0) return cmp;
-                LocalDateTime ua = a.getUpdatedAt();
-                LocalDateTime ub = b.getUpdatedAt();
-                if (ua == null && ub == null) return 0;
-                if (ua == null) return 1;
-                if (ub == null) return -1;
-                return ub.compareTo(ua);
-            })
-            .collect(Collectors.toList());
-        return ok(routes.stream().map(this::routeMapListItem).collect(Collectors.toList()));
     }
 
     @GetMapping("/routes/{id}")

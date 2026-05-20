@@ -23,7 +23,9 @@ check() {
   echo "URL: $url"
   echo "HTTP: $code"
   if [ "$code" = "200" ]; then
-    if echo "$body" | head -c 1 | grep -q '{'; then
+    if echo "$body" | grep -q '"status"[[:space:]]*:[[:space:]]*"success"'; then
+      echo "OK: JSON success"
+    elif echo "$body" | head -c 1 | grep -q '{'; then
       status=$(echo "$body" | sed -n 's/.*"status"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
       echo "status в JSON: ${status:-?}"
       if echo "$body" | grep -q '"data"'; then
@@ -36,8 +38,8 @@ check() {
       echo "$(echo "$body" | head -c 200)"
     fi
   elif [ "$code" = "502" ] || [ "$code" = "000" ]; then
-    echo "ОШИБКА: Java не отвечает. systemctl status astrakhan-admin"
-    echo "  journalctl -u astrakhan-admin -n 40 --no-pager"
+    echo "ОШИБКА: Java не отвечает (:8080 не слушается)."
+    echo "  bash deploy/debug-java-startup.sh   ← причина в логах"
     echo "  bash deploy/start-java.sh"
   elif [ "$code" = "404" ]; then
     echo "ОШИБКА: 404 — неверный путь. Prod: context-path=/java-api, URL должен быть /java-api/api/v1/..."

@@ -30,7 +30,8 @@ if [ -f "$APP_DIR/deploy/astrakhan-admin.service" ]; then
   cp "$APP_DIR/deploy/astrakhan-admin.service" /etc/systemd/system/astrakhan-admin.service
 fi
 if ! grep -q 'spring.profiles.active=prod' /etc/systemd/system/astrakhan-admin.service 2>/dev/null; then
-  sed -i 's|-jar |-Dspring.profiles.active=prod -jar |' /etc/systemd/system/astrakhan-admin.service
+  sed -i 's|ExecStart=/usr/bin/java -Xmx1024m -jar |ExecStart=/usr/bin/java -Xmx1024m -Dspring.profiles.active=prod -jar |' \
+    /etc/systemd/system/astrakhan-admin.service
 fi
 systemctl daemon-reload
 systemctl enable astrakhan-admin 2>/dev/null || true
