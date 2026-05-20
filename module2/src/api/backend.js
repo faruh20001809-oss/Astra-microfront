@@ -41,32 +41,21 @@ function backendHintFromHtml(text, status) {
  * @param {Response} response - fetch Response
  * @returns {Promise<any>} - данные (data) или fallback
  */
-async function readResponseTextWithRetry(response, url, maxAttempts = 2) {
-  let lastError
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      return await response.text()
-    } catch (err) {
-      lastError = err
-      const msg = String(err?.message || err)
-      const retryable =
-        msg.includes('chunked') ||
-        msg.includes('network') ||
-        msg.includes('Failed to fetch') ||
-        err?.name === 'TypeError'
-      if (!retryable || attempt >= maxAttempts - 1) break
-      warnApiOnce(url, 'Обрыв ответа API, повтор…', msg)
-      await new Promise((r) => setTimeout(r, 450))
-    }
-  }
-  throw lastError
+function isIncompleteResponseError(err) {
+  const msg = String(err?.message || err)
+  return (
+    msg.includes('chunked') ||
+    msg.includes('ERR_INCOMPLETE') ||
+    msg.includes('network error') ||
+    err?.name === 'TypeError'
+  )
 }
 
 const handleJavaResponse = async (response) => {
   const url = response.url || ''
   try {
     const contentType = response.headers.get('content-type') || ''
-    const rawText = await readResponseTextWithRetry(response, url)
+    const rawText = await response.text()
     const trimmed = rawText.trim()
 
     if (!response.ok) {
@@ -109,6 +98,9 @@ const handleJavaResponse = async (response) => {
     warnApiOnce(url, 'Неожиданный формат ответа API', json)
     return []
   } catch (err) {
+    if (isIncompleteResponseError(err)) {
+      throw err
+    }
     warnApiOnce(url, err?.message || 'Ошибка API', null)
     return []
   }
@@ -225,10 +217,20 @@ export const javaApi = {
   /** Routes (Маршруты) */
   routes: {
     /** @param {Object} filters - { published: 'true', category: '...' } */
-    getList: async (filters = {}) => {
+    getList: async (filters = {}, attempt = 0) => {
       const params = new URLSearchParams({ published: 'true', ...filters })
-      const res = await baseFetch(`${JAVA_API_BASE}/routes?${params}`)
-      return handleJavaResponse(res)
+      const url = `${JAVA_API_BASE}/routes?${params}`
+      try {
+        const res = await baseFetch(url)
+        return await handleJavaResponse(res)
+      } catch (err) {
+        if (attempt < 1 && isIncompleteResponseError(err)) {
+          await new Promise((r) => setTimeout(r, 500))
+          return javaApi.routes.getList(filters, attempt + 1)
+        }
+        warnApiOnce(url, err?.message || 'Ошибка загрузки маршрутов', null)
+        return []
+      }
     },
 
     /** @param {number} id */
