@@ -41,10 +41,17 @@
       <div class="museum-card-row museum-card-row--routes">
         <article
           v-for="route in previewRoutes"
-          :key="route.title + route.price"
+          :key="route.id ?? route.title"
           class="museum-preview-card museum-preview-card--dark"
         >
-          <div class="museum-card-media" aria-hidden="true"></div>
+          <div class="museum-card-media">
+            <img
+              v-if="route.coverImage"
+              :src="route.coverImage"
+              :alt="route.title"
+              loading="lazy"
+            />
+          </div>
           <p>{{ route.title }}</p>
           <div class="museum-card-foot">
             <span>{{ route.price }}</span>
@@ -62,10 +69,17 @@
       <div class="museum-card-row">
         <article
           v-for="item in previewProducts"
-          :key="item.title + item.price"
+          :key="item.id ?? item.title"
           class="museum-preview-card museum-preview-card--shop"
         >
-          <div class="museum-card-media" aria-hidden="true"></div>
+          <div class="museum-card-media">
+            <img
+              v-if="item.image"
+              :src="item.image"
+              :alt="item.title"
+              loading="lazy"
+            />
+          </div>
           <p>{{ item.title }}</p>
           <div class="museum-card-foot">
             <span>{{ item.price }}</span>
@@ -92,17 +106,58 @@
  * (MapView). Это удовлетворяет требование ТЗ 4.1 «разделить страницы».
  */
 
-const previewRoutes = [
-  { title: 'Маршрут по району Закутумье', price: '800 ₽' },
-  { title: 'Маршрут по району Закутумье', price: 'Бесплатно' },
-  { title: 'Маршрут по району Закутумье', price: 'Бесплатно' },
-]
+import { ref, onMounted } from 'vue'
+import { javaApi } from '@/api/backend.js'
 
-const previewProducts = [
-  { title: 'Футболка оверсайз с оттиском реального деревянного элемента', price: '2 500 ₽' },
-  { title: 'Футболка оверсайз с оттиском реального деревянного элемента', price: '2 500 ₽' },
-  { title: 'Футболка оверсайз с оттиском реального деревянного элемента', price: '2 500 ₽' },
-]
+const PREVIEW_LIMIT = 3
+
+const previewRoutes = ref([])
+const previewProducts = ref([])
+
+function formatRoutePrice(route) {
+  const paid = !!(route.isPaid ?? route.paid)
+  if (!paid) return 'Бесплатно'
+  const price = route.price
+  if (price == null || price === '') return 'Бесплатно'
+  return `${Number(price).toLocaleString('ru-RU')} ₽`
+}
+
+function normalizeRoute(r) {
+  return {
+    id: r.id,
+    title: r.title || r.name || 'Маршрут',
+    coverImage: r.coverImage || r.image || null,
+    price: formatRoutePrice(r),
+  }
+}
+
+function normalizeProduct(p) {
+  const price = p.price
+  return {
+    id: p.id,
+    title: p.name || p.title || 'Товар',
+    image: p.image || null,
+    price: price != null && price !== '' ? `${Number(price).toLocaleString('ru-RU')} ₽` : '',
+  }
+}
+
+onMounted(async () => {
+  try {
+    const data = await javaApi.routes.getList({ published: 'true' })
+    const list = Array.isArray(data) ? data : []
+    previewRoutes.value = list.slice(0, PREVIEW_LIMIT).map(normalizeRoute)
+  } catch (err) {
+    if (import.meta.env.DEV) console.warn('Home routes preview:', err)
+  }
+
+  try {
+    const data = await javaApi.products.getList()
+    const list = Array.isArray(data) ? data : []
+    previewProducts.value = list.slice(0, PREVIEW_LIMIT).map(normalizeProduct)
+  } catch (err) {
+    if (import.meta.env.DEV) console.warn('Home products preview:', err)
+  }
+})
 </script>
 
 <style scoped>
@@ -283,6 +338,14 @@ body.app-dark-theme .museum-home-page {
 .museum-card-media {
   aspect-ratio: 1.55 / 1;
   background: #c9c9c9;
+  overflow: hidden;
+}
+
+.museum-card-media img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .museum-preview-card p {

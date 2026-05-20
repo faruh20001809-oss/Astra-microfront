@@ -848,13 +848,38 @@ public class ApiController {
         return m;
     }
 
+    /** Есть загруженный файл в БД (проверка по filename, без чтения bytea). */
+    private static boolean hasUploadedImage(String imageFilename) {
+        return imageFilename != null && !imageFilename.isBlank();
+    }
+
     /** Внешний URL или путь к API для обложки: при загрузке файла в админке — только imageData, без imageUrl. */
     private static String poiCoverImageUrl(PointOfInterest p) {
         if (p.getImageUrl() != null && !p.getImageUrl().isBlank()) {
             return p.getImageUrl().trim();
         }
-        if (p.getImageData() != null && p.getImageData().length > 0 && p.getId() != null) {
+        if (hasUploadedImage(p.getImageFilename()) && p.getId() != null) {
             return "/java-api/api/v1/pois/" + p.getId() + "/image";
+        }
+        return null;
+    }
+
+    private static String routeCoverImageUrl(Route r) {
+        if (r.getImageUrl() != null && !r.getImageUrl().isEmpty()) {
+            return r.getImageUrl();
+        }
+        if (hasUploadedImage(r.getImageFilename()) && r.getId() != null) {
+            return "/java-api/api/v1/routes/" + r.getId() + "/image";
+        }
+        return null;
+    }
+
+    private static String productCoverImageUrl(Product p) {
+        if (p.getImageUrl() != null && !p.getImageUrl().isEmpty()) {
+            return p.getImageUrl();
+        }
+        if (hasUploadedImage(p.getImageFilename()) && p.getId() != null) {
+            return "/java-api/api/v1/products/" + p.getId() + "/image";
         }
         return null;
     }
@@ -920,9 +945,7 @@ public class ApiController {
         } else {
             m.put("stops", List.of());
         }
-        String coverImage = (r.getImageUrl() != null && !r.getImageUrl().isEmpty())
-                ? r.getImageUrl()
-                : (r.getImageData() != null && r.getImageData().length > 0 ? "/java-api/api/v1/routes/" + r.getId() + "/image" : null);
+        String coverImage = routeCoverImageUrl(r);
         m.put("image", coverImage);
         m.put("coverImage", coverImage);
         return m;
@@ -945,7 +968,7 @@ public class ApiController {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", p.getId()); m.put("name", p.getName()); m.put("description", p.getDescription());
         m.put("category", p.getCategory()); m.put("price", p.getPrice()); m.put("currency", p.getCurrency());
-        m.put("image", (p.getImageUrl() != null && !p.getImageUrl().isEmpty()) ? p.getImageUrl() : "/java-api/api/v1/products/" + p.getId() + "/image"); m.put("rating", p.getRating()); m.put("inStock", p.getInStock());
+        m.put("image", productCoverImageUrl(p)); m.put("rating", p.getRating()); m.put("inStock", p.getInStock());
         m.put("quantity", p.getQuantity()); m.put("material", p.getMaterial());
         if (p.getSizes() != null) m.put("sizes", Arrays.asList(p.getSizes().split(",")));
         if (p.getColors() != null) m.put("colors", Arrays.asList(p.getColors().split(",")));
