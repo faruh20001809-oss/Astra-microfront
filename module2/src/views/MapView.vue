@@ -493,31 +493,11 @@ import { useFavorites } from '@/composables/useFavorites.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import { javaApi } from '@/api/backend.js'
 import { fetch2gisRouteCoordinates, isDgisRoutingConfigured } from '@/api/dgisRouting.js'
+import { loadDgisMapFromEnv } from '@/api/dgisConfig.js'
 
 const LS_POI_CATALOG_MAX = 'astra-poi-catalog-max-id'
 const LS_POI_DISMISSED = 'astra-poi-dismissed-new-ids'
 const NEW_POI_POLL_MS = 75_000
-
-/** Один JSON из `VITE_DGIS_MAP`: `{ "key": "…", "style": "…" }` (ключ как `DGIS_MAP_KEY` / `app.dgis.map-key` в админке). */
-const DGIS_MAP_DEFAULT = Object.freeze({
-  key: 'e9f7375c-7ad1-4258-854a-399d99eb65cb',
-  style: '0651ff51-79b6-409c-8b90-37a9be2e97ad',
-})
-
-function loadDgisMapFromEnv() {
-  const raw = import.meta.env.VITE_DGIS_MAP
-  if (!raw || typeof raw !== 'string') return { ...DGIS_MAP_DEFAULT }
-  try {
-    const o = JSON.parse(raw)
-    return {
-      key: typeof o.key === 'string' && o.key.trim() ? o.key.trim() : DGIS_MAP_DEFAULT.key,
-      style:
-        typeof o.style === 'string' && o.style.trim() ? o.style.trim() : DGIS_MAP_DEFAULT.style,
-    }
-  } catch {
-    return { ...DGIS_MAP_DEFAULT }
-  }
-}
 
 const dgisMap = loadDgisMapFromEnv()
 

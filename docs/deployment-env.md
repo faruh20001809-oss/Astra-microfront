@@ -59,9 +59,14 @@ nano /etc/astra/module2.vite.env
 
 ```dotenv
 VITE_JAVA_API_BASE=/java-api/api/v1
-VITE_DGIS_MAP={"key":"ВАШ_MAPGL_KEY","style":"0651ff51-79b6-409c-8b90-37a9be2e97ad"}
+# Тестовый стенд (MapGL + Static): key e9f7375c-7ad1-4258-854a-399d99eb65cb, style ниже
+VITE_DGIS_MAP={"key":"e9f7375c-7ad1-4258-854a-399d99eb65cb","style":"0651ff51-79b6-409c-8b90-37a9be2e97ad"}
+# Прод: подставьте свой ключ(и); при отдельном Static — добавьте "staticKey":"…"
+# либо отдельно: VITE_DGIS_STATIC_KEY=ВАШ_STATIC_KEY
+# Ключ MapGL без продукта «Static API» даёт 403 на static.maps.2gis.com — превью в /virtual-museum не загрузятся
 VITE_DGIS_ROUTING_KEY=ВАШ_ROUTING_KEY
 # VITE_DGIS_ROUTING_BASE=/api/dgis-routing
+# VITE_DGIS_STATIC_BASE=/api/dgis-static
 VITE_AI_API_KEY=ВАШ_LLM_ИЛИ_OPENROUTER_КЛЮЧ
 ```
 
@@ -109,7 +114,7 @@ nano /etc/astra/admin.env
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/museum_user
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=ПАРОЛЬ_ОТ_POSTGRES
-DGIS_MAP_KEY=ВАШ_MAPGL_KEY
+DGIS_MAP_KEY=e9f7375c-7ad1-4258-854a-399d99eb65cb
 APP_MODULE2_URL=https://ваш-домен
 APP_API_PUBLIC_BASE_URL=https://ваш-домен/java-api
 APP_ADMIN_URL=https://ваш-домен/admin
@@ -245,6 +250,16 @@ systemctl restart astra-node astra-flask astra-admin   # ваши имена ю�
 
 - правило **«истина в `/etc/astra/`»**: вы копируете **одно и то же значение** в `module2.vite.env` и в `admin.env` при смене ключа;
 - либо автоматизируете выкладку скриптом деплоя, который подставляет значения из одного внутреннего шаблона (не храните этот шаблон с секретами в git).
+
+## Смена ключа 2GIS (чеклист)
+
+После выпуска **нового** ключа в кабинете 2GIS обновите **все** места — иначе в URL/карте останется старый UUID:
+
+1. **`/etc/astra/module2.vite.env`** — `VITE_DGIS_MAP`, при необходимости `VITE_DGIS_STATIC_KEY` / `staticKey` в JSON → **`npm run build`** и выкладка `module2/dist`.
+2. **`/etc/astrakhan-admin.env`** — `DGIS_MAP_KEY=…` → **`systemctl restart astrakhan-admin`** (пересборка фронта не нужна).
+3. **Браузер** — очистить sessionStorage (ключи `astra-cache-static-*`, `astra-cache-pois-*`) или жёсткое обновление, иначе превью карт хранят старые URL с `key=` 24 ч.
+
+В собранном `dist/assets/*.js` можно проверить, какой ключ попал в бандл: `grep -o 'key=[a-f0-9-]*' dist/assets/*.js` (не публикуйте вывод).
 
 ## Astrakhan Admin (Spring): ключ карты `DGIS_MAP_KEY`
 

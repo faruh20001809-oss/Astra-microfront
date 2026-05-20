@@ -9,7 +9,7 @@ export const CACHE_KEYS = {
   poisPublished: 'astra-cache-pois-published-v1',
   poiDetail: (id) => `astra-cache-poi-${id}`,
   staticMap: (lat, lng, w, h, z) =>
-    `astra-cache-static-${lat.toFixed(5)}-${lng.toFixed(5)}-${w}x${h}-z${z}`,
+    `astra-cache-static-v2-${lat.toFixed(5)}-${lng.toFixed(5)}-${w}x${h}-z${z}`,
 }
 
 const DEFAULT_TTL_MS = 15 * 60 * 1000

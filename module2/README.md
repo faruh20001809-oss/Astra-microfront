@@ -69,7 +69,7 @@ PORT=3001
 | `VITE_DGIS_ROUTING_KEY` | Ключ **Routing / Directions API** 2GIS (если не задан — подставляется `key` из `VITE_DGIS_MAP`) |
 | `VITE_DGIS_ROUTING_BASE` | Базовый URL API маршрутизации (по умолчанию `https://routing.api.2gis.com`). При CORS в dev: `VITE_DGIS_ROUTING_BASE=/api/dgis-routing` — запрос пойдёт через прокси Vite |
 | `VITE_DGIS_ROUTING_TRANSPORT` | `walking` (по умолчанию) или `driving` и др. — см. [2GIS Routing](https://docs.2gis.com/api/navigation/routing/overview) |
-| `VITE_DGIS_STATIC_KEY` | Ключ [2GIS Static API](https://docs.2gis.com/en/maps/others/static/overview) для превью в карточках (если не задан — `key` из `VITE_DGIS_MAP`) |
+| `VITE_DGIS_STATIC_KEY` | Ключ [2GIS Static API](https://docs.2gis.com/en/maps/others/static/overview) для превью в `/virtual-museum`. Иначе `staticKey` в JSON `VITE_DGIS_MAP`, иначе `key` (часто **403**, если Static не подключён к ключу MapGL в кабинете 2GIS) |
 | `VITE_DGIS_STATIC_BASE` | Базовый URL Static API (по умолчанию `https://static.maps.2gis.com/2.0`). В dev при блокировке: `/api/dgis-static` + прокси Vite |
 
 Маршрут с каталога (`?route=id`) на карте строится по **цепочке POI**: запросы к Routing API по сегментам между соседними точками, линия по дорогам/тропам; при ошибке — прямая линия между точками.

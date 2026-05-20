@@ -4,7 +4,7 @@
  * @see https://docs.2gis.com/en/maps/others/static/reference
  */
 
-import { getDgisMapKey } from '@/api/dgisConfig.js'
+import { getDgisStaticKey } from '@/api/dgisConfig.js'
 import { CACHE_KEYS, cacheGet, cacheSet } from '@/utils/appCache.js'
 
 const STATIC_API_VERSION = '2.0'
@@ -28,7 +28,7 @@ export function getDgisStaticMapUrl(lat, lng, options = {}) {
     return ''
   }
 
-  const key = getDgisMapKey()
+  const key = getDgisStaticKey()
   if (!key) return ''
 
   const width = Math.min(Math.max(Math.round(options.width ?? 640), 80), 2048)
@@ -64,5 +64,5 @@ export function getCachedDgisStaticMapUrl(lat, lng, options = {}) {
 }
 
 export function isDgisStaticConfigured() {
-  return Boolean(getDgisMapKey())
+  return Boolean(getDgisStaticKey())
 }

@@ -34,7 +34,7 @@ public class PoiAdminController {
     @Value("${app.ai.enabled:false}")
     private boolean poiAiEnabled;
 
-    @Value("${app.dgis.map-key:2fa2df2d-9b29-4877-ac65-818e02de807d}")
+    @Value("${app.dgis.map-key:e9f7375c-7ad1-4258-854a-399d99eb65cb}")
     private String dgisMapKey;
 
     @GetMapping public String list(@RequestParam(required = false) String status, Model model) {

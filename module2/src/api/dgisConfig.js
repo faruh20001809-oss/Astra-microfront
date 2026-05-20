@@ -17,19 +17,32 @@ export function loadDgisMapFromEnv() {
       key: typeof o.key === 'string' && o.key.trim() ? o.key.trim() : DGIS_MAP_DEFAULT.key,
       style:
         typeof o.style === 'string' && o.style.trim() ? o.style.trim() : DGIS_MAP_DEFAULT.style,
+      staticKey:
+        typeof o.staticKey === 'string' && o.staticKey.trim() ? o.staticKey.trim() : null,
     }
   } catch {
     return { ...DGIS_MAP_DEFAULT }
   }
 }
 
-/** Ключ API 2GIS (Static / MapGL / Routing fallback). */
+/** Ключ MapGL / общий fallback (не подставлять в Static API без проверки). */
 export function getDgisMapKey() {
-  const explicit = import.meta.env.VITE_DGIS_STATIC_KEY
-  if (explicit != null && String(explicit).trim() !== '') return String(explicit).trim()
   const routing = import.meta.env.VITE_DGIS_ROUTING_KEY
   if (routing != null && String(routing).trim() !== '') return String(routing).trim()
   return loadDgisMapFromEnv().key
+}
+
+/**
+ * Ключ только для Static API (превью в виртуальном музее).
+ * Ключ MapGL (`key` в VITE_DGIS_MAP) часто не даёт static.maps.2gis.com → 403.
+ * @see https://docs.2gis.com/en/maps/others/static/overview
+ */
+export function getDgisStaticKey() {
+  const explicit = import.meta.env.VITE_DGIS_STATIC_KEY
+  if (explicit != null && String(explicit).trim() !== '') return String(explicit).trim()
+  const { staticKey, key } = loadDgisMapFromEnv()
+  if (staticKey) return staticKey
+  return key
 }
 
 export function getDgisMapStyle() {
