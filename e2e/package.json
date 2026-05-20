@@ -7,6 +7,7 @@
     "test:update": "playwright test --update-snapshots",
     "test:ui": "playwright test --ui",
     "test:module2": "playwright test module2",
+    "test:update:module2": "playwright test module2 --update-snapshots",
     "test:admin": "playwright test astrakhan-admin",
     "test:module3": "playwright test module3",
     "install:browsers": "playwright install chromium"

@@ -54,10 +54,21 @@ if [ -f "$JAR" ]; then
 else
   echo "  JAR: НЕТ ($JAR)"
 fi
-if [ -d "$APP_DIR/module2/dist" ]; then
-  echo "  module2/dist: есть"
+if [ -f "$APP_DIR/module2/dist/index.html" ]; then
+  echo "  module2/dist/index.html: есть"
+  if namei -l "$APP_DIR/module2/dist/index.html" 2>/dev/null | tail -1 | grep -q 'www-data\| o '; then
+    :
+  fi
+  PERM_OK=1
+  for d in /opt "$APP_DIR" "$APP_DIR/module2" "$APP_DIR/module2/dist"; do
+    if [ -d "$d" ] && [ ! -r "$d" ]; then PERM_OK=0; fi
+    if [ -d "$d" ] && [ ! -x "$d" ]; then PERM_OK=0; fi
+  done
+  if [ "$PERM_OK" = 0 ]; then
+    echo "  ВНИМАНИЕ: nginx может отдать 403 — выполните: sudo bash $APP_DIR/deploy/fix-static-403.sh"
+  fi
 else
-  echo "  module2/dist: НЕТ (соберите: cd module2 && npm run build)"
+  echo "  module2/dist/index.html: НЕТ → 403 на главной. sudo bash $APP_DIR/deploy/fix-static-403.sh"
 fi
 
 echo ""

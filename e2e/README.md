@@ -23,7 +23,7 @@ npm run test:module2
 При изменении вёрстки обновите эталоны:
 
 ```bash
-npm run test:update
+npm run test:update:module2
 ```
 
 Интерактивный режим:

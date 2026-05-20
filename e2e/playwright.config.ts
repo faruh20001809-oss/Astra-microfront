@@ -4,6 +4,8 @@ const module2Base = process.env.MODULE2_BASE_URL || 'http://127.0.0.1:5173'
 const adminBase = process.env.ADMIN_BASE_URL || 'http://127.0.0.1:8080'
 const module3Base = process.env.MODULE3_BASE_URL || 'http://127.0.0.1:5000'
 
+const startModule2Server = !process.env.SKIP_MODULE2_SERVER
+
 export default defineConfig({
   testDir: '.',
   fullyParallel: true,
@@ -12,6 +14,15 @@ export default defineConfig({
   workers: process.env.CI ? 2 : undefined,
   timeout: 60_000,
   reporter: [['list'], ['html', { open: 'never' }]],
+  webServer: startModule2Server
+    ? {
+        command: 'npm run dev:e2e',
+        cwd: '../module2',
+        url: module2Base,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+      }
+    : undefined,
   snapshotPathTemplate: '{testDir}/{testFileDir}/__screenshots__/{projectName}/{arg}{ext}',
   expect: {
     toHaveScreenshot: {
@@ -34,15 +45,6 @@ export default defineConfig({
         baseURL: module2Base,
         viewport: { width: 1280, height: 900 },
       },
-      webServer: process.env.SKIP_MODULE2_SERVER
-        ? undefined
-        : {
-            command: 'npm run dev:e2e',
-            cwd: '../module2',
-            url: module2Base,
-            reuseExistingServer: !process.env.CI,
-            timeout: 120_000,
-          },
     },
     {
       name: 'astrakhan-admin-desktop',

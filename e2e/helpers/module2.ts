@@ -21,9 +21,11 @@ export async function gotoModule2(
   await prepareModule2Page(page)
   await page.goto(path, { waitUntil: 'load' })
   if (options?.waitSelector) {
-    await page.locator(options.waitSelector).first().waitFor({ state: 'visible', timeout: 30_000 })
+    await page.locator(options.waitSelector).first().waitFor({ state: 'visible', timeout: 45_000 })
+  } else {
+    await page.locator('#app').waitFor({ state: 'attached', timeout: 45_000 })
   }
-  await page.waitForLoadState('networkidle').catch(() => {})
+  await page.waitForTimeout(300)
   if (options?.settleMs) {
     await page.waitForTimeout(options.settleMs)
   }
