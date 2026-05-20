@@ -12,7 +12,7 @@
         <p>{{ error }}</p>
         <div class="poi-details-state__actions">
           <button type="button" class="btn btn-ghost btn-sm" @click="load">Попробовать снова</button>
-          <router-link class="btn btn-ghost btn-sm" to="/map">К карте</router-link>
+          <router-link class="btn btn-ghost btn-sm" to="/virtual-museum">К виртуальному музею</router-link>
         </div>
       </div>
 
@@ -21,7 +21,7 @@
         <nav class="poi-breadcrumbs" aria-label="Путь">
           <router-link to="/">Главная</router-link>
           <span aria-hidden="true">/</span>
-          <router-link to="/map">Карта</router-link>
+          <router-link to="/virtual-museum">Виртуальный музей</router-link>
           <span aria-hidden="true">/</span>
           <span class="poi-breadcrumbs__current">{{ poi.name }}</span>
         </nav>
@@ -81,6 +81,21 @@
           <div class="poi-article__body">
             <p v-for="(par, i) in detailParagraphs" :key="i">{{ par }}</p>
           </div>
+        </section>
+
+        <section
+          v-else
+          class="poi-section poi-stub"
+          aria-labelledby="poi-stub-title"
+        >
+          <h2 id="poi-stub-title" class="poi-section__title">Полное описание</h2>
+          <p class="poi-stub__lead">
+            Раздел в разработке: здесь появится расширенный текст, исторические справки,
+            дополнительные фотографии и материалы из MAX.
+          </p>
+          <p v-if="poi.shortDescription || poi.description" class="poi-stub__preview">
+            {{ poi.shortDescription || poi.description }}
+          </p>
         </section>
 
         <section v-if="hasMaxMedia" class="poi-section poi-max" aria-labelledby="poi-max-title">
@@ -232,7 +247,11 @@ async function load() {
 function openOnMap() {
   if (!poi.value) return
   mapStore.setSelected(poi.value)
-  router.push('/map')
+  router.push({
+    path: '/virtual-museum',
+    hash: '#museum-map',
+    query: { poi: String(poi.value.id) },
+  })
 }
 
 function formatCoord(value) {
@@ -498,6 +517,31 @@ watch(() => route.params.id, (next, prev) => {
 
 .poi-article__body p {
   margin: 0;
+}
+
+.poi-stub__lead {
+  margin: 0 0 var(--spacing-md);
+  max-width: 62ch;
+  color: var(--gray-300, #d2c7b3);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.poi-stub__preview {
+  margin: 0;
+  max-width: 70ch;
+  padding: var(--spacing-md);
+  border-left: 3px solid var(--accent);
+  color: var(--paper, #f0e5cd);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  background: rgba(20, 16, 13, 0.35);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+:root.app-light .poi-stub__preview {
+  background: #faf7f3;
+  color: #1d1d1b;
 }
 
 .poi-max__head {

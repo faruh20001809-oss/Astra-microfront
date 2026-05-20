@@ -9,7 +9,7 @@
       />
       <div class="museum-hero__content">
         <h1 id="museum-hero-title">Виртуальный музей деревянной архитектуры Астраханской области</h1>
-        <router-link class="museum-pill-link" to="/virtual-museum">
+        <router-link class="museum-pill-link" to="/virtual-museum#museum-map">
           Перейти к карте →
         </router-link>
       </div>
@@ -109,10 +109,18 @@ const previewProducts = [
 /* Основной фон страницы — белый, как на эталоне. Шрифт — sans-serif. */
 .museum-home-page {
   width: 100%;
+  flex: 1 0 auto;
   background: #fff;
   color: #1d1d1b;
   padding: calc(var(--nav-h, 64px) + 1rem) max(1.5rem, calc((100vw - 1180px) / 2)) 2.5rem;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Лендинг главной — всегда светлый, как на референсе */
+#app-root.app-dark .museum-home-page,
+body.app-dark-theme .museum-home-page {
+  background: #fff;
+  color: #1d1d1b;
 }
 
 .museum-hero {

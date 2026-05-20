@@ -1,14 +1,9 @@
 <template>
   <!--
-    VirtualMuseumView — отдельный маршрут /virtual-museum (ТЗ, раздел 4.1).
-    Сейчас оборачивает существующий MapView, который содержит hero,
-    рассказ о деревянной архитектуре и карту. Это даёт отдельные:
-      - URL (/virtual-museum),
-      - title из роутера,
-      - SEO-точку входа,
-    при этом не дублируя сложный код карты.
+    VirtualMuseumView — маршрут /virtual-museum (ТЗ §4.1):
+    каталог всех опубликованных точек + интерактивная карта.
   -->
-  <MapView />
+  <MapView show-poi-catalog />
 </template>
 
 <script setup>

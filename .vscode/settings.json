@@ -7,7 +7,8 @@
         "org.springframework.stereotype.*"
     ],
     "java.server.launchMode": "Standard",
-    "java.jdt.ls.vmargs": "-javaagent:${userHome}/.m2/repository/org/projectlombok/lombok/1.18.30/lombok-1.18.30.jar",
+    "java.jdt.ls.lombokSupport": true,
+    "java.jdt.ls.vmargs": "-javaagent:${userHome}/.m2/repository/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar",
     "java.compile.nullAnalysis.mode": "automatic"
 }
 
