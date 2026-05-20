@@ -10,6 +10,7 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 2 : undefined,
+  timeout: 60_000,
   reporter: [['list'], ['html', { open: 'never' }]],
   snapshotPathTemplate: '{testDir}/{testFileDir}/__screenshots__/{projectName}/{arg}{ext}',
   expect: {
@@ -36,7 +37,7 @@ export default defineConfig({
       webServer: process.env.SKIP_MODULE2_SERVER
         ? undefined
         : {
-            command: 'npm run dev -- --host 127.0.0.1 --port 5173',
+            command: 'npm run dev:e2e',
             cwd: '../module2',
             url: module2Base,
             reuseExistingServer: !process.env.CI,

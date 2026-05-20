@@ -19,7 +19,7 @@ export async function gotoModule2(
   options?: { waitSelector?: string; settleMs?: number },
 ) {
   await prepareModule2Page(page)
-  await page.goto(path, { waitUntil: 'domcontentloaded' })
+  await page.goto(path, { waitUntil: 'load' })
   if (options?.waitSelector) {
     await page.locator(options.waitSelector).first().waitFor({ state: 'visible', timeout: 30_000 })
   }

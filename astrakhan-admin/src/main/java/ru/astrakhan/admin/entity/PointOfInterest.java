@@ -26,6 +26,7 @@ public class PointOfInterest {
     private Double longitude;
     private String address;
     @Column(name = "image_url") private String imageUrl;
+    @Lob
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "image_data", columnDefinition = "bytea") private byte[] imageData;
     @Column(name = "image_filename") private String imageFilename;

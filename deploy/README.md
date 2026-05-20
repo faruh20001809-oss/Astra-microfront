@@ -159,7 +159,7 @@ sudo GIT_REPO="" APP_DIR=/opt/astramicro bash deploy/setup.sh
 
 ### Картинки маршрутов и API
 
-В `nginx-astramicro.conf` для `location /java-api/` должен быть **rewrite**: `rewrite ^/java-api(.*)$ $1 break;`, чтобы бэкенд получал путь `/api/v1/...` (без префикса `/java-api`). Иначе запросы к картинкам маршрутов и товаров вернут 404.
+В `nginx-astramicro.conf` для `location /java-api/` **не** делайте rewrite префикса: в профиле `prod` у Spring задан `server.servlet.context-path=/java-api`, бэкенд ждёт путь `/java-api/api/v1/...`. Rewrite нужен только в dev (Vite proxy срезает `/java-api`).
 
 ### TTS (озвучка POI)
 

@@ -13,6 +13,7 @@ public class Product {
     @Column(nullable = false) private Double price;
     @Builder.Default private String currency = "RUB";
     @Column(name = "image_url") private String imageUrl;
+    @Lob
     @Basic(fetch = FetchType.LAZY)
     @Column(name = "image_data", columnDefinition = "bytea") private byte[] imageData;
     @Column(name = "image_filename") private String imageFilename;

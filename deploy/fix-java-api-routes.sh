@@ -10,12 +10,24 @@ JAR_PATH="$APP_DIR/astrakhan-admin/target/history-admin-1.0.0.jar"
 
 echo "=== Исправление маршрутов /java-api ==="
 
-# 1. Nginx: убрать слэш в proxy_pass, чтобы на бэкенд уходил полный путь /java-api/...
-if grep -q 'proxy_pass http://127.0.0.1:8080/;' /etc/nginx/sites-available/astramicro 2>/dev/null; then
-  sed -i 's|proxy_pass http://127.0.0.1:8080/;|proxy_pass http://127.0.0.1:8080;|' /etc/nginx/sites-available/astramicro
-  echo "[1] Nginx: proxy_pass исправлен (без слэша)."
+NGINX_SITE="/etc/nginx/sites-available/astramicro"
+if [ -f "$APP_DIR/deploy/nginx-astramicro.conf" ]; then
+  cp "$APP_DIR/deploy/nginx-astramicro.conf" "$NGINX_SITE"
+  echo "[1] Nginx: конфиг скопирован из deploy/nginx-astramicro.conf."
 else
-  echo "[1] Nginx: proxy_pass уже без слэша."
+  echo "[1] Предупреждение: deploy/nginx-astramicro.conf не найден, правки sed."
+fi
+
+# Убрать ошибочный rewrite (prod: context-path=/java-api, путь должен оставаться /java-api/...)
+if grep -q 'rewrite \^/java-api' "$NGINX_SITE" 2>/dev/null; then
+  sed -i '/rewrite \^\/java-api/d' "$NGINX_SITE"
+  echo "[1b] Nginx: удалён rewrite /java-api (несовместим с Spring prod)."
+fi
+
+# proxy_pass без завершающего слэша — полный URI /java-api/...
+if grep -q 'proxy_pass http://127.0.0.1:8080/;' "$NGINX_SITE" 2>/dev/null; then
+  sed -i 's|proxy_pass http://127.0.0.1:8080/;|proxy_pass http://127.0.0.1:8080;|' "$NGINX_SITE"
+  echo "[1c] Nginx: proxy_pass без слэша."
 fi
 
 # 2. Systemd: добавить профиль prod в ExecStart
