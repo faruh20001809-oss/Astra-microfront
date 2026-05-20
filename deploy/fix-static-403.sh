@@ -30,13 +30,18 @@ echo "[2] Права на каталоги и dist..."
 chmod 755 /opt 2>/dev/null || true
 chmod 755 "$APP_DIR" 2>/dev/null || true
 chmod 755 "$APP_DIR/module2" 2>/dev/null || true
-if [ -d "$DIST" ]; then
-  find "$DIST" -type d -exec chmod 755 {} \;
-  find "$DIST" -type f -exec chmod 644 {} \;
-  echo "  dist: $(find "$DIST" -type f | wc -l) файлов"
-else
+if [ ! -d "$DIST" ] || [ ! -f "$DIST/index.html" ]; then
   echo "ОШИБКА: каталог $DIST не создан после сборки"
   exit 1
+fi
+find "$DIST" -type d -exec chmod 755 {} \;
+find "$DIST" -type f -exec chmod 644 {} \;
+echo "  dist: $(find "$DIST" -type f | wc -l) файлов"
+if [ -f "$APP_DIR/deploy/favicon.svg" ]; then
+  cp "$APP_DIR/deploy/favicon.svg" "$DIST/favicon.svg"
+  cp "$APP_DIR/deploy/favicon.svg" "$DIST/favicon.ico"
+  cp "$APP_DIR/deploy/favicon.svg" "$APP_DIR/module2/public/favicon.svg" 2>/dev/null || true
+  echo "  favicon: скопирован в dist"
 fi
 
 # 3. Nginx root в конфиге
