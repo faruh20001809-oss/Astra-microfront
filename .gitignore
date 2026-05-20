@@ -30,6 +30,11 @@ Thumbs.db
 # Logs
 *.log
 
+# Playwright E2E (артефакты прогона; эталоны __screenshots__ коммитим)
+e2e/test-results/
+e2e/playwright-report/
+e2e/blob-report/
+
 # Cursor / agent skills (локально; в репозиторий не коммитим)
 .agents/skills/
 .claude/skills/
