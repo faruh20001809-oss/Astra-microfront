@@ -51,6 +51,12 @@ function isIncompleteResponseError(err) {
   )
 }
 
+/** 502/503/504 — бэкенд не поднят, не маскируем пустым массивом. */
+function isGatewayError(err) {
+  const msg = String(err?.message || err)
+  return /502|503|504|недоступен/i.test(msg)
+}
+
 const handleJavaResponse = async (response) => {
   const url = response.url || ''
   try {
@@ -229,6 +235,7 @@ export const javaApi = {
           return javaApi.routes.getList(filters, attempt + 1)
         }
         warnApiOnce(url, err?.message || 'Ошибка загрузки маршрутов', null)
+        if (isGatewayError(err)) throw err
         return []
       }
     },
@@ -251,8 +258,15 @@ export const javaApi = {
   products: {
     getList: async (filters = {}) => {
       const params = new URLSearchParams(filters)
-      const res = await baseFetch(`${JAVA_API_BASE}/products?${params}`)
-      return handleJavaResponse(res)
+      const url = `${JAVA_API_BASE}/products?${params}`
+      try {
+        const res = await baseFetch(url)
+        return await handleJavaResponse(res)
+      } catch (err) {
+        warnApiOnce(url, err?.message || 'Ошибка загрузки товаров', null)
+        if (isGatewayError(err)) throw err
+        return []
+      }
     },
 
     /** @param {number} id */

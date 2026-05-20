@@ -90,7 +90,14 @@ echo "--- 5. Последние ошибки astramicro-admin (Flask) ---"
 journalctl -u astramicro-admin -n 15 --no-pager 2>/dev/null || echo "  (сервис не найден или нет логов)"
 
 echo ""
-echo "--- 6. Nginx ---"
+echo "--- 6. Проверка API (curl) ---"
+curl -s -o /dev/null -w "  /java-api/login (8080): %{http_code}\n" "http://127.0.0.1:8080/java-api/login" 2>/dev/null || echo "  /java-api/login (8080): 000"
+curl -s -o /dev/null -w "  /java-api/api/v1/routes (nginx): %{http_code}\n" \
+  "http://127.0.0.1/java-api/api/v1/routes?published=true" 2>/dev/null || echo "  routes via nginx: 000"
+echo "  (502 на routes/products = Java не слушает :8080 → bash deploy/start-java.sh)"
+
+echo ""
+echo "--- 7. Nginx ---"
 nginx -t 2>&1 || true
 
 echo ""

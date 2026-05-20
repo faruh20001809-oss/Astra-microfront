@@ -33,6 +33,10 @@
       </div>
     </section>
 
+    <p v-if="apiUnavailable" class="museum-api-hint" role="status">
+      Данные маршрутов и мерча временно недоступны (API не отвечает). На сервере: <code>bash deploy/start-java.sh</code>
+    </p>
+
     <section class="museum-preview-section" aria-labelledby="museum-routes-title">
       <div class="museum-section-head">
         <h2 id="museum-routes-title">Онлайн-маршруты по городу</h2>
@@ -113,6 +117,7 @@ const PREVIEW_LIMIT = 3
 
 const previewRoutes = ref([])
 const previewProducts = ref([])
+const apiUnavailable = ref(false)
 
 function formatRoutePrice(route) {
   const paid = !!(route.isPaid ?? route.paid)
@@ -147,6 +152,7 @@ onMounted(async () => {
     const list = Array.isArray(data) ? data : []
     previewRoutes.value = list.slice(0, PREVIEW_LIMIT).map(normalizeRoute)
   } catch (err) {
+    apiUnavailable.value = true
     if (import.meta.env.DEV) console.warn('Home routes preview:', err)
   }
 
@@ -155,6 +161,7 @@ onMounted(async () => {
     const list = Array.isArray(data) ? data : []
     previewProducts.value = list.slice(0, PREVIEW_LIMIT).map(normalizeProduct)
   } catch (err) {
+    apiUnavailable.value = true
     if (import.meta.env.DEV) console.warn('Home products preview:', err)
   }
 })
@@ -288,6 +295,19 @@ body.app-dark-theme .museum-home-page {
   padding-top: 1.8rem;
   font-size: clamp(0.95rem, 0.22vw + 0.9rem, 1.05rem);
   line-height: 1.22;
+}
+
+.museum-api-hint {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #c9a227;
+  background: #fff9e6;
+  font-size: 0.85rem;
+  line-height: 1.35;
+}
+
+.museum-api-hint code {
+  font-size: 0.8rem;
 }
 
 .museum-preview-section {

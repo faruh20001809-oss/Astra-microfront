@@ -23,7 +23,9 @@ export default defineConfig(({ mode }) => {
         '/java-api': {
           target: 'http://localhost:8080',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/java-api/, ''),
+          // Dev без context-path: /java-api/api/v1 → /api/v1. Prod-профиль на :8080: VITE_JAVA_KEEP_CONTEXT=1
+          rewrite: (path) =>
+            env.VITE_JAVA_KEEP_CONTEXT === '1' ? path : path.replace(/^\/java-api/, ''),
           timeout: 120_000,
           proxyTimeout: 120_000,
           configure: (proxy) => {

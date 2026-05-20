@@ -1,6 +1,8 @@
 {
     "java.jdt.ls.java.home": "C:\\Program Files\\Java\\jdk-17",
     "java.configuration.updateBuildConfiguration": "automatic",
+    "java.import.maven.enabled": true,
+    "java.maven.downloadSources": true,
     "java.completion.importOrder": ["#", "java", "javax", "org", "com"],
     "java.completion.favoriteStaticMembers": [
         "org.springframework.web.bind.annotation.*",
@@ -8,9 +10,6 @@
     ],
     "java.server.launchMode": "Standard",
     "java.jdt.ls.lombokSupport": true,
-    "java.jdt.ls.vmargs": "-javaagent:${userHome}/.m2/repository/org/projectlombok/lombok/1.18.36/lombok-1.18.36.jar",
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "disabled",
+    "java.errors.incompleteClasspath.severity": "ignore"
 }
-
-
-
