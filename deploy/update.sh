@@ -29,32 +29,42 @@ git reset --hard "origin/$BRANCH"
 git checkout -B "$BRANCH" "origin/$BRANCH"
 git clean -fd astrakhan-admin/target module2/dist 2>/dev/null || true
 
-echo "[1/6] Сборка бэкенда (Maven)..."
+echo "[1/7] Миграция БД routes (priority, status)..."
+if [ -f "$APP_DIR/deploy/migrate-routes-db.sh" ]; then
+  bash "$APP_DIR/deploy/migrate-routes-db.sh" || {
+    echo "  ВНИМАНИЕ: SQL-миграция routes не выполнена. Вручную:"
+    echo "    sudo bash $APP_DIR/deploy/migrate-routes-db.sh"
+  }
+else
+  echo "  migrate-routes-db.sh не найден — пропуск"
+fi
+
+echo "[2/7] Сборка бэкенда (Maven)..."
 cd "$APP_DIR/astrakhan-admin"
 mvn -q clean package -DskipTests
 
-echo "[2/6] Сборка фронта (npm)..."
+echo "[3/7] Сборка фронта (npm)..."
 cd "$APP_DIR/module2"
 npm ci
 npm run build
 
-echo "[3/5] Nginx (актуальный конфиг без rewrite /java-api)..."
+echo "[4/7] Nginx (актуальный конфиг без rewrite /java-api)..."
 if [ -f "$APP_DIR/deploy/nginx-astramicro.conf" ]; then
   cp "$APP_DIR/deploy/nginx-astramicro.conf" /etc/nginx/sites-available/astramicro
   sed -i '/rewrite \^\/java-api/d' /etc/nginx/sites-available/astramicro 2>/dev/null || true
   nginx -t && systemctl reload nginx
 fi
 
-echo "[4/6] Перезапуск astrakhan-admin (Java)..."
+echo "[5/7] Перезапуск astrakhan-admin (Java)..."
 systemctl restart astrakhan-admin
 
-echo "[5/6] Перезапуск astramicro-admin (Flask)..."
+echo "[6/7] Перезапуск astramicro-admin (Flask)..."
 # Сначала остановка, пауза (чтобы порт 5000 успел освободиться), затем старт — иначе «Address already in use»
 systemctl stop astramicro-admin 2>/dev/null || true
 sleep 2
 systemctl start astramicro-admin
 
-echo "[6/6] Перезапуск astramicro-node (Node API /api, если unit есть)..."
+echo "[7/7] Перезапуск astramicro-node (Node API /api, если unit есть)..."
 if [ -f /etc/systemd/system/astramicro-node.service ]; then
   systemctl restart astramicro-node
   echo "  astramicro-node перезапущен."

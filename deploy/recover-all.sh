@@ -65,6 +65,12 @@ systemctl enable nginx 2>/dev/null || true
 systemctl restart nginx
 echo "  nginx: RUNNING"
 
+# --- Миграция routes (priority, status) ---
+echo "[3b] Миграция БД routes..."
+if [ -f "$APP_DIR/deploy/migrate-routes-db.sh" ]; then
+  bash "$APP_DIR/deploy/migrate-routes-db.sh" || echo "  предупреждение: SQL миграция routes не выполнена"
+fi
+
 # --- Сборка Java ---
 echo "[4] Spring Boot (Java)..."
 if [ "$FULL" = 1 ] || [ ! -f "$JAR" ]; then
