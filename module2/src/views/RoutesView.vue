@@ -204,7 +204,7 @@ import RouteCard from '@/components/routes/RouteCard.vue'
 import QrModal from '@/components/common/QrModal.vue'
 import { useToastStore, useMapStore } from '@/store/index.js'
 import { useFavorites } from '@/composables/useFavorites.js'
-import { javaApi } from '@/api/backend.js'
+import { javaApi, unwrapJavaList } from '@/api/backend.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 
 const toastStore = useToastStore()
@@ -382,7 +382,7 @@ onMounted(async () => {
   isLoading.value = true
   try {
     const data = await javaApi.routes.getList({ published: 'true' })
-    routes.value = (Array.isArray(data) ? data : []).map(normalizeRouteFromApi)
+    routes.value = unwrapJavaList(data).map(normalizeRouteFromApi)
     if (!routes.value.length) {
       routes.value = getMockRoutes().map(normalizeRouteFromApi)
     }

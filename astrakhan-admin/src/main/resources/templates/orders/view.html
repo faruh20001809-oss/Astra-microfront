@@ -194,12 +194,12 @@
                         <tbody>
                         <tr th:each="item : ${order.itemsList}">
                             <td>
-                                <strong th:text="${item.name}"></strong>
-                                <span class="text-muted" th:if="${item.category}" th:text="' · '+${item.category}"></span>
+                                <strong th:text="${item['name']}"></strong>
+                                <span class="text-muted" th:if="${item['category'] != null}" th:text="' · ' + ${item['category']}"></span>
                             </td>
-                            <td th:text="${item.price} + ' ₽'"></td>
-                            <td th:text="${item.qty}"></td>
-                            <td th:text="${item.price * item.qty} + ' ₽'"></td>
+                            <td th:text="${item['price']} + ' ₽'"></td>
+                            <td th:text="${item['qty'] != null ? item['qty'] : item['quantity']}"></td>
+                            <td th:text="${item['price'] * (item['qty'] != null ? item['qty'] : item['quantity'])} + ' ₽'"></td>
                         </tr>
                         </tbody>
                         <tfoot>

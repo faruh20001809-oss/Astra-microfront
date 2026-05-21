@@ -186,9 +186,11 @@ body.app-dark-theme .museum-virtual-page {
 }
 
 .museum-virtual-head {
-  padding: calc(var(--nav-h, 64px) + 1rem) max(1.5rem, calc((100vw - 1180px) / 2)) 1.25rem;
+  width: 100%;
   max-width: 1180px;
   margin: 0 auto;
+  padding: calc(var(--nav-h, 64px) + 1rem) 1.5rem 1.25rem;
+  box-sizing: border-box;
 }
 
 .museum-virtual-head h1 {
@@ -225,15 +227,19 @@ body.app-dark-theme .museum-virtual-page {
 }
 
 .museum-feature-section {
+  width: 100%;
   max-width: 1180px;
   margin: 0 auto 2rem;
-  padding: 0 max(1.5rem, calc((100vw - 1180px) / 2));
+  padding: 0 1.5rem;
+  box-sizing: border-box;
 }
 
 .museum-feature-card {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(260px, 0.88fr);
+  grid-template-columns: minmax(0, 1.12fr) minmax(280px, 0.88fr);
   grid-template-rows: minmax(360px, min(52vw, 520px));
+  width: 100%;
+  min-width: 0;
   background: #fff;
   border-radius: 2px;
   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.1);
@@ -242,6 +248,7 @@ body.app-dark-theme .museum-virtual-page {
 
 .museum-feature-map {
   min-height: 360px;
+  min-width: 0;
   background: #e8e8e8;
 }
 
@@ -261,6 +268,7 @@ body.app-dark-theme .museum-virtual-page {
 .museum-feature-panel {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   padding: 1.25rem 1.35rem 1.5rem;
   border-left: 1px solid rgba(0, 0, 0, 0.08);
   overflow-y: auto;
@@ -321,9 +329,11 @@ body.app-dark-theme .museum-virtual-page {
 }
 
 .museum-map-recs {
-  padding: 0 max(1.5rem, calc((100vw - 1180px) / 2)) 2.5rem;
+  width: 100%;
   max-width: 1180px;
   margin: 0 auto;
+  padding: 0 1.5rem 2.5rem;
+  box-sizing: border-box;
 }
 
 .museum-map-recs h2 {
@@ -347,6 +357,7 @@ body.app-dark-theme .museum-virtual-page {
 
 .museum-poi-card {
   display: grid;
+  min-width: 0;
   background: #191716;
   color: #fff;
   padding: 1rem;
@@ -418,6 +429,12 @@ body.app-dark-theme .museum-virtual-page {
 
 .museum-poi-card__cta:hover {
   background: #d4d4d4;
+}
+
+@media (min-width: 1200px) {
+  .museum-feature-card {
+    grid-template-rows: minmax(400px, 520px);
+  }
 }
 
 @media (max-width: 900px) {

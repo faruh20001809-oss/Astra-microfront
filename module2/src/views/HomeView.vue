@@ -42,7 +42,9 @@
         <h2 id="museum-routes-title">Онлайн-маршруты по городу</h2>
         <router-link class="museum-outline-link" to="/routes">Больше маршрутов →</router-link>
       </div>
-      <div class="museum-card-row museum-card-row--routes">
+      <p v-if="routesLoading" class="museum-preview-status" role="status">Загрузка маршрутов…</p>
+      <p v-else-if="routesError" class="museum-api-hint" role="alert">{{ routesError }}</p>
+      <div v-else-if="previewRoutes.length" class="museum-card-row museum-card-row--routes">
         <article
           v-for="route in previewRoutes"
           :key="route.id ?? route.title"
@@ -59,10 +61,11 @@
           <p>{{ route.title }}</p>
           <div class="museum-card-foot">
             <span>{{ route.price }}</span>
-            <router-link to="/routes">Подробнее →</router-link>
+            <router-link :to="routeLink(route)">Подробнее →</router-link>
           </div>
         </article>
       </div>
+      <p v-else class="museum-preview-status">Опубликованные маршруты скоро появятся.</p>
     </section>
 
     <section class="museum-preview-section" aria-labelledby="museum-shop-title">
@@ -111,13 +114,15 @@
  */
 
 import { ref, onMounted } from 'vue'
-import { javaApi } from '@/api/backend.js'
+import { javaApi, unwrapJavaList } from '@/api/backend.js'
 
 const PREVIEW_LIMIT = 3
 
 const previewRoutes = ref([])
 const previewProducts = ref([])
 const apiUnavailable = ref(false)
+const routesLoading = ref(true)
+const routesError = ref('')
 
 function formatRoutePrice(route) {
   const paid = !!(route.isPaid ?? route.paid)
@@ -136,6 +141,11 @@ function normalizeRoute(r) {
   }
 }
 
+function routeLink(route) {
+  if (route?.id != null) return { name: 'route-share', params: { id: route.id } }
+  return { name: 'routes' }
+}
+
 function normalizeProduct(p) {
   const price = p.price
   return {
@@ -147,18 +157,24 @@ function normalizeProduct(p) {
 }
 
 onMounted(async () => {
+  routesLoading.value = true
+  routesError.value = ''
   try {
     const data = await javaApi.routes.getList({ published: 'true' })
-    const list = Array.isArray(data) ? data : []
+    const list = unwrapJavaList(data)
     previewRoutes.value = list.slice(0, PREVIEW_LIMIT).map(normalizeRoute)
   } catch (err) {
     apiUnavailable.value = true
+    routesError.value =
+      err?.message || 'Не удалось загрузить маршруты. Проверьте Java API (/java-api/api/v1/routes).'
     if (import.meta.env.DEV) console.warn('Home routes preview:', err)
+  } finally {
+    routesLoading.value = false
   }
 
   try {
     const data = await javaApi.products.getList()
-    const list = Array.isArray(data) ? data : []
+    const list = unwrapJavaList(data)
     previewProducts.value = list.slice(0, PREVIEW_LIMIT).map(normalizeProduct)
   } catch (err) {
     apiUnavailable.value = true
@@ -308,6 +324,12 @@ body.app-dark-theme .museum-home-page {
 
 .museum-api-hint code {
   font-size: 0.8rem;
+}
+
+.museum-preview-status {
+  margin: 0 0 1rem;
+  color: #5f5f5f;
+  font-size: 0.9rem;
 }
 
 .museum-preview-section {

@@ -17,7 +17,7 @@
     <div class="form-group"><label>Категория *</label><select class="form-control" th:field="*{category}" required><option value="">—</option><option value="История">История</option><option value="Архитектура">Архитектура</option><option value="Музеи">Музеи</option><option value="Парки">Парки</option><option value="Памятники">Памятники</option></select></div>
     <div class="form-group"><label>Статус</label><select class="form-control" th:field="*{status}"><option value="DRAFT">Черновик</option><option value="PENDING">На модерации</option><option value="PUBLISHED">Опубликовано</option><option value="ARCHIVED">В архиве</option></select></div>
 </div>
-<div class="form-group"><label>Описание</label><textarea class="form-control" id="poi-description-field" th:field="*{description}" rows="4"></textarea><small id="descQualityHint" style="color:#999"></small></div>
+<div class="form-group"><label>Описание *</label><textarea class="form-control" id="poi-description-field" th:field="*{description}" rows="4" required minlength="20"></textarea><small id="descQualityHint" style="color:#999"></small></div>
 <div class="form-group" th:if="${poiAiEnabled == true}">
     <label>Черновик описания (ИИ)</label>
     <div class="form-row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">
@@ -51,8 +51,8 @@
     <button type="button" class="btn btn-sm btn-ghost" id="dgisClearCoords" style="margin-bottom:8px">Очистить координаты</button>
 </div>
 <div class="form-row">
-    <div class="form-group"><label>Широта</label><input id="latInput" type="number" step="0.000001" class="form-control" th:field="*{latitude}" placeholder="46.3497"/></div>
-    <div class="form-group"><label>Долгота</label><input id="lngInput" type="number" step="0.000001" class="form-control" th:field="*{longitude}" placeholder="48.0332"/></div>
+    <div class="form-group"><label>Широта *</label><input id="latInput" type="number" step="0.000001" class="form-control" th:field="*{latitude}" placeholder="46.3497" required/></div>
+    <div class="form-group"><label>Долгота *</label><input id="lngInput" type="number" step="0.000001" class="form-control" th:field="*{longitude}" placeholder="48.0332" required/></div>
 </div>
 <small id="coordHint" style="color:#999;display:block;margin-top:4px"></small>
 <script src="https://mapgl.2gis.com/api/js/v1"></script>

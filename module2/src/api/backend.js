@@ -114,6 +114,16 @@ const handleJavaResponse = async (response) => {
 
 const RETRYABLE_STATUS = new Set([502, 503, 504])
 
+/** Нормализует тело Java API в массив (список маршрутов, POI и т.д.). */
+export function unwrapJavaList(data) {
+  if (Array.isArray(data)) return data
+  if (data && typeof data === 'object') {
+    if (Array.isArray(data.items)) return data.items
+    if (Array.isArray(data.data)) return data.data
+  }
+  return []
+}
+
 /**
  * Базовый fetch-запрос с обработкой ошибок
  * @param {string} url
@@ -235,8 +245,7 @@ export const javaApi = {
           return javaApi.routes.getList(filters, attempt + 1)
         }
         warnApiOnce(url, err?.message || 'Ошибка загрузки маршрутов', null)
-        if (isGatewayError(err)) throw err
-        return []
+        throw err
       }
     },
 
