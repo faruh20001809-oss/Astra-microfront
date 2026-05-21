@@ -84,7 +84,9 @@
 - `module2`: `npm run test:run` (Vitest, API-клиент)
 - `astrakhan-admin`: `mvn test`
 - `module3`: `python -m pytest -q`
-- **E2E + скриншоты UI** (Playwright): см. [`e2e/README.md`](e2e/README.md) — `cd e2e && npm install && npm run test:module2`
+- **E2E + скриншоты UI** (Playwright): [`e2e/README.md`](e2e/README.md)
+  - витрина: `npm run test:module2`
+  - **админка (ВКР):** `npm run test:admin` — скриншоты для диплома: `e2e/astrakhan-admin/__screenshots__/diploma/`
 
 CI в GitHub Actions:
 
