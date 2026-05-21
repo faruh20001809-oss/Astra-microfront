@@ -65,14 +65,6 @@
             </p>
             <p class="poi-detail-card__short">{{ briefText }}</p>
 
-            <PoiMiniMap
-              v-if="hasCoords"
-              class="poi-detail-card__map"
-              :lat="Number(poi.lat)"
-              :lng="Number(poi.lng)"
-              :aria-label="`Карта: ${poi.name}`"
-            />
-
             <router-link
               class="poi-detail-back"
               :to="backToMapRoute"
@@ -81,6 +73,22 @@
             </router-link>
           </div>
         </article>
+
+        <section
+          v-if="hasCoords"
+          class="poi-detail-map-section"
+          aria-labelledby="poi-map-section-title"
+        >
+          <h2 id="poi-map-section-title" class="poi-detail-map-section__title">Расположение на карте</h2>
+          <p class="poi-detail-map-section__hint">Приближайте и перемещайте карту 2ГИС, чтобы изучить окрестности объекта.</p>
+          <PoiInteractiveMap2gis
+            large
+            :lat="Number(poi.lat)"
+            :lng="Number(poi.lng)"
+            :zoom="17"
+            :aria-label="`Интерактивная карта: ${poi.name}`"
+          />
+        </section>
 
         <div v-if="articleParagraphs.length" class="poi-detail-article">
           <p v-for="(par, i) in articleParagraphs" :key="i">{{ par }}</p>
@@ -122,7 +130,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMapStore } from '@/store/index.js'
-import PoiMiniMap from '@/components/poi/PoiMiniMap.vue'
+import PoiInteractiveMap2gis from '@/components/poi/PoiInteractiveMap2gis.vue'
 
 const route = useRoute()
 const mapStore = useMapStore()
@@ -379,8 +387,21 @@ body.app-dark-theme .poi-details-page {
   flex: 1 1 auto;
 }
 
-.poi-detail-card__map {
-  margin-bottom: 1rem;
+.poi-detail-map-section {
+  margin-bottom: 2rem;
+}
+
+.poi-detail-map-section__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+  font-weight: 900;
+}
+
+.poi-detail-map-section__hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: #5f5f5f;
+  line-height: 1.3;
 }
 
 .poi-detail-back {

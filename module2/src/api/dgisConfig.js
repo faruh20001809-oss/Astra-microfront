@@ -3,8 +3,10 @@
  * Документация: https://docs.2gis.com/
  */
 
+/** Тестовый ключ 2GIS: MapGL + Static API — https://dev.2gis.ru/api */
 export const DGIS_MAP_DEFAULT = Object.freeze({
   key: 'e9f7375c-7ad1-4258-854a-399d99eb65cb',
+  staticKey: 'e9f7375c-7ad1-4258-854a-399d99eb65cb',
   style: '0651ff51-79b6-409c-8b90-37a9be2e97ad',
 })
 
@@ -18,7 +20,9 @@ export function loadDgisMapFromEnv() {
       style:
         typeof o.style === 'string' && o.style.trim() ? o.style.trim() : DGIS_MAP_DEFAULT.style,
       staticKey:
-        typeof o.staticKey === 'string' && o.staticKey.trim() ? o.staticKey.trim() : null,
+        typeof o.staticKey === 'string' && o.staticKey.trim()
+          ? o.staticKey.trim()
+          : DGIS_MAP_DEFAULT.staticKey,
     }
   } catch {
     return { ...DGIS_MAP_DEFAULT }
@@ -40,9 +44,8 @@ export function getDgisMapKey() {
 export function getDgisStaticKey() {
   const explicit = import.meta.env.VITE_DGIS_STATIC_KEY
   if (explicit != null && String(explicit).trim() !== '') return String(explicit).trim()
-  const { staticKey, key } = loadDgisMapFromEnv()
-  if (staticKey) return staticKey
-  return key
+  const { staticKey } = loadDgisMapFromEnv()
+  return staticKey || DGIS_MAP_DEFAULT.staticKey
 }
 
 export function getDgisMapStyle() {

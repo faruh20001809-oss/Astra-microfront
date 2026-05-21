@@ -15,7 +15,7 @@
     <section id="museum-map" class="museum-feature-section" aria-label="Превью выбранного объекта">
       <div class="museum-feature-card">
         <div class="museum-feature-map">
-          <PoiStaticMapPreview
+          <PoiStaticMap2gis
             v-if="panelPoi && poiHasMapCoords(panelPoi)"
             :lat="Number(panelPoi.lat)"
             :lng="Number(panelPoi.lng)"
@@ -71,7 +71,7 @@
           @click="selectPoi(poi)"
         >
           <div class="museum-poi-card__media">
-            <PoiStaticMapPreview
+            <PoiStaticMap2gis
               v-if="poiHasMapCoords(poi)"
               :lat="Number(poi.lat)"
               :lng="Number(poi.lng)"
@@ -106,7 +106,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMapStore } from '@/store/index.js'
 import { poiHasMapCoords } from '@/utils/poiStaticMap.js'
-import PoiStaticMapPreview from '@/components/poi/PoiStaticMapPreview.vue'
+import PoiStaticMap2gis from '@/components/poi/PoiStaticMap2gis.vue'
 import SuggestPoiDialog from '@/components/poi/SuggestPoiDialog.vue'
 
 const route = useRoute()
@@ -252,7 +252,8 @@ body.app-dark-theme .museum-virtual-page {
   background: #e8e8e8;
 }
 
-.museum-feature-map :deep(.poi-static-map-preview) {
+.museum-feature-map :deep(.poi-static-2gis),
+.museum-feature-map :deep(.poi-static-2gis__img) {
   width: 100%;
   height: 100%;
   min-height: 360px;
@@ -375,7 +376,8 @@ body.app-dark-theme .museum-virtual-page {
   overflow: hidden;
 }
 
-.museum-poi-card__media :deep(.poi-static-map-preview) {
+.museum-poi-card__media :deep(.poi-static-2gis),
+.museum-poi-card__media :deep(.poi-static-2gis__img) {
   filter: grayscale(0.15) contrast(1.02);
 }
 

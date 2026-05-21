@@ -447,6 +447,9 @@ CREATE TABLE public.routes (
     price double precision,
     published boolean,
     rating double precision,
+    priority integer DEFAULT 0 NOT NULL,
+    status character varying(32) DEFAULT 'DRAFT'::character varying NOT NULL,
+    outdated_reason text,
     updated_at timestamp(6) without time zone,
     waypoints text
 );

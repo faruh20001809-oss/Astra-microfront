@@ -14,6 +14,9 @@ function getStaticBaseUrl() {
   if (raw != null && String(raw).trim() !== '') {
     return String(raw).trim().replace(/\/$/, '')
   }
+  if (import.meta.env.DEV) {
+    return '/api/dgis-static'
+  }
   return `https://static.maps.2gis.com/${STATIC_API_VERSION}`
 }
 
