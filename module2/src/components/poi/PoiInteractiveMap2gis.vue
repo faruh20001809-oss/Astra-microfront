@@ -1,5 +1,13 @@
 <template>
-  <section class="poi-interactive-2gis" :class="{ 'poi-interactive-2gis--large': large }" :aria-label="ariaLabel">
+  <section
+    class="poi-interactive-2gis"
+    :class="{
+      'poi-interactive-2gis--large': large,
+      'poi-interactive-2gis--readonly': readonly,
+      'poi-interactive-2gis--compact': compact,
+    }"
+    :aria-label="ariaLabel"
+  >
     <div v-if="loadError" class="poi-interactive-2gis__error" role="alert">
       <p>{{ loadError }}</p>
       <a :href="webUrl" target="_blank" rel="noopener noreferrer" class="poi-interactive-2gis__link">
@@ -7,8 +15,15 @@
       </a>
     </div>
     <template v-else>
-      <div ref="mapEl" class="poi-interactive-2gis__canvas" role="application" />
-      <div v-if="ready" class="poi-interactive-2gis__toolbar">
+      <div
+        ref="mapEl"
+        class="poi-interactive-2gis__canvas"
+        :role="readonly ? 'img' : 'application'"
+      />
+      <div v-if="ready && readonly" class="poi-interactive-2gis__preview-label" aria-hidden="true">
+        2ГИС
+      </div>
+      <div v-if="ready && !readonly" class="poi-interactive-2gis__toolbar">
         <button type="button" class="poi-interactive-2gis__btn" title="Приблизить" @click="zoomIn">+</button>
         <button type="button" class="poi-interactive-2gis__btn" title="Отдалить" @click="zoomOut">−</button>
         <button type="button" class="poi-interactive-2gis__btn" title="К объекту" @click="recenter">⌂</button>
@@ -40,7 +55,15 @@ const props = defineProps({
   lat: { type: Number, required: true },
   lng: { type: Number, required: true },
   zoom: { type: Number, default: 16 },
+  /** Полноразмерный блок на странице точки */
   large: { type: Boolean, default: false },
+  /** Компактное превью в карточке каталога */
+  compact: { type: Boolean, default: false },
+  /**
+   * Только просмотр: MapGL рисуется, но pointer-events отключены —
+   * клики проходят к родителю (выбор карточки в музее).
+   */
+  readonly: { type: Boolean, default: false },
   ariaLabel: { type: String, default: 'Интерактивная карта 2ГИС' },
 })
 
@@ -79,9 +102,12 @@ function updateMarker() {
   }
   const lat = Number(props.lat)
   const lng = Number(props.lng)
+  const markerClass = props.large && !props.readonly
+    ? 'dgis-poi-marker dgis-poi-marker--large'
+    : 'dgis-poi-marker'
   marker = new window.mapgl.HtmlMarker(map, {
     coordinates: [lng, lat],
-    html: '<div class="dgis-poi-marker dgis-poi-marker--large" aria-hidden="true"></div>',
+    html: `<div class="${markerClass}" aria-hidden="true"></div>`,
     anchor: [0.5, 1],
   })
 }
@@ -163,6 +189,38 @@ onUnmounted(() => {
   width: 100%;
   min-height: 200px;
   aspect-ratio: 4 / 3;
+}
+
+.poi-interactive-2gis--compact .poi-interactive-2gis__canvas {
+  min-height: 120px;
+  aspect-ratio: 2.3 / 1;
+}
+
+.poi-interactive-2gis--readonly {
+  pointer-events: none;
+  user-select: none;
+}
+
+.poi-interactive-2gis--readonly .poi-interactive-2gis__canvas,
+.poi-interactive-2gis--readonly :deep(.mapgl-canvas-container),
+.poi-interactive-2gis--readonly :deep(canvas) {
+  pointer-events: none !important;
+  touch-action: none !important;
+}
+
+.poi-interactive-2gis__preview-label {
+  position: absolute;
+  left: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 2;
+  padding: 0.15rem 0.45rem;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #1d1d1b;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  pointer-events: none;
 }
 
 .poi-interactive-2gis__toolbar {

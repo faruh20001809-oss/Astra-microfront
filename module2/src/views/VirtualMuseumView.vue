@@ -5,7 +5,7 @@
       <p class="museum-virtual-intro">
         Проект сохраняет уникальное деревянное зодчество Астраханской области в виртуальном
         и общедоступном формате. Выберите объект в каталоге ниже — на странице точки доступна
-        интерактивная карта 2ГИС и полное описание.
+        динамическая карта 2ГИС (в каталоге — только просмотр) и на странице точки — полное управление картой.
       </p>
       <button type="button" class="museum-virtual-suggest" @click="suggestOpen = true">
         💡 Предложить точку на карту
@@ -15,14 +15,14 @@
     <section id="museum-map" class="museum-feature-section" aria-label="Превью выбранного объекта">
       <div class="museum-feature-card">
         <div class="museum-feature-map">
-          <PoiStaticMap2gis
+          <PoiInteractiveMap2gis
             v-if="panelPoi && poiHasMapCoords(panelPoi)"
+            :key="`panel-${panelPoi.id}`"
+            readonly
             :lat="Number(panelPoi.lat)"
             :lng="Number(panelPoi.lng)"
-            :width="720"
-            :height="480"
             :zoom="17"
-            :alt="`Карта: ${panelPoi.name}`"
+            :aria-label="`Карта: ${panelPoi.name}`"
           />
           <div v-else class="museum-feature-map__fallback" aria-hidden="true" />
         </div>
@@ -71,14 +71,15 @@
           @click="selectPoi(poi)"
         >
           <div class="museum-poi-card__media">
-            <PoiStaticMap2gis
+            <PoiInteractiveMap2gis
               v-if="poiHasMapCoords(poi)"
+              :key="`card-${poi.id}`"
+              readonly
+              compact
               :lat="Number(poi.lat)"
               :lng="Number(poi.lng)"
-              :width="560"
-              :height="240"
               :zoom="16"
-              :alt="`Карта: ${poi.name}`"
+              :aria-label="`Карта: ${poi.name}`"
             />
             <div v-else class="museum-poi-card__media-fallback" aria-hidden="true" />
           </div>
@@ -106,7 +107,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useMapStore } from '@/store/index.js'
 import { poiHasMapCoords } from '@/utils/poiStaticMap.js'
-import PoiStaticMap2gis from '@/components/poi/PoiStaticMap2gis.vue'
+import PoiInteractiveMap2gis from '@/components/poi/PoiInteractiveMap2gis.vue'
 import SuggestPoiDialog from '@/components/poi/SuggestPoiDialog.vue'
 
 const route = useRoute()
@@ -252,12 +253,18 @@ body.app-dark-theme .museum-virtual-page {
   background: #e8e8e8;
 }
 
-.museum-feature-map :deep(.poi-static-2gis),
-.museum-feature-map :deep(.poi-static-2gis__img) {
+.museum-feature-map :deep(.poi-interactive-2gis) {
   width: 100%;
   height: 100%;
   min-height: 360px;
-  object-fit: cover;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.museum-feature-map :deep(.poi-interactive-2gis__canvas) {
+  min-height: 360px;
+  aspect-ratio: auto;
+  height: 100%;
 }
 
 .museum-feature-map__fallback {
@@ -376,9 +383,17 @@ body.app-dark-theme .museum-virtual-page {
   overflow: hidden;
 }
 
-.museum-poi-card__media :deep(.poi-static-2gis),
-.museum-poi-card__media :deep(.poi-static-2gis__img) {
-  filter: grayscale(0.15) contrast(1.02);
+.museum-poi-card__media :deep(.poi-interactive-2gis) {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.museum-poi-card__media :deep(.poi-interactive-2gis__canvas) {
+  min-height: 120px;
+  height: 100%;
 }
 
 .museum-poi-card__media-fallback {
