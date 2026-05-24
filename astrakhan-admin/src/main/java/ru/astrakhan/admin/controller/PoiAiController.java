@@ -1,5 +1,6 @@
 package ru.astrakhan.admin.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import ru.astrakhan.admin.service.PoiService;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Tag(name = "Admin POI AI", description = "Генерация описаний и анализ фото (требуется сессия админки)")
 @RestController
 @RequestMapping("/admin/api/poi")
 @RequiredArgsConstructor

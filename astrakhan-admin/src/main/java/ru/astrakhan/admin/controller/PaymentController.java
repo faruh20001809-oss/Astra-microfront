@@ -1,5 +1,6 @@
 package ru.astrakhan.admin.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import java.util.Map;
 /**
  * API для онлайн-оплаты заказов (заготовка под интеграцию с платёжным провайдером).
  */
+@Tag(name = "Payments", description = "Оплата заказов")
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor

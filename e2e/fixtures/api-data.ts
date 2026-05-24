@@ -117,3 +117,17 @@ export const MOCK_PRODUCTS = [
 export function javaSuccess<T>(data: T) {
   return { status: 'success', data }
 }
+
+/** Деталь маршрута для GET /api/v1/routes/{id} (тематика + остановки). */
+export function mockRouteDetail(id = 1) {
+  const route = MOCK_ROUTES.find((r) => r.id === id) ?? MOCK_ROUTES[0]
+  const paid = !!(route.isPaid ?? route.paid ?? (Number(route.price) > 0))
+  return javaSuccess({
+    ...route,
+    title: route.title || route.name,
+    isPaid: paid,
+    paid,
+    pois: route.pois ?? route.stops?.map((s) => s.poiId).filter(Boolean) ?? [],
+    stops: route.stops ?? [],
+  })
+}

@@ -12,6 +12,7 @@ import ru.astrakhan.admin.dto.CreateOrderRequest;
 import ru.astrakhan.admin.dto.CreatePreorderRequest;
 import ru.astrakhan.admin.dto.OrderItemRequest;
 import java.util.UUID;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import ru.astrakhan.admin.service.*;
 import ru.astrakhan.admin.util.RouteStopsHelper;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Tag(name = "Public API v1", description = "Публичный REST API для module2 (маршруты, POI, заказы, прогресс)")
 @RestController @RequestMapping("/api/v1") @RequiredArgsConstructor
 @Slf4j
 public class ApiController {
