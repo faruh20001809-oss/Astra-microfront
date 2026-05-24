@@ -51,11 +51,10 @@
           class="museum-preview-card museum-preview-card--dark"
         >
           <div class="museum-card-media">
-            <img
-              v-if="route.coverImage"
-              :src="route.coverImage"
+            <RouteCoverImage
+              v-if="routeHasCover(route)"
+              :route="route"
               :alt="route.title"
-              loading="lazy"
             />
           </div>
           <p>{{ route.title }}</p>
@@ -115,6 +114,8 @@
 
 import { ref, onMounted } from 'vue'
 import { javaApi, unwrapJavaList } from '@/api/backend.js'
+import RouteCoverImage from '@/components/routes/RouteCoverImage.vue'
+import { normalizeRouteMedia, pickRouteCoverSource } from '@/utils/routeMedia.js'
 
 const PREVIEW_LIMIT = 3
 
@@ -132,17 +133,23 @@ function formatRoutePrice(route) {
   return `${Number(price).toLocaleString('ru-RU')} ₽`
 }
 
+function routeHasCover(route) {
+  return !!pickRouteCoverSource(route)
+}
+
 function normalizeRoute(r) {
+  const media = normalizeRouteMedia(r)
   return {
-    id: r.id,
-    title: r.title || r.name || 'Маршрут',
-    coverImage: r.coverImage || r.image || null,
-    price: formatRoutePrice(r),
+    id: media.id,
+    title: media.title || media.name || 'Маршрут',
+    coverImage: media.coverImage,
+    image: media.image,
+    price: formatRoutePrice(media),
   }
 }
 
 function routeLink(route) {
-  if (route?.id != null) return { name: 'route-share', params: { id: route.id } }
+  if (route?.id != null) return { name: 'route-details', params: { id: route.id } }
   return { name: 'routes' }
 }
 

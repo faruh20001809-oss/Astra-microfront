@@ -46,6 +46,11 @@ public class DatabaseSchemaMigration implements ApplicationRunner {
         jdbcTemplate.execute("ALTER TABLE routes ADD COLUMN IF NOT EXISTS outdated_reason TEXT");
         jdbcTemplate.update("UPDATE routes SET priority = 0 WHERE priority IS NULL");
         jdbcTemplate.update("UPDATE routes SET status = 'DRAFT' WHERE status IS NULL OR TRIM(status) = ''");
+        jdbcTemplate.update(
+                "UPDATE routes SET image_filename = 'route-cover.jpg' WHERE image_data IS NOT NULL AND (image_filename IS NULL OR TRIM(image_filename) = '')");
+        jdbcTemplate.execute("ALTER TABLE routes ADD COLUMN IF NOT EXISTS thematic_description TEXT");
+        jdbcTemplate.execute("ALTER TABLE routes ADD COLUMN IF NOT EXISTS video_urls TEXT");
+        jdbcTemplate.execute("ALTER TABLE routes ADD COLUMN IF NOT EXISTS audio_urls TEXT");
     }
 
     private void migrateRoutesGeneric() {
@@ -54,6 +59,11 @@ public class DatabaseSchemaMigration implements ApplicationRunner {
         addColumnIfMissing("routes", "outdated_reason", "TEXT", null);
         jdbcTemplate.update("UPDATE routes SET priority = 0 WHERE priority IS NULL");
         jdbcTemplate.update("UPDATE routes SET status = 'DRAFT' WHERE status IS NULL OR TRIM(COALESCE(status, '')) = ''");
+        jdbcTemplate.update(
+                "UPDATE routes SET image_filename = 'route-cover.jpg' WHERE image_data IS NOT NULL AND (image_filename IS NULL OR TRIM(COALESCE(image_filename, '')) = '')");
+        addColumnIfMissing("routes", "thematic_description", "TEXT", null);
+        addColumnIfMissing("routes", "video_urls", "TEXT", null);
+        addColumnIfMissing("routes", "audio_urls", "TEXT", null);
     }
 
     private boolean isPostgreSQL() {

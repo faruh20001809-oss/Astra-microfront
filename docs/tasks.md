@@ -5,8 +5,11 @@
 В админке есть кнопка **«Массовая загрузка точек/маршрутов»** на странице списка точек интереса (`/admin/poi`).
 
 - **Страница:** `/admin/poi/bulk`
-- **Формат JSON:** `{ "pois": [ { "name", "category", "latitude", "longitude", "description?", "address?", "foundedYear?", "architect?" } ], "routes": [ { "name", "description", "category", "poiOrder": [0, 1, 2] } ] }`
-- Точки создаются как черновики **без картинок**; маршруты — с `poiOrder` (индексы в массиве `pois`). После загрузки картинки добавляются вручную в карточках точек.
+- **Формат JSON:** `{ "pois": [ { "name", "category", "latitude", "longitude", "imageUrl?", ... } ], "routes": [ { "name", "description", "category", "imageUrl?", "poiOrder": [0, 1, 2] } ] }`
+- Поля картинки: `imageUrl`, `image_url`, `coverImage` или `image`. Без URL — файл в карточке редактирования маршрута/точки.
+- Маршруты из bulk создаются **неопубликованными**; для публичного сайта нужны «Опубликован» и загруженная обложка (файл или URL).
+- Публичная карточка: **`/routes/{id}`** — тематическое описание, видео/аудио, остановки, действия (карта, прогресс).
+- Админка маршрута: поля `thematicDescription`, `videoUrls`, `audioUrls` (маршрут целиком); **для каждой точки** — блок «Тематическое описание каждой остановки» (JSON в `waypoints`).
 - **Код:** `astrakhan-admin/.../PoiAdminController.java` (методы `bulkForm`, `bulkUpload`), шаблон `poi/bulk.html`.
 
 ---

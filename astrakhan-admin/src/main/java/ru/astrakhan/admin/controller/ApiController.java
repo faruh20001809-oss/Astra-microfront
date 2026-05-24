@@ -14,6 +14,7 @@ import ru.astrakhan.admin.dto.OrderItemRequest;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import ru.astrakhan.admin.service.*;
+import ru.astrakhan.admin.util.RouteStopsHelper;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -878,10 +879,10 @@ public class ApiController {
     }
 
     private static String routeCoverImageUrl(Route r) {
-        if (r.getImageUrl() != null && !r.getImageUrl().isEmpty()) {
-            return r.getImageUrl();
+        if (r.getImageUrl() != null && !r.getImageUrl().isBlank()) {
+            return r.getImageUrl().trim();
         }
-        if (hasUploadedImage(r.getImageFilename()) && r.getId() != null) {
+        if (r.getId() != null && hasUploadedImage(r.getImageFilename())) {
             return "/java-api/api/v1/routes/" + r.getId() + "/image";
         }
         return null;
@@ -932,6 +933,9 @@ public class ApiController {
         m.put("name", r.getName());
         m.put("title", r.getName());
         m.put("description", r.getDescription());
+        m.put("thematicDescription", r.getThematicDescription());
+        m.put("videoUrls", parseUrlList(r.getVideoUrls()));
+        m.put("audioUrls", parseUrlList(r.getAudioUrls()));
         m.put("category", r.getCategory());
         m.put("distance", formatDistance(r.getDistance()));
         m.put("duration", formatDuration(r.getDuration()));
@@ -948,13 +952,7 @@ public class ApiController {
         List<Long> poiIdList = parseRoutePoiIds(r.getPoiIds());
         m.put("pois", poiIdList);
         if (withStops && !poiIdList.isEmpty()) {
-            List<Map<String, Object>> stops = new ArrayList<>();
-            for (Long poiId : poiIdList) {
-                poiService.findById(poiId).ifPresent(poi -> stops.add(Map.of(
-                        "name", poi.getName(),
-                        "description", poi.getDescription() != null ? poi.getDescription() : "")));
-            }
-            m.put("stops", stops);
+            m.put("stops", buildRouteStops(r));
         } else {
             m.put("stops", List.of());
         }
@@ -962,6 +960,45 @@ public class ApiController {
         m.put("image", coverImage);
         m.put("coverImage", coverImage);
         return m;
+    }
+
+    private List<Map<String, Object>> buildRouteStops(Route r) {
+        List<Long> poiIdList = parseRoutePoiIds(r.getPoiIds());
+        Map<Long, RouteStopsHelper.StopContent> contentByPoi = RouteStopsHelper.indexByPoiId(r.getWaypoints());
+        List<Map<String, Object>> stops = new ArrayList<>();
+        for (Long poiId : poiIdList) {
+            Map<String, Object> stop = new LinkedHashMap<>();
+            stop.put("poiId", poiId);
+            poiService.findById(poiId).ifPresentOrElse(poi -> {
+                stop.put("name", poi.getName());
+                stop.put("description", poi.getDescription() != null ? poi.getDescription() : "");
+            }, () -> {
+                stop.put("name", "Точка #" + poiId);
+                stop.put("description", "");
+            });
+            RouteStopsHelper.StopContent c = contentByPoi.get(poiId);
+            String thematic = c != null && c.thematicDescription != null ? c.thematicDescription : "";
+            stop.put("thematicDescription", thematic);
+            stop.put("videoUrls", c != null ? parseUrlList(c.videoUrls) : List.of());
+            stop.put("audioUrls", c != null ? parseUrlList(c.audioUrls) : List.of());
+            stops.add(stop);
+        }
+        return stops;
+    }
+
+    /** Ссылки из админки / JSON bulk: по одной в строке или через запятую. */
+    private static List<String> parseUrlList(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return List.of();
+        }
+        List<String> out = new ArrayList<>();
+        for (String part : raw.split("[\\r\\n,]+")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty() && !out.contains(trimmed)) {
+                out.add(trimmed);
+            }
+        }
+        return out;
     }
 
     private static String formatDistance(Double km) {

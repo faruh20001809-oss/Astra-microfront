@@ -2,7 +2,7 @@
   <div class="route-card card" @click="$emit('open', route)">
     <!-- Cover placeholder / image -->
     <div class="route-cover">
-      <img v-if="route.coverImage" :src="route.coverImage" :alt="route.title" />
+      <RouteCoverImage v-if="hasCover" :route="route" :alt="route.title" />
       <div v-else class="route-cover-placeholder">
         <span>{{ categoryGlyph }}</span>
       </div>
@@ -64,12 +64,16 @@
 
 <script setup>
 import { computed } from 'vue'
+import RouteCoverImage from '@/components/routes/RouteCoverImage.vue'
+import { pickRouteCoverSource } from '@/utils/routeMedia.js'
 
 const props = defineProps({
   route: Object,
   favorite: { type: Boolean, default: false },
 })
 defineEmits(['open', 'toggleFavorite', 'share'])
+
+const hasCover = computed(() => !!pickRouteCoverSource(props.route))
 
 const categoryGlyph = computed(() => {
   const map = {

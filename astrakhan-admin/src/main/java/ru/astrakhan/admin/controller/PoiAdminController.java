@@ -17,6 +17,7 @@ import ru.astrakhan.admin.service.PoiPublicationNotificationService;
 import ru.astrakhan.admin.service.PoiService;
 import ru.astrakhan.admin.service.PoiSuggestionService;
 import ru.astrakhan.admin.service.RouteService;
+import ru.astrakhan.admin.util.RouteStopsHelper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -188,6 +189,8 @@ public class PoiAdminController {
                     if (p.has("longitude")) poi.setLongitude(p.get("longitude").asDouble());
                     if (p.has("foundedYear")) poi.setFoundedYear(p.get("foundedYear").asInt());
                     if (p.has("architect")) poi.setArchitect(p.get("architect").asText(null));
+                    String poiImageUrl = readJsonImageUrl(p);
+                    if (poiImageUrl != null) poi.setImageUrl(poiImageUrl);
                     poi.setStatus(PointOfInterest.PoiStatus.DRAFT);
                     poi.setImageData(null);
                     poi.setImageFilename(null);
@@ -203,6 +206,9 @@ public class PoiAdminController {
                     route.setName(name);
                     route.setDescription(r.has("description") ? r.get("description").asText(null) : null);
                     route.setCategory(r.has("category") ? r.get("category").asText("Маршрут") : "Маршрут");
+                    String routeImageUrl = readJsonImageUrl(r);
+                    if (routeImageUrl != null) route.setImageUrl(routeImageUrl);
+                    applyRouteContentFromJson(route, r);
                     route.setPublished(false);
                     route.setPaid(false);
                     route.setPrice(0.0);
@@ -214,15 +220,86 @@ public class PoiAdminController {
                         }
                         route.setPoiIds(String.join(",", ids));
                     }
+                    route.setWaypoints(buildRouteStopsWaypointsFromJson(r, createdPoiIds, route.getPoiIds()));
                     routeService.save(route);
                 }
             }
             int routesCount = (routesNode != null && routesNode.isArray()) ? routesNode.size() : 0;
-            ra.addFlashAttribute("success", "Создано точек: " + createdPoiIds.size() + (routesCount > 0 ? ", маршрутов: " + routesCount : "") + ". Добавьте картинки в карточках точек.");
+            ra.addFlashAttribute("success", "Создано точек: " + createdPoiIds.size() + (routesCount > 0 ? ", маршрутов: " + routesCount : "") + ". Для записей без imageUrl в JSON добавьте файлы в карточках редактирования.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", "Ошибка разбора JSON: " + e.getMessage());
             return "redirect:/admin/poi/bulk";
         }
         return "redirect:/admin/poi";
+    }
+
+    private static String buildRouteStopsWaypointsFromJson(JsonNode r, List<Long> createdPoiIds, String poiIdsCsv) {
+        if (r == null || !r.has("stops") || !r.get("stops").isArray()) {
+            return RouteStopsHelper.syncWithPoiIds("[]", poiIdsCsv);
+        }
+        List<RouteStopsHelper.StopContent> contents = new ArrayList<>();
+        for (JsonNode s : r.get("stops")) {
+            RouteStopsHelper.StopContent c = new RouteStopsHelper.StopContent();
+            if (s.has("poiIndex") && !s.get("poiIndex").isNull()) {
+                int i = s.get("poiIndex").asInt(-1);
+                if (i >= 0 && i < createdPoiIds.size()) c.poiId = createdPoiIds.get(i);
+            } else if (s.has("poiOrder") && !s.get("poiOrder").isNull()) {
+                int i = s.get("poiOrder").asInt(-1);
+                if (i >= 0 && i < createdPoiIds.size()) c.poiId = createdPoiIds.get(i);
+            } else if (s.has("poiId") && !s.get("poiId").isNull()) {
+                c.poiId = s.get("poiId").asLong();
+            }
+            if (c.poiId == null) continue;
+            if (s.has("thematicDescription") && !s.get("thematicDescription").isNull()) {
+                c.thematicDescription = s.get("thematicDescription").asText(null);
+            }
+            String videos = readJsonUrlListField(s, "videoUrls", "videoUrl");
+            if (videos != null) c.videoUrls = videos;
+            String audios = readJsonUrlListField(s, "audioUrls", "audioUrl");
+            if (audios != null) c.audioUrls = audios;
+            contents.add(c);
+        }
+        return RouteStopsHelper.syncWithPoiIds(RouteStopsHelper.serialize(contents), poiIdsCsv);
+    }
+
+    private static void applyRouteContentFromJson(Route route, JsonNode r) {
+        if (r.has("thematicDescription") && !r.get("thematicDescription").isNull()) {
+            route.setThematicDescription(r.get("thematicDescription").asText(null));
+        }
+        String videos = readJsonUrlListField(r, "videoUrls", "videoUrl", "video_urls");
+        if (videos != null) route.setVideoUrls(videos);
+        String audios = readJsonUrlListField(r, "audioUrls", "audioUrl", "audio_urls");
+        if (audios != null) route.setAudioUrls(audios);
+    }
+
+    private static String readJsonUrlListField(JsonNode node, String... keys) {
+        if (node == null || !node.isObject()) return null;
+        for (String key : keys) {
+            if (!node.has(key) || node.get(key).isNull()) continue;
+            JsonNode v = node.get(key);
+            if (v.isArray()) {
+                List<String> urls = new ArrayList<>();
+                for (JsonNode item : v) {
+                    String s = item.asText("").trim();
+                    if (!s.isEmpty()) urls.add(s);
+                }
+                return urls.isEmpty() ? null : String.join("\n", urls);
+            }
+            String single = v.asText("").trim();
+            if (!single.isEmpty()) return single;
+        }
+        return null;
+    }
+
+    /** imageUrl / image_url / coverImage / image — как в JSON от сотрудников и публичном API. */
+    private static String readJsonImageUrl(JsonNode node) {
+        if (node == null || !node.isObject()) return null;
+        for (String key : new String[] { "imageUrl", "image_url", "coverImage", "image" }) {
+            if (node.has(key) && !node.get(key).isNull()) {
+                String v = node.get(key).asText("").trim();
+                if (!v.isEmpty()) return v;
+            }
+        }
+        return null;
     }
 }

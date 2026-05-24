@@ -9,6 +9,12 @@ public class Route {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
     @Column(nullable = false) private String name;
     @Column(columnDefinition = "TEXT") private String description;
+    /** Развёрнутое тематическое описание для страницы маршрута на сайте. */
+    @Column(name = "thematic_description", columnDefinition = "TEXT") private String thematicDescription;
+    /** Ссылки на видео (по одной в строке): прямой URL, YouTube, Rutube и т.д. */
+    @Column(name = "video_urls", columnDefinition = "TEXT") private String videoUrls;
+    /** Ссылки на аудио (по одной в строке). */
+    @Column(name = "audio_urls", columnDefinition = "TEXT") private String audioUrls;
     private String category;
     @Column(name = "image_url") private String imageUrl;
     @Basic(fetch = FetchType.LAZY)

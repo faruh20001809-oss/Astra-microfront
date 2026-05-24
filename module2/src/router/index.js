@@ -3,7 +3,7 @@ import HomeView from '@/views/HomeView.vue'
 import VirtualMuseumView from '@/views/VirtualMuseumView.vue'
 import MapView from '@/views/MapView.vue'
 import RoutesView from '@/views/RoutesView.vue'
-import RouteShareView from '@/views/RouteShareView.vue'
+import RouteDetailsView from '@/views/RouteDetailsView.vue'
 import PoiDetailsView from '@/views/PoiDetailsView.vue'
 import ShopView from '@/views/ShopView.vue'
 import ProductDetailsView from '@/views/ProductDetailsView.vue'
@@ -47,9 +47,10 @@ const routes = [
   },
   {
     path: '/routes/:id',
-    name: 'route-share',
-    component: RouteShareView,
-    meta: { title: 'Маршрут' }
+    name: 'route-details',
+    component: RouteDetailsView,
+    meta: { title: 'Маршрут' },
+    props: true,
   },
   {
     path: '/profile',

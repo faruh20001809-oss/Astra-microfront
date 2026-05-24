@@ -63,7 +63,11 @@
 
       <section v-if="!isLoading && featuredRoute" class="route-feature" aria-label="Главный маршрут">
         <div class="route-feature__media">
-          <img v-if="featuredRoute.coverImage" :src="featuredRoute.coverImage" :alt="featuredRoute.title" />
+          <RouteCoverImage
+            v-if="featuredHasCover"
+            :route="featuredRoute"
+            :alt="featuredRoute.title"
+          />
           <div v-else class="route-feature__placeholder" aria-hidden="true"></div>
         </div>
         <div class="route-feature__content">
@@ -72,7 +76,7 @@
           <div class="route-feature__actions">
             <span>{{ featuredRoute.isPaid ? `${featuredRoute.price} ₽` : 'Бесплатно' }}</span>
             <button type="button" class="btn btn-primary btn-sm" @click="openRoute(featuredRoute)">
-              Эксклюзивно на Vizitastra →
+              Подробнее →
             </button>
           </div>
         </div>
@@ -98,75 +102,6 @@
       </div>
 
     </div>
-
-    <!-- Route detail modal -->
-    <transition name="fade">
-      <div
-        v-if="selected"
-        class="modal-backdrop"
-        role="presentation"
-        @click.self="selected = null"
-      >
-        <div
-          class="modal-box route-modal"
-          role="dialog"
-          aria-modal="true"
-          :aria-labelledby="`route-modal-${selected.id}`"
-        >
-          <button type="button" class="modal-close-btn" aria-label="Закрыть" @click="selected = null">
-            ✕
-          </button>
-
-          <span :class="['tag', selected.isPaid ? '' : 'tag-accent']">
-            {{ selected.isPaid ? `${selected.price} ₽` : 'Бесплатно' }}
-          </span>
-          <h2 :id="`route-modal-${selected.id}`" class="route-modal__title">{{ selected.title }}</h2>
-          <div class="route-meta-row">
-            <span>{{ selected.category }}</span>
-            <span>·</span>
-            <span>{{ selected.duration }}</span>
-            <span>·</span>
-            <span>{{ selected.distance }}</span>
-            <span>·</span>
-            <span>{{ selected.stops?.length || 0 }} остановок</span>
-            <span v-if="guestEmail">·</span>
-            <span v-if="guestEmail">Наград доступно: {{ confirmedProgress.availableRewards || 0 }}</span>
-          </div>
-
-          <div class="divider" />
-          <p class="route-desc">{{ selected.description }}</p>
-
-          <!-- Stops list -->
-          <div v-if="selected.stops?.length" class="stops-list">
-            <p class="stops-list__label text-mono">Остановки маршрута</p>
-            <div class="stops-timeline">
-              <div
-                v-for="(stop, i) in selected.stops"
-                :key="i"
-                class="stop-item"
-              >
-                <div class="stop-dot">{{ i + 1 }}</div>
-                <div>
-                  <p class="stop-name">{{ stop.name }}</p>
-                  <p class="stop-desc">{{ stop.description }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="route-modal-actions">
-            <button v-if="selected.isPaid" type="button" class="btn btn-primary btn-lg" @click="onPaidRoute(selected)">
-              Использовать награду / Купить за {{ selected.price }} ₽
-            </button>
-            <button v-else type="button" class="btn btn-accent btn-lg" @click="onStartRoute(selected)">
-              Начать маршрут
-            </button>
-            <button type="button" class="btn btn-ghost" @click="markCompleted(selected)">Отметить как пройденный</button>
-            <button class="btn btn-ghost" @click="selected = null">Закрыть</button>
-          </div>
-        </div>
-      </div>
-    </transition>
 
     <transition name="fade">
       <div
@@ -201,41 +136,30 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import RouteCard from '@/components/routes/RouteCard.vue'
+import RouteCoverImage from '@/components/routes/RouteCoverImage.vue'
+import { normalizeRouteMedia, pickRouteCoverSource } from '@/utils/routeMedia.js'
 import QrModal from '@/components/common/QrModal.vue'
-import { useToastStore, useMapStore } from '@/store/index.js'
+import { useToastStore } from '@/store/index.js'
 import { useFavorites } from '@/composables/useFavorites.js'
 import { javaApi, unwrapJavaList } from '@/api/backend.js'
-import { useGuestProgress } from '@/composables/useGuestProgress.js'
 
 const toastStore = useToastStore()
 const router = useRouter()
-const mapStore = useMapStore()
 const { isRouteFavorite, toggleRoute, favoriteRoutesList } = useFavorites()
-const { markRouteCompleted } = useGuestProgress()
-const confirmedProgress = ref({ availableRewards: 0, completedPaidRoutes: 0, completedFreeRoutes: 0 })
-const guestEmail = ref(localStorage.getItem('astra_guest_email') || '')
 
 function normalizeRouteFromApi(r) {
   if (!r || typeof r !== 'object') return r
   const pois = Array.isArray(r.pois) ? r.pois.map(Number).filter(Number.isFinite) : []
-  return {
+  return normalizeRouteMedia({
     ...r,
     title: r.title || r.name || 'Маршрут',
     isPaid: !!(r.isPaid ?? r.paid),
     stops: Array.isArray(r.stops) ? r.stops : [],
     pois,
-  }
-}
-
-function extractPoiIdsFromRoute(route) {
-  if (Array.isArray(route.pois) && route.pois.length) {
-    return route.pois.map(Number).filter(Number.isFinite)
-  }
-  return []
+  })
 }
 
 const routes = ref([])
-const selected = ref(null)
 const isLoading = ref(false)
 const activeCategory = ref(null)
 const showFree = ref(false)
@@ -274,6 +198,7 @@ const filteredRoutes = computed(() => {
 })
 
 const featuredRoute = computed(() => filteredRoutes.value[0] || null)
+const featuredHasCover = computed(() => !!pickRouteCoverSource(featuredRoute.value))
 
 function buildRouteShareUrl(route) {
   const base = window.location.origin + (import.meta.env.BASE_URL || '/').replace(/\/?$/, '/')
@@ -327,57 +252,6 @@ async function copyShareUrl() {
   }
 }
 
-function onStartRoute(route) {
-  const id = Number(route.id)
-  if (!Number.isFinite(id)) {
-    toastStore.push('Некорректный маршрут', 'error')
-    return
-  }
-  const poiIds = extractPoiIdsFromRoute(route)
-  const title = route.title || route.name || 'Маршрут'
-  mapStore.setActiveFollowRoute({ id, title, poiIds })
-  router.push({ path: '/', query: { route: String(id) } })
-  selected.value = null
-  toastStore.push('Открываем маршрут на карте…', 'success')
-}
-
-async function markCompleted(route) {
-  const email = guestEmail.value.trim()
-  if (!email) {
-    toastStore.push('Для фиксации прохождения войдите в кабинет заказов (email + код).', 'info')
-    return
-  }
-  try {
-    const stats = await javaApi.routes.markCompleted(route.id, email)
-    confirmedProgress.value = { ...confirmedProgress.value, ...stats }
-    markRouteCompleted(route.id, { paid: !!route.isPaid })
-    toastStore.push('Маршрут отмечен как пройденный', 'success')
-  } catch (e) {
-    toastStore.push(e?.message || 'Не удалось сохранить прогресс', 'error')
-  }
-}
-
-async function onPaidRoute(route) {
-  const email = guestEmail.value.trim()
-  if (!email) {
-    toastStore.push('Покупка маршрута доступна после входа в кабинет заказов', 'info')
-    return
-  }
-  try {
-    const stats = await javaApi.userProgress.getConfirmedByEmail(email)
-    confirmedProgress.value = { ...confirmedProgress.value, ...stats }
-    if (Number(confirmedProgress.value.availableRewards || 0) > 0) {
-      await javaApi.rewards.redeemByEmail(email, route.id)
-      toastStore.push('Награда применена: маршрут открыт бесплатно', 'success')
-      onStartRoute(route)
-      return
-    }
-    toastStore.push('Нет доступных наград. Выполните условие 2 платных + 3 бесплатных.', 'info')
-  } catch (e) {
-    toastStore.push(e?.message || 'Не удалось проверить награды', 'error')
-  }
-}
-
 onMounted(async () => {
   isLoading.value = true
   try {
@@ -392,25 +266,11 @@ onMounted(async () => {
   } finally {
     isLoading.value = false
   }
-  if (guestEmail.value.trim()) {
-    try {
-      const stats = await javaApi.userProgress.getConfirmedByEmail(guestEmail.value.trim())
-      confirmedProgress.value = { ...confirmedProgress.value, ...stats }
-    } catch {}
-  }
 })
 
-async function openRoute(r) {
-  selected.value = r
-  if (!r?.id) return
-  const needsStops = !Array.isArray(r.stops) || r.stops.length === 0
-  if (!needsStops) return
-  try {
-    const full = await javaApi.routes.getById(r.id)
-    if (full) selected.value = normalizeRouteFromApi(full)
-  } catch (e) {
-    console.warn('Route details:', e)
-  }
+function openRoute(r) {
+  if (r?.id == null) return
+  router.push({ name: 'route-details', params: { id: r.id } })
 }
 
 function getMockRoutes() {

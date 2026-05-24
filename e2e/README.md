@@ -17,6 +17,18 @@ npm run test:update:module2   # обновить эталоны
 
 Скриншоты: `e2e/module2/__screenshots__/module2-desktop/*.png`
 
+### module2 — ВКР Богачева (BOG-UI / BOG-API / BOG-E2E)
+
+```bash
+npm run test:bog
+npm run test:update:bog
+npm run copy:bog-diploma
+```
+
+Документация и таблица сценариев: [module2/README.md](module2/README.md)
+
+**Скриншоты для вставки в ВКР:** `e2e/module2/__screenshots__/diploma/` и `screenshots/BOG-*.png`
+
 ## astrakhan-admin — для диплома (Косоротикова)
 
 ```bash

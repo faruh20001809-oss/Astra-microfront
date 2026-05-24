@@ -366,44 +366,129 @@ body.app-light-theme .route-card .route-icon-btn.active {
   border-color: rgba(184, 92, 92, 0.45);
 }
 
-/* ---- Light theme: личный кабинет (та же тёплая поверхность, что у btn-primary) ---- */
-.app-light .cabinet-page .cabinet-card {
+/* ---- Light theme: личный кабинет ---- */
+.app-light .cabinet-page,
+body.app-light-theme .cabinet-page {
+  color: var(--paper);
+}
+
+.app-light .cabinet-page .cabinet-hero,
+body.app-light-theme .cabinet-page .cabinet-hero {
+  border-bottom-color: rgba(184, 148, 94, 0.22);
+}
+
+.app-light .cabinet-page .cabinet-title,
+.app-light .cabinet-page .cabinet-name,
+.app-light .cabinet-page .cabinet-progress__title,
+.app-light .cabinet-page .cabinet-empty__title,
+.app-light .cabinet-page .cabinet-subsection__title,
+body.app-light-theme .cabinet-page .cabinet-title,
+body.app-light-theme .cabinet-page .cabinet-name,
+body.app-light-theme .cabinet-page .cabinet-progress__title,
+body.app-light-theme .cabinet-page .cabinet-empty__title,
+body.app-light-theme .cabinet-page .cabinet-subsection__title {
+  color: var(--cream);
+}
+
+.app-light .cabinet-page .cabinet-eyebrow,
+.app-light .cabinet-page .cabinet-card-label,
+body.app-light-theme .cabinet-page .cabinet-eyebrow,
+body.app-light-theme .cabinet-page .cabinet-card-label {
+  color: var(--accent-dark);
+}
+
+.app-light .cabinet-page .cabinet-lead,
+.app-light .cabinet-page .cabinet-line,
+.app-light .cabinet-page .cabinet-progress__lead,
+.app-light .cabinet-page .cabinet-reward__hint,
+.app-light .cabinet-page .cabinet-sync-status,
+.app-light .cabinet-page .cabinet-reward-available,
+.app-light .cabinet-page .cabinet-activity-list,
+.app-light .cabinet-page .cabinet-empty__text,
+body.app-light-theme .cabinet-page .cabinet-lead,
+body.app-light-theme .cabinet-page .cabinet-line,
+body.app-light-theme .cabinet-page .cabinet-progress__lead,
+body.app-light-theme .cabinet-page .cabinet-reward__hint,
+body.app-light-theme .cabinet-page .cabinet-sync-status,
+body.app-light-theme .cabinet-page .cabinet-reward-available,
+body.app-light-theme .cabinet-page .cabinet-activity-list,
+body.app-light-theme .cabinet-page .cabinet-empty__text {
+  color: var(--gray-600);
+}
+
+.app-light .cabinet-page .cabinet-stat__label,
+.app-light .cabinet-page .cabinet-ach-item__meta,
+.app-light .cabinet-page .cabinet-ach-item__title,
+body.app-light-theme .cabinet-page .cabinet-stat__label,
+body.app-light-theme .cabinet-page .cabinet-ach-item__meta,
+body.app-light-theme .cabinet-page .cabinet-ach-item__title {
+  color: var(--gray-600);
+}
+
+.app-light .cabinet-page .cabinet-stat__value,
+.app-light .cabinet-page .cabinet-nav-link__title,
+body.app-light-theme .cabinet-page .cabinet-stat__value,
+body.app-light-theme .cabinet-page .cabinet-nav-link__title {
+  color: var(--cream);
+}
+
+.app-light .cabinet-page .cabinet-nav-link__desc,
+body.app-light-theme .cabinet-page .cabinet-nav-link__desc {
+  color: var(--gray-500);
+}
+
+.app-light .cabinet-page .cabinet-ach-item.is-unlocked .cabinet-ach-item__title,
+.app-light .cabinet-page .cabinet-ach-item.is-unlocked .cabinet-ach-item__meta,
+body.app-light-theme .cabinet-page .cabinet-ach-item.is-unlocked .cabinet-ach-item__title,
+body.app-light-theme .cabinet-page .cabinet-ach-item.is-unlocked .cabinet-ach-item__meta {
+  color: var(--cream);
+}
+
+.app-light .cabinet-page .cabinet-card,
+body.app-light-theme .cabinet-page .cabinet-card {
   border-color: rgba(184, 148, 94, 0.22);
   background: var(--surface-warm);
   box-shadow: var(--shadow-subtle);
 }
 
-.app-light .cabinet-page .cabinet-card::before {
+.app-light .cabinet-page .cabinet-card::before,
+body.app-light-theme .cabinet-page .cabinet-card::before {
   background: radial-gradient(120% 80% at 0% 0%, rgba(212, 184, 150, 0.14), transparent 55%);
 }
 
-.app-light .cabinet-page .cabinet-nav-link {
+.app-light .cabinet-page .cabinet-nav-link,
+body.app-light-theme .cabinet-page .cabinet-nav-link {
   border-color: rgba(184, 148, 94, 0.2);
   background: var(--surface-warm-nested);
-  color: var(--paper);
+  color: var(--cream);
 }
 
-.app-light .cabinet-page .cabinet-nav-link:hover {
+.app-light .cabinet-page .cabinet-nav-link:hover,
+body.app-light-theme .cabinet-page .cabinet-nav-link:hover {
   border-color: rgba(184, 148, 94, 0.4);
   background: rgba(212, 184, 150, 0.12);
 }
 
-.app-light .cabinet-page .cabinet-empty {
+.app-light .cabinet-page .cabinet-empty,
+body.app-light-theme .cabinet-page .cabinet-empty {
   border-color: rgba(184, 148, 94, 0.28);
   background: var(--surface-warm-nested);
 }
 
-.app-light .cabinet-page .cabinet-stat {
+.app-light .cabinet-page .cabinet-stat,
+body.app-light-theme .cabinet-page .cabinet-stat {
   border-color: rgba(184, 148, 94, 0.16);
   background: var(--surface-warm-nested);
 }
 
-.app-light .cabinet-page .cabinet-ach-item {
+.app-light .cabinet-page .cabinet-ach-item,
+body.app-light-theme .cabinet-page .cabinet-ach-item {
   border-color: rgba(184, 148, 94, 0.14);
   background: var(--surface-warm-nested);
 }
 
-.app-light .cabinet-page .cabinet-ach-item.is-unlocked {
+.app-light .cabinet-page .cabinet-ach-item.is-unlocked,
+body.app-light-theme .cabinet-page .cabinet-ach-item.is-unlocked {
   border-color: rgba(184, 148, 94, 0.3);
   background: linear-gradient(
     125deg,
@@ -413,12 +498,23 @@ body.app-light-theme .route-card .route-icon-btn.active {
   box-shadow: 0 0 0 1px rgba(184, 148, 94, 0.08);
 }
 
-.app-light .cabinet-page .cabinet-tier__badge {
+.app-light .cabinet-page .cabinet-tier__badge,
+body.app-light-theme .cabinet-page .cabinet-tier__badge {
   border-color: rgba(184, 148, 94, 0.22);
+  color: var(--gray-600);
 }
 
-.app-light .cabinet-page .cabinet-tier__badge--active {
+.app-light .cabinet-page .cabinet-tier__badge--active,
+body.app-light-theme .cabinet-page .cabinet-tier__badge--active {
   background: rgba(212, 184, 150, 0.14);
+  color: var(--accent-dark);
+}
+
+.app-light .cabinet-page .cabinet-reward__track,
+.app-light .cabinet-page .cabinet-ach-meter,
+body.app-light-theme .cabinet-page .cabinet-reward__track,
+body.app-light-theme .cabinet-page .cabinet-ach-meter {
+  background: var(--gray-200);
 }
 
 /* ---- Light theme: вход / регистрация клиента (ProfileAuthView — .auth-shell; motion-reveal только анимирует opacity/transform) ---- */

@@ -8,6 +8,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.astrakhan.admin.entity.Route;
 import ru.astrakhan.admin.service.PoiService;
 import ru.astrakhan.admin.service.RouteService;
+import ru.astrakhan.admin.util.RouteStopsHelper;
 import java.io.IOException;
 
 @Controller @RequestMapping("/admin/routes") @RequiredArgsConstructor
@@ -18,20 +19,43 @@ public class RouteAdminController {
     @GetMapping public String list(Model model) { model.addAttribute("routes", routeService.findAll()); return "routes/list"; }
 
     @GetMapping("/create") public String createForm(Model model) {
-        model.addAttribute("route", new Route()); model.addAttribute("isEdit", false);
-        model.addAttribute("allPois", poiService.findPublished()); return "routes/form";
+        model.addAttribute("route", new Route());
+        model.addAttribute("stopContentsJson", "[]");
+        model.addAttribute("isEdit", false);
+        model.addAttribute("allPois", poiService.findPublished());
+        return "routes/form";
     }
     @GetMapping("/edit/{id}") public String editForm(@PathVariable Long id, Model model) {
-        model.addAttribute("route", routeService.findById(id).orElseThrow(() -> new RuntimeException("Not found")));
-        model.addAttribute("isEdit", true); model.addAttribute("allPois", poiService.findPublished()); return "routes/form";
+        Route route = routeService.findById(id).orElseThrow(() -> new RuntimeException("Not found"));
+        model.addAttribute("route", route);
+        model.addAttribute("stopContentsJson", route.getWaypoints() != null ? route.getWaypoints() : "[]");
+        model.addAttribute("isEdit", true);
+        model.addAttribute("allPois", poiService.findPublished());
+        return "routes/form";
     }
     @PostMapping("/save") public String save(@ModelAttribute Route route,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
-            @RequestParam(value = "selectedPois", required = false) String selectedPois, RedirectAttributes ra) {
+            @RequestParam(value = "selectedPois", required = false) String selectedPois,
+            @RequestParam(value = "stopContentsJson", required = false) String stopContentsJson,
+            RedirectAttributes ra) {
         try {
-            if (imageFile != null && !imageFile.isEmpty()) { route.setImageData(imageFile.getBytes()); route.setImageFilename(imageFile.getOriginalFilename()); }
+            if (imageFile != null && !imageFile.isEmpty()) {
+                route.setImageData(imageFile.getBytes());
+                String fn = imageFile.getOriginalFilename();
+                route.setImageFilename((fn != null && !fn.isBlank()) ? fn : "route-cover.jpg");
+            }
             else if (route.getId() != null) { routeService.findById(route.getId()).ifPresent(ex -> { if (route.getImageData()==null) { route.setImageData(ex.getImageData()); route.setImageFilename(ex.getImageFilename()); }}); }
             if (selectedPois != null) route.setPoiIds(selectedPois);
+            String poiIds = route.getPoiIds();
+            if (stopContentsJson != null && !stopContentsJson.isBlank()) {
+                route.setWaypoints(RouteStopsHelper.syncWithPoiIds(
+                        RouteStopsHelper.normalizeIncomingJson(stopContentsJson), poiIds));
+            } else if (route.getId() != null) {
+                routeService.findById(route.getId()).ifPresent(ex -> route.setWaypoints(
+                        RouteStopsHelper.syncWithPoiIds(ex.getWaypoints(), poiIds)));
+            } else {
+                route.setWaypoints(RouteStopsHelper.syncWithPoiIds("[]", poiIds));
+            }
             routeService.save(route); ra.addFlashAttribute("success", "Маршрут сохранён!");
         } catch (IOException e) { ra.addFlashAttribute("error", "Ошибка: " + e.getMessage()); }
         return "redirect:/admin/routes";

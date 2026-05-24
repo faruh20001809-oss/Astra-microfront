@@ -7,7 +7,7 @@
 <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 <div class="card">
   <p style="color:var(--gray-400);margin-bottom:1rem">Вставьте JSON с массивом <code>pois</code> и опционально <code>routes</code>. Точки будут созданы как черновики без картинок — затем для каждой можно открыть редактирование и вложить изображения.</p>
-  <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:1rem">Формат: <code>{"pois":[{"name":"...","category":"...","latitude":46.35,"longitude":48.04,"description":"...","address":"..."}],"routes":[{"name":"...","description":"...","category":"...","poiOrder":[0,1,2]}]}</code>. <code>poiOrder</code> — индексы точек в массиве <code>pois</code> (0 = первая созданная точка).</p>
+  <p style="font-size:0.85rem;color:var(--gray-500);margin-bottom:1rem">Формат: <code>{"pois":[...],"routes":[{"name":"...","poiOrder":[0,1],"stops":[{"poiIndex":0,"thematicDescription":"...","videoUrls":[],"audioUrls":[]}]}]}</code>. <code>poiIndex</code> — индекс в <code>pois</code>; у каждой остановки своё тематическое описание и медиа.</p>
   <form th:action="@{/admin/poi/bulk}" method="post" id="bulkForm">
     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
     <div class="form-group">
