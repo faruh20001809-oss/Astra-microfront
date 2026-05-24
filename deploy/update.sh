@@ -40,8 +40,30 @@ else
 fi
 
 echo "[2/7] Сборка бэкенда (Maven)..."
+if ! command -v java >/dev/null 2>&1; then
+  echo "  ОШИБКА: java не найдена. Установите JDK 17: apt install -y openjdk-17-jdk"
+  exit 1
+fi
+JAVA_MAJOR="$(java -version 2>&1 | head -1 | sed -n 's/.*version "\([0-9]*\).*/\1/p')"
+if [ -z "$JAVA_MAJOR" ] || [ "$JAVA_MAJOR" -lt 17 ] 2>/dev/null; then
+  echo "  ОШИБКА: нужен JDK 17+, сейчас: $(java -version 2>&1 | head -1)"
+  echo "  apt install -y openjdk-17-jdk && update-alternatives --config java"
+  exit 1
+fi
 cd "$APP_DIR/astrakhan-admin"
-mvn -q clean package -DskipTests
+if [ ! -f "src/main/java/ru/astrakhan/admin/AstrakhanAdminApplication.java" ]; then
+  echo "  ОШИБКА: нет исходников Spring Boot в astrakhan-admin/src/main/java"
+  exit 1
+fi
+if ! mvn clean package -DskipTests; then
+  echo "  ОШИБКА Maven. Частые причины: JDK < 17, нет сети для зависимостей."
+  echo "  Проверка: ls -la target/classes/ru/astrakhan/admin/AstrakhanAdminApplication.class"
+  exit 1
+fi
+if [ ! -f "target/history-admin-1.0.0.jar" ]; then
+  echo "  ОШИБКА: JAR не собран: target/history-admin-1.0.0.jar"
+  exit 1
+fi
 
 echo "[3/7] Сборка фронта (npm)..."
 cd "$APP_DIR/module2"

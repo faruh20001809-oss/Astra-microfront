@@ -79,7 +79,11 @@ if [ "$FULL" = 1 ] || [ ! -f "$JAR" ]; then
     exit 1
   fi
   cd "$APP_DIR/astrakhan-admin"
-  mvn -q clean package -DskipTests
+  if ! command -v java >/dev/null 2>&1; then
+    echo "  ОШИБКА: java не найдена (нужен JDK 17+)"
+    exit 1
+  fi
+  mvn clean package -DskipTests
   cd "$APP_DIR"
 fi
 if [ ! -f "$JAR" ]; then
