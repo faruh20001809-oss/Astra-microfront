@@ -1,9 +1,8 @@
 import { expect, type Page } from '@playwright/test'
-import { blockExternalImages, installJavaApiMocks } from '../fixtures/mock-java-api.js'
+import { installJavaApiMocks } from '../fixtures/mock-java-api.js'
 
 export async function prepareModule2Page(page: Page) {
   await installJavaApiMocks(page)
-  await blockExternalImages(page)
   await page.addInitScript(() => {
     localStorage.setItem('astra-theme', 'light')
     localStorage.removeItem('astra-cart')
