@@ -42,3 +42,4 @@ e2e/blob-report/
 docs/route-points-preorder-tech-analysis.md
 /e2e
 *.png
+module2/.env.example
