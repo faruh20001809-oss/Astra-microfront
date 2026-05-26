@@ -432,7 +432,7 @@ function donate() {
   border-radius: var(--radius-sm);
   color: var(--gray-400);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
   text-align: center;
 }
 

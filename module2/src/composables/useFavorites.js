@@ -27,6 +27,15 @@ const favoriteRoutes = ref(new Set())
 const favoritePois = ref(new Set())
 let initialized = false
 let persistWatchStarted = false
+let favSaveTimer = null
+
+function scheduleFavSave() {
+  if (favSaveTimer) return
+  favSaveTimer = setTimeout(() => {
+    favSaveTimer = null
+    saveState(favoriteRoutes.value, favoritePois.value)
+  }, 200)
+}
 
 function ensureInit() {
   if (initialized) return
@@ -43,9 +52,7 @@ export function useFavorites() {
     persistWatchStarted = true
     watch(
       [favoriteRoutes, favoritePois],
-      () => {
-        saveState(favoriteRoutes.value, favoritePois.value)
-      },
+      scheduleFavSave,
       { deep: true },
     )
   }

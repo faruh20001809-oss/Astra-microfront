@@ -194,9 +194,14 @@ public class ApiController {
     }
 
     @GetMapping("/routes/{id}")
-    public ResponseEntity<Map<String, Object>> getRoute(@PathVariable Long id) {
-        return routeService.findById(id).map(r -> { analyticsService.trackEvent("route_view", r.getId(), r.getName()); return okSingle(routeMapDetail(r)); })
-            .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Map<String, Object>> getRoute(
+            @PathVariable Long id,
+            @RequestParam(required = false) String email) {
+        return routeService.findById(id).map(r -> {
+            analyticsService.trackEvent("route_view", r.getId(), r.getName());
+            boolean accessGranted = routeProgressService.hasAccessToRoute(email, r.getId());
+            return okSingle(routeMapDetail(r, accessGranted));
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     /** Картинка маршрута (из imageData). ETag по updatedAt — при обновлении файла на бэкенде кэш инвалидируется. */
@@ -249,6 +254,23 @@ public class ApiController {
                 return apiError(HttpStatus.BAD_REQUEST,
                         "Недопустимый статус: " + statusStr + ". Допустимы: DRAFT, ACTIVE, OUTDATED.");
             }
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /** Проверка доступа к платному маршруту. Бесплатные маршруты → всегда accessGranted=true. */
+    @GetMapping("/routes/{id}/access")
+    public ResponseEntity<Map<String, Object>> checkRouteAccess(
+            @PathVariable Long id,
+            @RequestParam(required = false) String email) {
+        return routeService.findById(id).map(r -> {
+            boolean isPaid = Boolean.TRUE.equals(r.getPaid());
+            boolean access = routeProgressService.hasAccessToRoute(email, r.getId());
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("routeId", id);
+            data.put("isPaid", isPaid);
+            data.put("price", r.getPrice() != null ? r.getPrice() : 0.0);
+            data.put("accessGranted", access);
+            return okSingle(data);
         }).orElse(ResponseEntity.notFound().build());
     }
 
@@ -907,7 +929,11 @@ public class ApiController {
 
     /** Детальная карточка маршрута — с остановками по связанным ТОИ. */
     private Map<String, Object> routeMapDetail(Route r) {
-        return routeMapCore(r, true);
+        return routeMapCore(r, true, true);
+    }
+
+    private Map<String, Object> routeMapDetail(Route r, boolean accessGranted) {
+        return routeMapCore(r, true, accessGranted);
     }
 
     private static List<Long> parseRoutePoiIds(String poiIds) {
@@ -930,31 +956,47 @@ public class ApiController {
     }
 
     private Map<String, Object> routeMapCore(Route r, boolean withStops) {
+        return routeMapCore(r, withStops, true);
+    }
+
+    private Map<String, Object> routeMapCore(Route r, boolean withStops, boolean accessGranted) {
+        boolean isPaid = r.getPaid() != null && r.getPaid();
+        boolean locked = isPaid && !accessGranted;
+
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", r.getId());
         m.put("name", r.getName());
         m.put("title", r.getName());
         m.put("description", r.getDescription());
-        m.put("thematicDescription", r.getThematicDescription());
-        m.put("videoUrls", parseUrlList(r.getVideoUrls()));
-        m.put("audioUrls", parseUrlList(r.getAudioUrls()));
         m.put("category", r.getCategory());
         m.put("distance", formatDistance(r.getDistance()));
         m.put("duration", formatDuration(r.getDuration()));
         m.put("difficulty", r.getDifficulty());
         m.put("rating", r.getRating() != null ? r.getRating() : 0.0);
         m.put("published", r.getPublished());
-        m.put("paid", r.getPaid() != null && r.getPaid());
-        m.put("isPaid", r.getPaid() != null && r.getPaid());
+        m.put("paid", isPaid);
+        m.put("isPaid", isPaid);
         m.put("price", r.getPrice() != null ? r.getPrice() : 0.0);
         m.put("priority", r.getPriority() != null ? r.getPriority() : 0);
         m.put("status", r.getStatus() != null ? r.getStatus().name() : Route.RouteStatus.DRAFT.name());
         m.put("outdatedReason", r.getOutdatedReason());
         m.put("isActual", r.getStatus() == null || r.getStatus() != Route.RouteStatus.OUTDATED);
+        m.put("accessGranted", accessGranted);
+
+        if (locked) {
+            m.put("thematicDescription", truncateForPreview(r.getThematicDescription(), 200));
+            m.put("videoUrls", List.of());
+            m.put("audioUrls", List.of());
+        } else {
+            m.put("thematicDescription", r.getThematicDescription());
+            m.put("videoUrls", parseUrlList(r.getVideoUrls()));
+            m.put("audioUrls", parseUrlList(r.getAudioUrls()));
+        }
+
         List<Long> poiIdList = parseRoutePoiIds(r.getPoiIds());
         m.put("pois", poiIdList);
-        if (withStops && !poiIdList.isEmpty()) {
-            m.put("stops", buildRouteStops(r));
+        if (withStops) {
+            m.put("stops", locked ? buildLockedRouteStops(r) : buildRouteStops(r));
         } else {
             m.put("stops", List.of());
         }
@@ -965,27 +1007,95 @@ public class ApiController {
     }
 
     private List<Map<String, Object>> buildRouteStops(Route r) {
-        List<Long> poiIdList = parseRoutePoiIds(r.getPoiIds());
-        Map<Long, RouteStopsHelper.StopContent> contentByPoi = RouteStopsHelper.indexByPoiId(r.getWaypoints());
+        List<RouteStopsHelper.StopContent> allStops = RouteStopsHelper.parse(r.getWaypoints());
         List<Map<String, Object>> stops = new ArrayList<>();
-        for (Long poiId : poiIdList) {
+        int index = 0;
+        for (RouteStopsHelper.StopContent c : allStops) {
             Map<String, Object> stop = new LinkedHashMap<>();
-            stop.put("poiId", poiId);
-            poiService.findById(poiId).ifPresentOrElse(poi -> {
-                stop.put("name", poi.getName());
-                stop.put("description", poi.getDescription() != null ? poi.getDescription() : "");
-            }, () -> {
-                stop.put("name", "Точка #" + poiId);
-                stop.put("description", "");
-            });
-            RouteStopsHelper.StopContent c = contentByPoi.get(poiId);
-            String thematic = c != null && c.thematicDescription != null ? c.thematicDescription : "";
-            stop.put("thematicDescription", thematic);
-            stop.put("videoUrls", c != null ? parseUrlList(c.videoUrls) : List.of());
-            stop.put("audioUrls", c != null ? parseUrlList(c.audioUrls) : List.of());
+            stop.put("order", index++);
+
+            if (Boolean.TRUE.equals(c.isCustom)) {
+                stop.put("isCustom", true);
+                stop.put("poiId", null);
+                stop.put("name", c.customName != null ? c.customName : "Кастомная точка");
+                stop.put("description", c.description != null ? c.description : "");
+                stop.put("latitude", c.customLatitude);
+                stop.put("longitude", c.customLongitude);
+            } else if (c.poiId != null) {
+                stop.put("isCustom", false);
+                stop.put("poiId", c.poiId);
+                poiService.findById(c.poiId).ifPresentOrElse(poi -> {
+                    stop.put("name", poi.getName());
+                    String poiDesc = c.description != null && !c.description.isBlank()
+                            ? c.description
+                            : (poi.getDescription() != null ? poi.getDescription() : "");
+                    stop.put("description", poiDesc);
+                    stop.put("latitude", poi.getLatitude());
+                    stop.put("longitude", poi.getLongitude());
+                    stop.put("address", poi.getAddress());
+                    stop.put("poiImage", poiCoverImageUrl(poi));
+                }, () -> {
+                    stop.put("name", "Точка #" + c.poiId);
+                    stop.put("description", c.description != null ? c.description : "");
+                });
+            } else {
+                continue;
+            }
+
+            stop.put("thematicDescription", c.thematicDescription != null ? c.thematicDescription : "");
+            stop.put("videoUrls", parseUrlList(c.videoUrls));
+            stop.put("audioUrls", parseUrlList(c.audioUrls));
+            stop.put("imageUrl", c.imageUrl);
+            stop.put("durationMinutes", c.durationMinutes);
             stops.add(stop);
         }
         return stops;
+    }
+
+    /**
+     * Заглушка для платных маршрутов без доступа:
+     * показывает названия точек и порядок, но скрывает описания, медиа, картинки.
+     */
+    private List<Map<String, Object>> buildLockedRouteStops(Route r) {
+        List<RouteStopsHelper.StopContent> allStops = RouteStopsHelper.parse(r.getWaypoints());
+        List<Map<String, Object>> stops = new ArrayList<>();
+        int index = 0;
+        for (RouteStopsHelper.StopContent c : allStops) {
+            Map<String, Object> stop = new LinkedHashMap<>();
+            stop.put("order", index++);
+            stop.put("locked", true);
+
+            if (Boolean.TRUE.equals(c.isCustom)) {
+                stop.put("isCustom", true);
+                stop.put("poiId", null);
+                stop.put("name", c.customName != null ? c.customName : "Кастомная точка");
+            } else if (c.poiId != null) {
+                stop.put("isCustom", false);
+                stop.put("poiId", c.poiId);
+                poiService.findById(c.poiId).ifPresentOrElse(
+                        poi -> stop.put("name", poi.getName()),
+                        () -> stop.put("name", "Точка #" + c.poiId));
+            } else {
+                continue;
+            }
+
+            stop.put("description", "");
+            stop.put("thematicDescription", "");
+            stop.put("videoUrls", List.of());
+            stop.put("audioUrls", List.of());
+            stop.put("imageUrl", null);
+            stop.put("durationMinutes", c.durationMinutes);
+            stops.add(stop);
+        }
+        return stops;
+    }
+
+    private static String truncateForPreview(String text, int maxLength) {
+        if (text == null || text.isBlank()) return "";
+        if (text.length() <= maxLength) return text;
+        int cut = text.lastIndexOf(' ', maxLength);
+        if (cut < maxLength / 2) cut = maxLength;
+        return text.substring(0, cut) + "…";
     }
 
     /** Ссылки из админки / JSON bulk: по одной в строке или через запятую. */

@@ -560,7 +560,7 @@ function getMockProducts() {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 
 .variant-btn:hover { border-color: var(--paper); color: var(--paper); }
@@ -585,7 +585,7 @@ function getMockProducts() {
   color: var(--paper);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; border-radius: var(--radius-sm);
-  font-size: 1rem; transition: all var(--transition);
+  font-size: 1rem; transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 
 .qty-btn:hover { border-color: var(--accent); color: var(--accent); }

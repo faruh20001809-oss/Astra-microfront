@@ -147,6 +147,7 @@ const headerVisible = ref(true)
 const headerHovered = ref(false)
 let lastScrollY = 0
 let hoverTimeout = null
+let scrollRAF = null
 
 const navItems = [
   { to: '/', label: 'главная', icon: 'map' },
@@ -175,26 +176,30 @@ watch(menuOpen, (open) => {
 })
 
 const handleScroll = () => {
-  const currentScrollY = window.scrollY
-  const topZone = currentScrollY < 100
-
-  if (topZone) {
-    headerVisible.value = true
-  } else if (currentScrollY > lastScrollY) {
-    headerVisible.value = false
-  } else {
-    headerVisible.value = true
-  }
-  lastScrollY = currentScrollY
+  if (scrollRAF) return
+  scrollRAF = requestAnimationFrame(() => {
+    scrollRAF = null
+    const currentScrollY = window.scrollY
+    const topZone = currentScrollY < 100
+    if (topZone) {
+      headerVisible.value = true
+    } else if (currentScrollY > lastScrollY) {
+      headerVisible.value = false
+    } else {
+      headerVisible.value = true
+    }
+    lastScrollY = currentScrollY
+  })
 }
 
 const handleMouseMove = (e) => {
   if (e.clientY < 80) {
     headerHovered.value = true
     if (hoverTimeout) clearTimeout(hoverTimeout)
-  } else {
+  } else if (!hoverTimeout) {
     hoverTimeout = setTimeout(() => {
       headerHovered.value = false
+      hoverTimeout = null
     }, 500)
   }
 }
@@ -205,7 +210,7 @@ const attachMotionListeners = () => {
     return
   }
   window.addEventListener('scroll', handleScroll, { passive: true })
-  window.addEventListener('mousemove', handleMouseMove)
+  window.addEventListener('mousemove', handleMouseMove, { passive: true })
 }
 
 onMounted(() => {
@@ -231,11 +236,13 @@ onUnmounted(() => {
   padding-left: env(safe-area-inset-left, 0);
   padding-right: env(safe-area-inset-right, 0);
   z-index: 1000;
-  background: var(--header-bg);
-  backdrop-filter: blur(14px) saturate(1.05);
+  background: var(--header-bg-solid, rgba(20, 16, 13, 0.92));
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(212, 184, 150, 0.1);
   transform: translateY(0);
-  transition: transform 0.3s ease, background 0.3s ease;
+  will-change: transform;
+  transition: transform 0.3s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {

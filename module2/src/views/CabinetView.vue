@@ -119,7 +119,7 @@
               >
                 <div
                   class="cabinet-reward__fill"
-                  :style="{ width: `${Math.min(100, Math.max(0, rewardProgress.progressPercent))}%` }"
+                  :style="{ transform: `scaleX(${Math.min(1, Math.max(0, rewardProgress.progressPercent / 100))})` }"
                 />
               </div>
               <p class="cabinet-reward__hint">
@@ -171,7 +171,7 @@
                       >
                         <div
                           class="cabinet-ach-meter-fill"
-                          :style="{ width: `${achProgressPercent(a)}%` }"
+                          :style="{ transform: `scaleX(${Math.min(1, achProgressPercent(a) / 100)})` }"
                         />
                       </div>
                     </div>
@@ -798,9 +798,12 @@ onUnmounted(() => {
 
 .cabinet-reward__fill {
   height: 100%;
+  width: 100%;
   background: linear-gradient(90deg, var(--accent-dark), var(--accent));
   border-radius: 999px;
-  transition: width 0.35s ease;
+  transform-origin: left;
+  will-change: transform;
+  transition: transform 0.35s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1009,9 +1012,12 @@ onUnmounted(() => {
 
 .cabinet-ach-meter-fill {
   height: 100%;
+  width: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--accent-dark), var(--accent));
-  transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: left;
+  will-change: transform;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {

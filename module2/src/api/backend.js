@@ -249,9 +249,16 @@ export const javaApi = {
       }
     },
 
-    /** @param {number} id */
-    getById: async (id) => {
-      const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}`)
+    /** @param {number} id @param {string} [email] */
+    getById: async (id, email) => {
+      const params = email ? `?email=${encodeURIComponent(String(email).trim())}` : ''
+      const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}${params}`)
+      return handleJavaResponse(res)
+    },
+    /** @param {number} id @param {string} email */
+    checkAccess: async (id, email) => {
+      const params = email ? `?email=${encodeURIComponent(String(email).trim())}` : ''
+      const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}/access${params}`)
       return handleJavaResponse(res)
     },
     markCompleted: async (id, email) => {

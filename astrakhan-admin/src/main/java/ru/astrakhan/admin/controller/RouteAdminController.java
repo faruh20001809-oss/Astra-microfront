@@ -10,6 +10,8 @@ import ru.astrakhan.admin.service.PoiService;
 import ru.astrakhan.admin.service.RouteService;
 import ru.astrakhan.admin.util.RouteStopsHelper;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller @RequestMapping("/admin/routes") @RequiredArgsConstructor
 public class RouteAdminController {
@@ -39,6 +41,25 @@ public class RouteAdminController {
             @RequestParam(value = "stopContentsJson", required = false) String stopContentsJson,
             RedirectAttributes ra) {
         try {
+            List<String> mediaErrors = new ArrayList<>();
+            mediaErrors.addAll(RouteStopsHelper.validateMediaUrls(route.getVideoUrls(), "video"));
+            mediaErrors.addAll(RouteStopsHelper.validateMediaUrls(route.getAudioUrls(), "audio"));
+            if (stopContentsJson != null && !stopContentsJson.isBlank()) {
+                List<RouteStopsHelper.StopContent> stopsData = RouteStopsHelper.parse(stopContentsJson);
+                for (int i = 0; i < stopsData.size(); i++) {
+                    RouteStopsHelper.StopContent sc = stopsData.get(i);
+                    String label = "Точка " + (i + 1);
+                    RouteStopsHelper.validateMediaUrls(sc.videoUrls, "video")
+                            .forEach(e -> mediaErrors.add(label + " видео: " + e));
+                    RouteStopsHelper.validateMediaUrls(sc.audioUrls, "audio")
+                            .forEach(e -> mediaErrors.add(label + " аудио: " + e));
+                }
+            }
+            if (!mediaErrors.isEmpty()) {
+                ra.addFlashAttribute("error", "Ошибки в медиа-ссылках:\n" + String.join("\n", mediaErrors));
+                return "redirect:/admin/routes" + (route.getId() != null ? "/edit/" + route.getId() : "/create");
+            }
+
             if (imageFile != null && !imageFile.isEmpty()) {
                 route.setImageData(imageFile.getBytes());
                 String fn = imageFile.getOriginalFilename();
@@ -48,8 +69,8 @@ public class RouteAdminController {
             if (selectedPois != null) route.setPoiIds(selectedPois);
             String poiIds = route.getPoiIds();
             if (stopContentsJson != null && !stopContentsJson.isBlank()) {
-                route.setWaypoints(RouteStopsHelper.syncWithPoiIds(
-                        RouteStopsHelper.normalizeIncomingJson(stopContentsJson), poiIds));
+                String normalized = RouteStopsHelper.normalizeIncomingJson(stopContentsJson);
+                route.setWaypoints(RouteStopsHelper.syncWithPoiIds(normalized, poiIds));
             } else if (route.getId() != null) {
                 routeService.findById(route.getId()).ifPresent(ex -> route.setWaypoints(
                         RouteStopsHelper.syncWithPoiIds(ex.getWaypoints(), poiIds)));

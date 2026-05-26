@@ -128,7 +128,7 @@ const categoryGlyph = computed(() => {
   color: var(--gray-300);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 
 .route-icon-btn:hover {

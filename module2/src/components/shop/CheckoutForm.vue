@@ -583,7 +583,7 @@ async function checkout() {
   border: 1px solid var(--gray-600);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
 }
 
 .radio-card:hover {

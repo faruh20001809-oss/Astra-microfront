@@ -69,6 +69,21 @@ public class RouteProgressService {
         return getConfirmedStats(e);
     }
 
+    /**
+     * Проверяет, имеет ли пользователь доступ к маршруту:
+     * - бесплатный маршрут → доступен всем;
+     * - платный маршрут → только если есть RewardRedemptionEvent для этого email+route.
+     */
+    public boolean hasAccessToRoute(String email, Long routeId) {
+        Route route = routeService.findById(routeId).orElse(null);
+        if (route == null) return false;
+        if (!Boolean.TRUE.equals(route.getPaid())) return true;
+        if (email == null || email.isBlank()) return false;
+        String e = email.trim().toLowerCase();
+        if (!e.contains("@")) return false;
+        return redemptionRepository.existsByEmailIgnoreCaseAndRouteId(e, routeId);
+    }
+
     private static String normalizeEmail(String email) {
         String e = email != null ? email.trim().toLowerCase() : "";
         if (e.isBlank() || !e.contains("@")) {

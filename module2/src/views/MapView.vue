@@ -1372,7 +1372,7 @@ function categoryIcon(cat) {
   background: transparent;
   color: var(--gray-400);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
   white-space: nowrap;
 }
 .sidebar-suggest-btn:hover {
@@ -1397,7 +1397,7 @@ function categoryIcon(cat) {
   background: transparent;
   color: var(--gray-400);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 
 .filter-chip:hover {
@@ -1617,7 +1617,7 @@ function categoryIcon(cat) {
   letter-spacing: 0.06em;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
   box-shadow: var(--shadow-card);
 }
 .map-poins-btn:hover {
@@ -1644,7 +1644,7 @@ function categoryIcon(cat) {
   background: rgba(200, 169, 110, 0.08);
   color: var(--accent);
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
   text-align: center;
 }
 .drawer-suggest-btn:hover {
@@ -1712,7 +1712,7 @@ function categoryIcon(cat) {
   font-size: 1rem;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 
 .map-ctrl-btn:hover {
@@ -1918,7 +1918,7 @@ function categoryIcon(cat) {
   color: var(--gray-300);
   font-size: 1rem;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
 }
 
 .poi-fav-btn:hover {
@@ -2402,7 +2402,7 @@ function categoryIcon(cat) {
 
 .slide-up-enter-active,
 .slide-up-leave-active {
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .slide-up-enter-from {

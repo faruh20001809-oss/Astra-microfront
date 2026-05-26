@@ -86,6 +86,17 @@ const progressState = ref(loadState())
 const achievementsState = ref(loadAchievements())
 const rewardsState = ref(loadRewards())
 let persistWatchStarted = false
+let saveTimer = null
+
+function schedulePersist() {
+  if (saveTimer) return
+  saveTimer = setTimeout(() => {
+    saveTimer = null
+    saveProgressState(progressState.value)
+    saveAchievementsState(achievementsState.value)
+    saveRewardsState(rewardsState.value)
+  }, 300)
+}
 
 const ACHIEVEMENTS = [
   { id: 'first_steps', title: 'Первые шаги', type: 'pois', threshold: 3 },
@@ -161,9 +172,9 @@ function grantActivityRewardIfEligible() {
 export function useGuestProgress() {
   if (!persistWatchStarted) {
     persistWatchStarted = true
-    watch(progressState, () => saveProgressState(progressState.value), { deep: true })
-    watch(achievementsState, () => saveAchievementsState(achievementsState.value), { deep: true })
-    watch(rewardsState, () => saveRewardsState(rewardsState.value), { deep: true })
+    watch(progressState, schedulePersist, { deep: true })
+    watch(achievementsState, schedulePersist, { deep: true })
+    watch(rewardsState, schedulePersist, { deep: true })
   }
 
   const visitedPoisCount = computed(() => progressState.value.visitedPois.size)

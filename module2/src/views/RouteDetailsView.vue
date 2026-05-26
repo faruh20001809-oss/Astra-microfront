@@ -36,8 +36,10 @@
             <span class="route-hero-meta__item"><span class="meta-icon">⇢</span> {{ route.distance }}</span>
             <span class="route-hero-meta__item"><span class="meta-icon">◎</span> {{ route.stops?.length || 0 }} остановок</span>
           </div>
-          <span :class="['tag', route.isPaid ? '' : 'tag-accent']">
-            {{ route.isPaid ? `${route.price} ₽` : 'Бесплатно' }}
+          <span :class="['tag', route.isPaid ? (isLocked ? 'tag-locked' : '') : 'tag-accent']">
+            <template v-if="!route.isPaid">Бесплатно</template>
+            <template v-else-if="isLocked">🔒 {{ route.price }} ₽</template>
+            <template v-else>Разблокирован</template>
           </span>
         </div>
       </div>
@@ -47,7 +49,7 @@
         <!-- Scroll Progress Sidebar (desktop) -->
         <aside class="route-progress-nav" aria-label="Прогресс маршрута" v-if="route.stops?.length">
           <div class="route-progress-nav__track">
-            <div class="route-progress-nav__fill" :style="{ height: progressPercent + '%' }" />
+            <div class="route-progress-nav__fill" :style="{ transform: `scaleY(${progressPercent / 100})` }" />
           </div>
           <div class="route-progress-nav__dots">
             <button
@@ -132,6 +134,26 @@
             </div>
           </section>
 
+          <!-- ═══ Paywall Banner (locked paid routes) ═══ -->
+          <section v-if="isLocked" class="route-paywall">
+            <div class="route-paywall__icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="48" height="48"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+            </div>
+            <h2 class="route-paywall__title">Платный маршрут</h2>
+            <p class="route-paywall__text">
+              Этот маршрут доступен за <strong>{{ route.price }} ₽</strong> или по награде.
+              Разблокируйте, чтобы увидеть подробные описания, фото, аудио-гиды и видео каждой остановки.
+            </p>
+            <div class="route-paywall__actions">
+              <button type="button" class="btn btn-primary btn-lg" @click="onPaidRoute">
+                Разблокировать маршрут
+              </button>
+              <p class="route-paywall__hint">
+                Пройдите 2 платных и 3 бесплатных маршрута, чтобы заработать награду.
+              </p>
+            </div>
+          </section>
+
           <!-- Stops Section (the main "фишка") -->
           <section
             v-if="route.stops?.length"
@@ -148,7 +170,11 @@
                 v-for="(stop, i) in route.stops"
                 :key="stop.poiId ?? i"
                 :ref="el => { if (el) stopRefs[i] = el }"
-                :class="['route-stop-card', { 'route-stop-card--active': activeStopIndex === i }]"
+                :class="[
+                  'route-stop-card',
+                  { 'route-stop-card--active': activeStopIndex === i },
+                  { 'route-stop-card--locked': isLocked }
+                ]"
                 :data-stop-index="i"
               >
                 <div class="route-stop-card__connector" aria-hidden="true">
@@ -160,51 +186,91 @@
 
                 <div class="route-stop-card__body">
                   <div class="route-stop-card__header">
-                    <h3 class="route-stop-card__name">{{ stop.name }}</h3>
-                    <router-link
-                      v-if="stop.poiId"
-                      :to="{ name: 'poi-details', params: { id: stop.poiId } }"
-                      class="route-stop-card__poi-link"
-                    >
-                      Карточка в музее →
-                    </router-link>
-                  </div>
-
-                  <div v-if="stopThematicParagraphs(stop).length" class="route-stop-card__text">
-                    <p v-for="(par, pi) in stopThematicParagraphs(stop)" :key="'t-' + pi">{{ par }}</p>
-                    <p v-if="stop.description" class="route-stop-card__ref">
-                      {{ stop.description }}
-                    </p>
-                  </div>
-                  <p v-else-if="stop.description" class="route-stop-card__desc">{{ stop.description }}</p>
-
-                  <!-- Stop media -->
-                  <div v-if="stopVideoEmbeds(stop).length" class="route-stop-card__media">
-                    <span class="route-stop-card__media-label text-mono">Видео</span>
-                    <div class="route-media-grid route-media-grid--sm">
-                      <div v-for="(item, vi) in stopVideoEmbeds(stop)" :key="'sv-' + vi" class="route-media-item">
-                        <iframe
-                          v-if="item.type === 'iframe'"
-                          :src="item.src"
-                          :title="`Видео: ${stop.name}`"
-                          loading="lazy"
-                          allowfullscreen
-                        />
-                        <video v-else :src="item.src" controls playsinline preload="metadata" />
-                      </div>
+                    <div class="route-stop-card__header-top">
+                      <h3 class="route-stop-card__name">{{ stop.name }}</h3>
+                      <span v-if="stop.durationMinutes && !isLocked" class="route-stop-card__duration">
+                        <span class="meta-icon">⏱</span> {{ stop.durationMinutes }} мин
+                      </span>
+                    </div>
+                    <div v-if="!isLocked" class="route-stop-card__badges">
+                      <router-link
+                        v-if="stop.poiId && !stop.isCustom"
+                        :to="{ name: 'poi-details', params: { id: stop.poiId } }"
+                        class="route-stop-card__poi-link"
+                      >
+                        Карточка в музее →
+                      </router-link>
+                      <span v-if="stop.isCustom" class="route-stop-card__custom-badge">Особая точка</span>
+                      <span v-if="stop.address" class="route-stop-card__address">{{ stop.address }}</span>
                     </div>
                   </div>
 
-                  <div v-if="stopAudioUrls(stop).length" class="route-stop-card__media">
-                    <span class="route-stop-card__media-label text-mono">Аудио</span>
-                    <audio
-                      v-for="(url, ai) in stopAudioUrls(stop)"
-                      :key="'sa-' + ai"
-                      :src="url"
-                      controls
-                      preload="none"
-                    />
-                  </div>
+                  <!-- Locked stub -->
+                  <template v-if="isLocked">
+                    <div class="route-stop-card__locked-stub">
+                      <div class="route-stop-card__locked-blur" aria-hidden="true">
+                        <div class="locked-blur-line" style="width: 85%"></div>
+                        <div class="locked-blur-line" style="width: 70%"></div>
+                        <div class="locked-blur-line" style="width: 60%"></div>
+                      </div>
+                      <div class="route-stop-card__locked-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                        Контент скрыт
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Full content (unlocked) -->
+                  <template v-else>
+                    <!-- Stop cover image -->
+                    <div v-if="stop.imageUrl || stop.poiImage" class="route-stop-card__image-wrap">
+                      <img
+                        :src="stop.imageUrl || stop.poiImage"
+                        :alt="stop.name"
+                        loading="lazy"
+                        class="route-stop-card__image"
+                      />
+                    </div>
+
+                    <div v-if="stopThematicParagraphs(stop).length" class="route-stop-card__text">
+                      <p v-for="(par, pi) in stopThematicParagraphs(stop)" :key="'t-' + pi">{{ par }}</p>
+                      <p v-if="stop.description" class="route-stop-card__ref">
+                        {{ stop.description }}
+                      </p>
+                    </div>
+                    <p v-else-if="stop.description" class="route-stop-card__desc">{{ stop.description }}</p>
+
+                    <!-- Stop media: Video -->
+                    <div v-if="stopVideoEmbeds(stop).length" class="route-stop-card__media">
+                      <span class="route-stop-card__media-label text-mono">Видео</span>
+                      <div class="route-media-grid route-media-grid--sm">
+                        <div v-for="(item, vi) in stopVideoEmbeds(stop)" :key="'sv-' + vi" class="route-media-item">
+                          <iframe
+                            v-if="item.type === 'iframe'"
+                            :src="item.src"
+                            :title="`Видео: ${stop.name}`"
+                            loading="lazy"
+                            allowfullscreen
+                          />
+                          <video v-else :src="item.src" controls playsinline preload="metadata" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Stop media: Audio -->
+                    <div v-if="stopAudioUrls(stop).length" class="route-stop-card__media">
+                      <span class="route-stop-card__media-label text-mono">Аудио-гид</span>
+                      <div class="route-stop-card__audio-list">
+                        <audio
+                          v-for="(url, ai) in stopAudioUrls(stop)"
+                          :key="'sa-' + ai"
+                          :src="url"
+                          controls
+                          preload="none"
+                        />
+                      </div>
+                    </div>
+                  </template>
                 </div>
 
                 <!-- Walking time between stops -->
@@ -222,20 +288,22 @@
 
           <!-- Actions -->
           <section class="route-actions" aria-label="Действия с маршрутом">
-            <button
-              v-if="route.isPaid"
-              type="button"
-              class="btn btn-primary btn-lg"
-              @click="onPaidRoute"
-            >
-              Использовать награду / Купить за {{ route.price }} ₽
-            </button>
-            <button v-else type="button" class="btn btn-accent btn-lg" @click="onStartRoute">
-              Начать маршрут на карте
-            </button>
-            <button type="button" class="btn btn-ghost" @click="markCompleted">
-              Отметить как пройденный
-            </button>
+            <template v-if="isLocked">
+              <button type="button" class="btn btn-primary btn-lg" @click="onPaidRoute">
+                Разблокировать за {{ route.price }} ₽ или наградой
+              </button>
+            </template>
+            <template v-else>
+              <button v-if="route.isPaid" type="button" class="btn btn-accent btn-lg" @click="onStartRoute">
+                Начать маршрут на карте
+              </button>
+              <button v-else type="button" class="btn btn-accent btn-lg" @click="onStartRoute">
+                Начать маршрут на карте
+              </button>
+              <button type="button" class="btn btn-ghost" @click="markCompleted">
+                Отметить как пройденный
+              </button>
+            </template>
             <button type="button" class="btn btn-ghost" @click="copyShareLink">
               Поделиться ссылкой
             </button>
@@ -251,7 +319,7 @@
         @click="toggleMobileNav"
       >
         <div class="route-mobile-progress__bar">
-          <div class="route-mobile-progress__fill" :style="{ width: progressPercent + '%' }" />
+          <div class="route-mobile-progress__fill" :style="{ transform: `scaleX(${progressPercent / 100})` }" />
         </div>
         <span class="route-mobile-progress__label">
           {{ activeStopIndex + 1 }} / {{ route.stops.length }}
@@ -297,7 +365,7 @@ const vueRoute = useRoute()
 const router = useRouter()
 const mapStore = useMapStore()
 const toastStore = useToastStore()
-const { markRouteCompleted } = useGuestProgress()
+const { markRouteCompleted, consumeReward } = useGuestProgress()
 
 const route = ref(null)
 const loading = ref(true)
@@ -332,6 +400,7 @@ const audioRef = ref(null)
 
 let scrollRAF = null
 let revealObserver = null
+let stopObserver = null
 
 const shareUrl = computed(() => {
   if (typeof window === 'undefined' || !route.value?.id) return ''
@@ -339,6 +408,12 @@ const shareUrl = computed(() => {
 })
 
 const hasCover = computed(() => !!pickRouteCoverSource(route.value))
+
+const isLocked = computed(() => {
+  const r = route.value
+  if (!r) return false
+  return r.isPaid && !r.accessGranted
+})
 
 const thematicParagraphs = computed(() => {
   const text = route.value?.thematicDescription || ''
@@ -366,6 +441,8 @@ function stopAudioUrls(stop) {
 }
 
 function estimateWalkMinutes(fromIndex) {
+  const nextStop = route.value?.stops?.[fromIndex + 1]
+  if (nextStop?.durationMinutes) return nextStop.durationMinutes
   const totalStops = route.value?.stops?.length || 1
   const totalDistStr = route.value?.distance || ''
   const totalDistKm = parseFloat(totalDistStr) || 2
@@ -381,6 +458,7 @@ function normalizeRouteFromApi(r) {
     ...r,
     title: r.title || r.name || 'Маршрут',
     isPaid: !!(r.isPaid ?? r.paid),
+    accessGranted: r.accessGranted !== false,
     stops: Array.isArray(r.stops) ? r.stops : [],
     pois,
     thematicDescription: r.thematicDescription || '',
@@ -413,31 +491,36 @@ function updateParallax() {
 }
 
 function updateStopProgress() {
-  const stops = stopRefs.value
-  if (!stops.length) return
-
-  const viewportMid = window.innerHeight * 0.4
-  let closest = 0
-  let minDist = Infinity
-
-  for (let i = 0; i < stops.length; i++) {
-    if (!stops[i]) continue
-    const rect = stops[i].getBoundingClientRect()
-    const dist = Math.abs(rect.top - viewportMid)
-    if (dist < minDist) {
-      minDist = dist
-      closest = i
-    }
-  }
-
-  activeStopIndex.value = closest
-  progressPercent.value = Math.round((closest / Math.max(stops.length - 1, 1)) * 100)
-
-  // Show mobile progress when past hero
   if (heroRef.value) {
     const heroRect = heroRef.value.getBoundingClientRect()
     isMobileProgressVisible.value = heroRect.bottom < 0
   }
+}
+
+function setupStopObserver() {
+  if (typeof IntersectionObserver === 'undefined') return
+  if (stopObserver) stopObserver.disconnect()
+
+  stopObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue
+        const idx = Number(entry.target.dataset.stopIndex)
+        if (Number.isFinite(idx)) {
+          activeStopIndex.value = idx
+          const total = route.value?.stops?.length || 1
+          progressPercent.value = Math.round((idx / Math.max(total - 1, 1)) * 100)
+        }
+      }
+    },
+    { rootMargin: '-40% 0px -55% 0px', threshold: 0 }
+  )
+
+  nextTick(() => {
+    for (const el of stopRefs.value) {
+      if (el) stopObserver.observe(el)
+    }
+  })
 }
 
 function scrollToStop(index) {
@@ -491,7 +574,7 @@ async function load(id) {
     return
   }
   try {
-    const data = await javaApi.routes.getById(num)
+    const data = await javaApi.routes.getById(num, guestEmail.value || undefined)
     if (data && (data.id != null || data.title || data.name)) {
       route.value = normalizeRouteFromApi(data)
     } else {
@@ -503,6 +586,7 @@ async function load(id) {
     loading.value = false
     await nextTick()
     setupRevealObserver()
+    setupStopObserver()
   }
 }
 
@@ -515,6 +599,7 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   if (revealObserver) revealObserver.disconnect()
+  if (stopObserver) stopObserver.disconnect()
 })
 
 watch(() => vueRoute.params.id, (id) => load(id))
@@ -561,18 +646,19 @@ async function onPaidRoute() {
   const email = guestEmail.value.trim()
   if (!r?.id) return
   if (!email) {
-    toastStore.push('Покупка маршрута доступна после входа в кабинет заказов', 'info')
+    toastStore.push('Для разблокировки маршрута войдите в кабинет (email + код).', 'info')
     return
   }
   try {
     await refreshProgress()
     if (Number(confirmedProgress.value.availableRewards || 0) > 0) {
       await javaApi.rewards.redeemByEmail(email, r.id)
-      toastStore.push('Награда применена: маршрут открыт бесплатно', 'success')
-      onStartRoute()
+      toastStore.push('Награда применена — маршрут разблокирован!', 'success')
+      consumeReward(r.id)
+      await load(r.id)
       return
     }
-    toastStore.push('Нет доступных наград. Выполните условие 2 платных + 3 бесплатных.', 'info')
+    toastStore.push('Нет доступных наград. Пройдите 2 платных + 3 бесплатных маршрута.', 'info')
   } catch (e) {
     toastStore.push(e?.message || 'Не удалось проверить награды', 'error')
   }
@@ -729,9 +815,12 @@ async function copyShareLink() {
 
 .route-progress-nav__fill {
   width: 100%;
+  height: 100%;
   background: linear-gradient(to bottom, var(--accent), var(--accent-dark));
   border-radius: 2px;
-  transition: height 400ms var(--ease-spring);
+  transform-origin: top;
+  will-change: transform;
+  transition: transform 400ms var(--ease-spring);
 }
 
 .route-progress-nav__dots {
@@ -751,7 +840,7 @@ async function copyShareLink() {
   cursor: pointer;
   padding: var(--spacing-xs) 0;
   text-align: left;
-  transition: all 300ms var(--ease-spring);
+  transition: color 300ms var(--ease-spring), background 300ms var(--ease-spring);
 }
 
 .route-progress-nav__dot-num {
@@ -767,7 +856,7 @@ async function copyShareLink() {
   color: var(--gray-400);
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  transition: all 300ms var(--ease-spring);
+  transition: border-color 300ms var(--ease-spring), color 300ms var(--ease-spring), background 300ms var(--ease-spring), box-shadow 300ms var(--ease-spring), transform 300ms var(--ease-spring);
 }
 
 .route-progress-nav__dot.active .route-progress-nav__dot-num {
@@ -834,13 +923,15 @@ async function copyShareLink() {
 }
 
 .route-section__article p {
-  color: var(--gray-300);
+  color: var(--paper);
+  opacity: 0.82;
   line-height: 1.8;
   margin-bottom: var(--spacing-md);
 }
 
 .route-section__lead {
-  color: var(--gray-300);
+  color: var(--paper);
+  opacity: 0.82;
   line-height: 1.8;
   font-size: 1rem;
 }
@@ -895,8 +986,8 @@ async function copyShareLink() {
   display: grid;
   grid-template-columns: 48px 1fr;
   gap: 0;
-  opacity: 0.6;
-  transform: translateY(12px);
+  opacity: 0.7;
+  transform: translateY(8px);
   transition: opacity 500ms var(--ease-spring), transform 500ms var(--ease-spring);
 }
 
@@ -944,7 +1035,7 @@ async function copyShareLink() {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   margin-top: var(--spacing-lg);
-  transition: all 400ms var(--ease-spring);
+  transition: border-color 400ms var(--ease-spring), color 400ms var(--ease-spring), background 400ms var(--ease-spring), box-shadow 400ms var(--ease-spring);
 }
 
 .route-stop-card__connector-dot.active {
@@ -959,14 +1050,14 @@ async function copyShareLink() {
   padding: var(--spacing-lg);
   border: 1px solid var(--gray-700);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--accent-soft);
   margin: var(--spacing-sm) 0;
   transition: border-color 400ms var(--ease-spring), background 400ms var(--ease-spring);
 }
 
 .route-stop-card--active .route-stop-card__body {
-  border-color: rgba(212, 184, 150, 0.25);
-  background: rgba(212, 184, 150, 0.03);
+  border-color: var(--accent);
+  background: var(--accent-glow);
 }
 
 .route-stop-card__header {
@@ -991,19 +1082,22 @@ async function copyShareLink() {
 }
 
 .route-stop-card__text p {
-  color: var(--gray-300);
+  color: var(--paper);
+  opacity: 0.82;
   line-height: 1.75;
   margin-bottom: var(--spacing-sm);
 }
 
 .route-stop-card__ref {
   font-size: 0.82rem;
-  color: var(--gray-500);
+  color: var(--paper);
+  opacity: 0.6;
   font-style: italic;
 }
 
 .route-stop-card__desc {
-  color: var(--gray-400);
+  color: var(--paper);
+  opacity: 0.72;
   line-height: 1.65;
   font-size: 0.9rem;
 }
@@ -1025,6 +1119,69 @@ async function copyShareLink() {
   width: 100%;
 }
 
+.route-stop-card__audio-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.route-stop-card__audio-list audio {
+  width: 100%;
+}
+
+.route-stop-card__header-top {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.route-stop-card__duration {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.route-stop-card__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+
+.route-stop-card__custom-badge {
+  font-size: 0.65rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(74, 158, 255, 0.15);
+  color: #6ab0ff;
+  font-weight: 500;
+}
+
+.route-stop-card__address {
+  font-size: 0.72rem;
+  color: var(--gray-500);
+}
+
+.route-stop-card__image-wrap {
+  margin: var(--spacing-md) 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--gray-700);
+}
+
+.route-stop-card__image {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
 /* Walking time indicator between stops */
 .route-stop-card__walk-time {
   position: absolute;
@@ -1044,6 +1201,97 @@ async function copyShareLink() {
 .walk-icon {
   font-size: 0.9rem;
   opacity: 0.7;
+}
+
+/* ===== Paywall ===== */
+.route-paywall {
+  text-align: center;
+  padding: var(--spacing-2xl) var(--spacing-xl);
+  margin-bottom: var(--spacing-2xl);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    rgba(212, 184, 150, 0.04) 0%,
+    rgba(212, 184, 150, 0.01) 100%
+  );
+}
+
+.route-paywall__icon {
+  color: var(--accent);
+  margin-bottom: var(--spacing-md);
+  opacity: 0.8;
+}
+
+.route-paywall__title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--cream);
+  margin-bottom: var(--spacing-sm);
+}
+
+.route-paywall__text {
+  color: var(--gray-300);
+  font-size: 0.9rem;
+  line-height: 1.7;
+  max-width: 480px;
+  margin: 0 auto var(--spacing-lg);
+}
+
+.route-paywall__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.route-paywall__hint {
+  font-size: 0.75rem;
+  color: var(--gray-500);
+  margin: 0;
+}
+
+/* ===== Locked stop card ===== */
+.route-stop-card--locked .route-stop-card__body {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.route-stop-card__locked-stub {
+  position: relative;
+  padding: var(--spacing-sm) 0;
+}
+
+.route-stop-card__locked-blur {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.locked-blur-line {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--gray-700);
+  opacity: 0.4;
+}
+
+.route-stop-card__locked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--spacing-sm);
+  font-size: 0.72rem;
+  color: var(--gray-500);
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--gray-700);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.tag-locked {
+  background: rgba(212, 184, 150, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(212, 184, 150, 0.3);
 }
 
 /* ===== Actions ===== */
@@ -1089,9 +1337,12 @@ async function copyShareLink() {
 
 .route-mobile-progress__fill {
   height: 100%;
+  width: 100%;
   background: var(--accent);
   border-radius: 2px;
-  transition: width 400ms var(--ease-spring);
+  transform-origin: left;
+  will-change: transform;
+  transition: transform 400ms var(--ease-spring);
 }
 
 .route-mobile-progress__label {
@@ -1264,6 +1515,55 @@ async function copyShareLink() {
     width: 36px;
     font-size: 0.55rem;
   }
+}
+
+/* ===== Light theme overrides ===== */
+:global(:root.app-light) .route-stop-card__body {
+  border-color: var(--gray-200);
+  background: var(--gray-50);
+}
+
+:global(:root.app-light) .route-stop-card--active .route-stop-card__body {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+:global(:root.app-light) .route-progress-nav__track {
+  background: var(--gray-200);
+}
+
+:global(:root.app-light) .route-progress-nav__dot-num {
+  background: var(--gray-100);
+  border-color: var(--gray-300);
+  color: var(--gray-600);
+}
+
+:global(:root.app-light) .route-stop-card__connector-line {
+  background: var(--gray-200);
+}
+
+:global(:root.app-light) .route-stop-card__connector-dot {
+  background: var(--white);
+  border-color: var(--gray-300);
+  color: var(--gray-600);
+}
+
+:global(:root.app-light) .route-stop-card__connector-dot.active {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+:global(:root.app-light) .route-mobile-progress {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--gray-200);
+}
+
+:global(:root.app-light) .route-mobile-progress__bar {
+  background: var(--gray-200);
+}
+
+:global(:root.app-light) .route-mobile-progress__label {
+  color: var(--gray-700);
 }
 
 @media (prefers-reduced-motion: reduce) {
