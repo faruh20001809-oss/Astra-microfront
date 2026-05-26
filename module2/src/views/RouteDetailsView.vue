@@ -185,45 +185,58 @@
                 </div>
 
                 <div class="route-stop-card__body">
-                  <div class="route-stop-card__header">
-                    <div class="route-stop-card__header-top">
-                      <h3 class="route-stop-card__name">{{ stop.name }}</h3>
-                      <span v-if="stop.durationMinutes && !isLocked" class="route-stop-card__duration">
-                        <span class="meta-icon">⏱</span> {{ stop.durationMinutes }} мин
-                      </span>
-                    </div>
-                    <div v-if="!isLocked" class="route-stop-card__badges">
-                      <router-link
-                        v-if="stop.poiId && !stop.isCustom"
-                        :to="{ name: 'poi-details', params: { id: stop.poiId } }"
-                        class="route-stop-card__poi-link"
-                      >
-                        Карточка в музее →
-                      </router-link>
-                      <span v-if="stop.isCustom" class="route-stop-card__custom-badge">Особая точка</span>
-                      <span v-if="stop.address" class="route-stop-card__address">{{ stop.address }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Locked stub -->
-                  <template v-if="isLocked">
-                    <div class="route-stop-card__locked-stub">
-                      <div class="route-stop-card__locked-blur" aria-hidden="true">
-                        <div class="locked-blur-line" style="width: 85%"></div>
-                        <div class="locked-blur-line" style="width: 70%"></div>
-                        <div class="locked-blur-line" style="width: 60%"></div>
+                  <!-- Top row: text left, image right -->
+                  <div class="route-stop-card__layout" :class="{ 'route-stop-card__layout--no-img': !stop.imageUrl && !stop.poiImage }">
+                    <div class="route-stop-card__info">
+                      <div class="route-stop-card__header">
+                        <h3 class="route-stop-card__name">{{ stop.name }}</h3>
+                        <div class="route-stop-card__header-meta">
+                          <span v-if="stop.durationMinutes && !isLocked" class="route-stop-card__duration">
+                            <span class="meta-icon">⏱</span> {{ stop.durationMinutes }} мин
+                          </span>
+                        </div>
+                        <div v-if="!isLocked" class="route-stop-card__badges">
+                          <router-link
+                            v-if="stop.poiId && !stop.isCustom"
+                            :to="{ name: 'poi-details', params: { id: stop.poiId } }"
+                            class="route-stop-card__poi-link"
+                          >
+                            Перейти к месту →
+                          </router-link>
+                          <span v-if="stop.isCustom" class="route-stop-card__custom-badge">Особая точка</span>
+                          <span v-if="stop.address" class="route-stop-card__address">{{ stop.address }}</span>
+                        </div>
                       </div>
-                      <div class="route-stop-card__locked-badge">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
-                        Контент скрыт
-                      </div>
-                    </div>
-                  </template>
 
-                  <!-- Full content (unlocked) -->
-                  <template v-else>
-                    <!-- Stop cover image -->
-                    <div v-if="stop.imageUrl || stop.poiImage" class="route-stop-card__image-wrap">
+                      <!-- Locked stub -->
+                      <template v-if="isLocked">
+                        <div class="route-stop-card__locked-stub">
+                          <div class="route-stop-card__locked-blur" aria-hidden="true">
+                            <div class="locked-blur-line" style="width: 85%"></div>
+                            <div class="locked-blur-line" style="width: 70%"></div>
+                            <div class="locked-blur-line" style="width: 60%"></div>
+                          </div>
+                          <div class="route-stop-card__locked-badge">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                            Контент скрыт
+                          </div>
+                        </div>
+                      </template>
+
+                      <!-- Text content (unlocked) -->
+                      <template v-else>
+                        <div v-if="stopThematicParagraphs(stop).length" class="route-stop-card__text">
+                          <p v-for="(par, pi) in stopThematicParagraphs(stop)" :key="'t-' + pi">{{ par }}</p>
+                          <p v-if="stop.description" class="route-stop-card__ref">
+                            {{ stop.description }}
+                          </p>
+                        </div>
+                        <p v-else-if="stop.description" class="route-stop-card__desc">{{ stop.description }}</p>
+                      </template>
+                    </div>
+
+                    <!-- Image on the right -->
+                    <div v-if="(stop.imageUrl || stop.poiImage) && !isLocked" class="route-stop-card__image-wrap">
                       <img
                         :src="stop.imageUrl || stop.poiImage"
                         :alt="stop.name"
@@ -231,15 +244,10 @@
                         class="route-stop-card__image"
                       />
                     </div>
+                  </div>
 
-                    <div v-if="stopThematicParagraphs(stop).length" class="route-stop-card__text">
-                      <p v-for="(par, pi) in stopThematicParagraphs(stop)" :key="'t-' + pi">{{ par }}</p>
-                      <p v-if="stop.description" class="route-stop-card__ref">
-                        {{ stop.description }}
-                      </p>
-                    </div>
-                    <p v-else-if="stop.description" class="route-stop-card__desc">{{ stop.description }}</p>
-
+                  <!-- Full-width media below the layout row -->
+                  <template v-if="!isLocked">
                     <!-- Stop media: Video -->
                     <div v-if="stopVideoEmbeds(stop).length" class="route-stop-card__media">
                       <span class="route-stop-card__media-label text-mono">Видео</span>
@@ -781,8 +789,8 @@ async function copyShareLink() {
 /* ===== Body Layout ===== */
 .route-body {
   display: grid;
-  grid-template-columns: 200px 1fr;
-  gap: var(--spacing-xl);
+  grid-template-columns: 170px 1fr;
+  gap: var(--spacing-lg);
   max-width: 1100px;
   padding-top: var(--spacing-2xl);
   padding-bottom: var(--spacing-2xl);
@@ -794,8 +802,9 @@ async function copyShareLink() {
   top: calc(var(--nav-h) + var(--spacing-lg));
   height: fit-content;
   max-height: calc(100vh - var(--nav-h) - 3rem);
-  overflow-y: auto;
+  overflow: hidden;
   scrollbar-width: none;
+  min-width: 0;
 }
 
 .route-progress-nav::-webkit-scrollbar {
@@ -827,25 +836,26 @@ async function copyShareLink() {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-lg);
-  padding: var(--spacing-sm) 0;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xs) 0;
 }
 
 .route-progress-nav__dot {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
   background: none;
   border: none;
   cursor: pointer;
-  padding: var(--spacing-xs) 0;
+  padding: 2px 0;
   text-align: left;
-  transition: color 300ms var(--ease-spring), background 300ms var(--ease-spring);
+  min-width: 0;
+  transition: color 300ms var(--ease-spring);
 }
 
 .route-progress-nav__dot-num {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -855,16 +865,15 @@ async function copyShareLink() {
   border: 2px solid var(--gray-600);
   color: var(--gray-400);
   font-family: var(--font-mono);
-  font-size: 0.7rem;
-  transition: border-color 300ms var(--ease-spring), color 300ms var(--ease-spring), background 300ms var(--ease-spring), box-shadow 300ms var(--ease-spring), transform 300ms var(--ease-spring);
+  font-size: 0.65rem;
+  transition: border-color 300ms var(--ease-spring), color 300ms var(--ease-spring), background 300ms var(--ease-spring), box-shadow 300ms var(--ease-spring);
 }
 
 .route-progress-nav__dot.active .route-progress-nav__dot-num {
   border-color: var(--accent);
   color: var(--accent);
   background: rgba(212, 184, 150, 0.12);
-  box-shadow: 0 0 12px rgba(212, 184, 150, 0.25);
-  transform: scale(1.15);
+  box-shadow: 0 0 10px rgba(212, 184, 150, 0.2);
 }
 
 .route-progress-nav__dot.visited .route-progress-nav__dot-num {
@@ -874,12 +883,13 @@ async function copyShareLink() {
 }
 
 .route-progress-nav__dot-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--gray-500);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 130px;
+  min-width: 0;
+  flex: 1;
   transition: color 300ms var(--ease-spring);
 }
 
@@ -1060,6 +1070,22 @@ async function copyShareLink() {
   background: var(--accent-glow);
 }
 
+/* Horizontal layout: text left, image right */
+.route-stop-card__layout {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: var(--spacing-lg);
+  align-items: start;
+}
+
+.route-stop-card__layout--no-img {
+  grid-template-columns: 1fr;
+}
+
+.route-stop-card__info {
+  min-width: 0;
+}
+
 .route-stop-card__header {
   margin-bottom: var(--spacing-sm);
 }
@@ -1069,16 +1095,37 @@ async function copyShareLink() {
   font-size: 1.15rem;
   margin: 0 0 0.25rem;
   color: var(--cream);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.route-stop-card__header-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-bottom: 0.15rem;
 }
 
 .route-stop-card__poi-link {
-  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
   color: var(--accent);
   text-decoration: none;
+  font-weight: 500;
+  padding: 4px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  margin-top: var(--spacing-sm);
+  transition: background 200ms, color 200ms;
 }
 
 .route-stop-card__poi-link:hover {
-  text-decoration: underline;
+  background: var(--accent);
+  color: var(--gray-900);
+  text-decoration: none;
 }
 
 .route-stop-card__text p {
@@ -1129,13 +1176,6 @@ async function copyShareLink() {
   width: 100%;
 }
 
-.route-stop-card__header-top {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-}
-
 .route-stop-card__duration {
   font-family: var(--font-mono);
   font-size: 0.72rem;
@@ -1151,7 +1191,7 @@ async function copyShareLink() {
   align-items: center;
   gap: var(--spacing-sm);
   flex-wrap: wrap;
-  margin-top: 0.2rem;
+  margin-top: 0.35rem;
 }
 
 .route-stop-card__custom-badge {
@@ -1169,15 +1209,18 @@ async function copyShareLink() {
 }
 
 .route-stop-card__image-wrap {
-  margin: var(--spacing-md) 0;
   border-radius: var(--radius-md);
   overflow: hidden;
   border: 1px solid var(--gray-700);
+  flex-shrink: 0;
+  align-self: start;
 }
 
 .route-stop-card__image {
   width: 100%;
-  max-height: 300px;
+  height: 100%;
+  min-height: 140px;
+  max-height: 220px;
   object-fit: cover;
   display: block;
 }
@@ -1488,6 +1531,17 @@ async function copyShareLink() {
   }
 }
 
+@media (max-width: 768px) {
+  .route-stop-card__layout {
+    grid-template-columns: 1fr 180px;
+  }
+
+  .route-stop-card__image {
+    max-height: 160px;
+    min-height: 100px;
+  }
+}
+
 @media (max-width: 600px) {
   .route-hero-parallax {
     min-height: 45vh;
@@ -1509,6 +1563,18 @@ async function copyShareLink() {
 
   .route-stop-card__body {
     padding: var(--spacing-md);
+  }
+
+  .route-stop-card__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .route-stop-card__image-wrap {
+    order: -1;
+  }
+
+  .route-stop-card__image {
+    max-height: 180px;
   }
 
   .route-stop-card__walk-time {
