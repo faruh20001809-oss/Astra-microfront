@@ -4,6 +4,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
+@Slf4j
 public class ClientJwtService {
 
     private final SecretKey secretKey;
@@ -24,7 +26,10 @@ public class ClientJwtService {
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.expiration-hours:168}") long expirationHours) {
         if (secret == null || secret.length() < 32) {
-            throw new IllegalStateException("app.jwt.secret must be at least 32 characters");
+            throw new IllegalStateException("app.jwt.secret must be at least 32 characters (set APP_JWT_SECRET)");
+        }
+        if (secret.contains("fallback-set-APP_JWT_SECRET")) {
+            log.warn("APP_JWT_SECRET is not set — using built-in fallback. Set a random secret in /etc/astrakhan-admin.env");
         }
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationSeconds = Math.max(1, expirationHours) * 3600L;

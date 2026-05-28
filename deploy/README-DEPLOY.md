@@ -356,7 +356,8 @@ sudo bash deploy/diagnose.sh
 
 | Проблема | Что сделать |
 |----------|-------------|
-| `astrakhan-admin` не running | `sudo journalctl -u astrakhan-admin -n 50` — смотреть причину падения. Часто: нет БД, нет JAR. Затем `sudo systemctl start astrakhan-admin`. |
+| `astrakhan-admin` не running | `sudo journalctl -u astrakhan-admin -n 50` — смотреть причину падения. Часто: нет БД, нет JAR, нет **APP_JWT_SECRET** (после JWT: `app.jwt.secret must be at least 32 characters`). Затем `sudo systemctl start astrakhan-admin`. |
+| `/workflow/` — **502 Bad Gateway** | Java не отвечает на :8080. `systemctl status astrakhan-admin`, логи выше. После фикса: `nginx -t && systemctl reload nginx` (нужен `proxy_cookie_path` для сессии). |
 | JAR не найден | Собрать заново: `cd /opt/astramicro/astrakhan-admin && sudo mvn clean package -DskipTests`, затем `sudo systemctl restart astrakhan-admin`. |
 | Ошибка БД (PostgreSQL) | Проверить, что PostgreSQL запущен: `systemctl status postgresql`. Поднять при необходимости: `systemctl start postgresql`. Проверить строку в `application-prod.properties` и переменные `SPRING_DATASOURCE_*`. |
 | `/java-api/admin` или `/admin/routes` — «Что-то пошло не так» (logId в HTML) | В логах: `journalctl -u astrakhan-admin -n 200 \| grep <logId>`. Частая причина: в таблице `routes` нет колонок `priority`, `status`, `outdated_reason`. На сервере (root, без sudo): `bash /opt/astramicro/deploy/migrate-routes-db.sh` или `su postgres -c "psql -d museum_user -f /opt/astramicro/deploy/sql/migrate-routes-lifecycle.sql"`. Затем `systemctl restart astrakhan-admin`. |
@@ -392,6 +393,7 @@ sudo systemctl reload nginx
 ## 7. Переменные окружения (продакшен)
 
 - **APP_MODULE2_URL** — публичный URL основного фронта (письма, редиректы). По умолчанию: `http://193.233.49.59`. Задаётся в systemd для `astrakhan-admin`.
+- **APP_JWT_SECRET** — секрет JWT для клиентского профиля (module2), **минимум 32 символа**. В `/etc/astrakhan-admin.env`. Без него после обновления с JWT Java мог не стартовать (502 на `/workflow/` и `/java-api/`).
 - **APP_ADMIN_URL** — URL админки (module3). По умолчанию: `http://193.233.49.59/admin`. В `application-prod.properties`.
 - **SPRING_DATASOURCE_*** — БД для Java (по умолчанию PostgreSQL `museum_user` на localhost).
 - **VITE_AI_API_KEY** — в `module2/.env` для сборки и (при необходимости) для Nginx-прокси к OpenRouter.
