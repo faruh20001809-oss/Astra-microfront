@@ -844,7 +844,7 @@ async function copyShareLink() {
   background: var(--gray-700);
   border-radius: 2px;
   overflow: hidden;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
 }
 
@@ -860,7 +860,8 @@ async function copyShareLink() {
 
 .route-progress-nav__dots {
   position: relative;
-  z-index: 1;
+  z-index: 0;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -869,7 +870,6 @@ async function copyShareLink() {
 
 .route-progress-nav__dot {
   position: relative;
-  z-index: 1;
   display: grid;
   grid-template-columns: var(--nav-dot-size) minmax(0, 1fr);
   align-items: center;
@@ -906,7 +906,7 @@ async function copyShareLink() {
   margin: 0;
   justify-self: center;
   position: relative;
-  z-index: 2;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
