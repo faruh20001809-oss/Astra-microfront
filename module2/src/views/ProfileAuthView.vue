@@ -133,6 +133,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { javaApi } from '@/api/backend.js'
+import { saveClientSession } from '@/auth/clientAuth.js'
 
 const router = useRouter()
 const mode = ref('login')
@@ -143,12 +144,7 @@ const loginForm = ref({ loginOrEmail: '', password: '' })
 const registerForm = ref({ login: '', email: '', password: '' })
 
 function saveProfile(profile) {
-  localStorage.setItem('astra_client_profile', JSON.stringify(profile || {}))
-  if (profile?.email) localStorage.setItem('astra_guest_email', String(profile.email).trim())
-  window.dispatchEvent(new CustomEvent('astra:client-profile-updated', { detail: { profile } }))
-  if (profile?.email) {
-    window.dispatchEvent(new CustomEvent('astra:guest-email-updated', { detail: { email: profile.email } }))
-  }
+  saveClientSession(profile, profile?.accessToken)
 }
 
 async function submitLogin() {

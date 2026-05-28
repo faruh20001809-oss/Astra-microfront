@@ -67,6 +67,7 @@
 <script setup>
 import { computed, onUnmounted, ref, watch } from 'vue'
 import { javaApi } from '@/api/backend.js'
+import { isClientLoggedIn } from '@/auth/clientAuth.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import { useFavorites } from '@/composables/useFavorites.js'
 
@@ -211,10 +212,9 @@ function recalcProgressFromOrders() {
 }
 
 async function syncProgressToServer() {
-  const email = emailInput.value.trim()
-  if (!email) return
+  if (!isClientLoggedIn()) return
   try {
-    await javaApi.userProgress.syncByEmail(email, getSnapshot())
+    await javaApi.userProgress.sync(getSnapshot())
   } catch (_) {}
 }
 

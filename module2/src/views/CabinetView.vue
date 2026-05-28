@@ -232,6 +232,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { javaApi } from '@/api/backend.js'
+import { clearClientSession, isClientLoggedIn, loadClientProfile } from '@/auth/clientAuth.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import { useFavorites } from '@/composables/useFavorites.js'
 
@@ -292,16 +293,14 @@ function consumeSampleReward() {
 }
 
 async function syncProgressToServer() {
-  const email = String(profileEmail.value || '').trim()
-  if (!email) {
-    syncStatus.value =
-      'Укажите email: войдите в профиль или введите email в разделе «Заказы», затем повторите синхронизацию.'
+  if (!isClientLoggedIn()) {
+    syncStatus.value = 'Войдите в профиль, чтобы синхронизировать прогресс с сервером.'
     return
   }
   syncBusy.value = true
   syncStatus.value = ''
   try {
-    await javaApi.userProgress.syncByEmail(email, getSnapshot())
+    await javaApi.userProgress.sync(getSnapshot())
     syncStatus.value = 'Прогресс синхронизирован с сервером.'
   } catch (e) {
     syncStatus.value = e?.message || 'Не удалось синхронизировать прогресс.'
@@ -317,19 +316,11 @@ const navLinks = [
 ]
 
 const clientEmail = ref(localStorage.getItem('astra_guest_email') || '')
-const profileState = ref(loadProfile())
+const profileState = ref(loadClientProfile())
 const telegramLinked = ref(false)
 const statusLoading = ref(false)
 
-function loadProfile() {
-  try {
-    return JSON.parse(localStorage.getItem('astra_client_profile') || '{}') || {}
-  } catch {
-    return {}
-  }
-}
-
-const isAuthorized = computed(() => Boolean(profileState.value?.username))
+const isAuthorized = computed(() => isClientLoggedIn() && Boolean(profileState.value?.username))
 const profileEmail = computed(() => profileState.value?.email || clientEmail.value || '')
 const profileName = computed(() => profileState.value?.name || profileState.value?.username || 'Гость')
 const initials = computed(() => String(profileName.value || 'G').trim().slice(0, 1).toUpperCase())
@@ -350,7 +341,7 @@ async function reloadClientStatus() {
 
 function refreshAll() {
   clientEmail.value = localStorage.getItem('astra_guest_email') || ''
-  profileState.value = loadProfile()
+  profileState.value = loadClientProfile()
   void reloadClientStatus()
 }
 
@@ -367,7 +358,7 @@ function handleGuestEmailUpdated(event) {
 }
 
 function logout() {
-  localStorage.removeItem('astra_client_profile')
+  clearClientSession()
   profileState.value = {}
 }
 

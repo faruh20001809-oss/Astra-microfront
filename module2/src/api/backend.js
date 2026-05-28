@@ -1,3 +1,5 @@
+import { getAuthHeaders, saveClientSession } from '@/auth/clientAuth.js'
+
 /**
  * API-клиент для модуля 2 (Vue + Node.js)
  *
@@ -65,9 +67,17 @@ const handleJavaResponse = async (response) => {
     const trimmed = rawText.trim()
 
     if (!response.ok) {
-      const hint = backendHintFromHtml(trimmed, response.status)
-      warnApiOnce(url, `HTTP ${response.status}`, hint || trimmed.slice(0, 200))
-      throw new Error(hint || `HTTP ${response.status}: ${response.statusText}`)
+      let message = backendHintFromHtml(trimmed, response.status)
+      if (trimmed.startsWith('{')) {
+        try {
+          const errJson = JSON.parse(trimmed)
+          if (errJson?.message) message = errJson.message
+        } catch {
+          /* ignore */
+        }
+      }
+      warnApiOnce(url, `HTTP ${response.status}`, message || trimmed.slice(0, 200))
+      throw new Error(message || `HTTP ${response.status}: ${response.statusText}`)
     }
 
     if (!trimmed) {
@@ -136,6 +146,9 @@ const baseFetch = async (url, options = {}, attempt = 0) => {
     headers.set('Content-Type', 'application/json')
   }
   headers.set('Accept', 'application/json')
+  for (const [key, value] of Object.entries(getAuthHeaders())) {
+    if (!headers.has(key)) headers.set(key, value)
+  }
 
   const fetchOptions = {
     ...options,
@@ -249,22 +262,20 @@ export const javaApi = {
       }
     },
 
-    /** @param {number} id @param {string} [email] */
-    getById: async (id, email) => {
-      const params = email ? `?email=${encodeURIComponent(String(email).trim())}` : ''
-      const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}${params}`)
+    /** @param {number} id — доступ к платному контенту по JWT, если пользователь вошёл */
+    getById: async (id) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}`)
       return handleJavaResponse(res)
     },
-    /** @param {number} id @param {string} email */
-    checkAccess: async (id, email) => {
-      const params = email ? `?email=${encodeURIComponent(String(email).trim())}` : ''
-      const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}/access${params}`)
+    /** @param {number} id */
+    checkAccess: async (id) => {
+      const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}/access`)
       return handleJavaResponse(res)
     },
-    markCompleted: async (id, email) => {
+    markCompleted: async (id) => {
       const res = await baseFetch(`${JAVA_API_BASE}/routes/${id}/complete`, {
         method: 'POST',
-        body: JSON.stringify({ email: String(email || '').trim() }),
+        body: JSON.stringify({}),
       })
       return handleJavaResponse(res)
     },
@@ -445,36 +456,28 @@ export const javaApi = {
   },
 
   userProgress: {
-    getByEmail: async (email) => {
-      const params = new URLSearchParams({ email: String(email || '').trim() })
-      const res = await baseFetch(`${JAVA_API_BASE}/user-progress?${params}`)
+    get: async () => {
+      const res = await baseFetch(`${JAVA_API_BASE}/user-progress`)
       return handleJavaResponse(res)
     },
-    syncByEmail: async (email, snapshot) => {
+    sync: async (snapshot) => {
       const res = await baseFetch(`${JAVA_API_BASE}/user-progress/sync`, {
         method: 'POST',
-        body: JSON.stringify({
-          email: String(email || '').trim(),
-          snapshot: snapshot || {},
-        }),
+        body: JSON.stringify({ snapshot: snapshot || {} }),
       })
       return handleJavaResponse(res)
     },
-    getConfirmedByEmail: async (email) => {
-      const params = new URLSearchParams({ email: String(email || '').trim() })
-      const res = await baseFetch(`${JAVA_API_BASE}/user-progress/confirmed?${params}`)
+    getConfirmed: async () => {
+      const res = await baseFetch(`${JAVA_API_BASE}/user-progress/confirmed`)
       return handleJavaResponse(res)
     },
   },
 
   rewards: {
-    redeemByEmail: async (email, routeId) => {
+    redeem: async (routeId) => {
       const res = await baseFetch(`${JAVA_API_BASE}/rewards/redeem`, {
         method: 'POST',
-        body: JSON.stringify({
-          email: String(email || '').trim(),
-          routeId: Number(routeId),
-        }),
+        body: JSON.stringify({ routeId: Number(routeId) }),
       })
       return handleJavaResponse(res)
     },
@@ -494,7 +497,9 @@ export const javaApi = {
       if (!res.ok || json.status === 'error') {
         throw new Error(json.message || 'Не удалось зарегистрировать профиль')
       }
-      return json.data
+      const data = json.data
+      if (data?.accessToken) saveClientSession(data, data.accessToken)
+      return data
     },
     login: async ({ loginOrEmail, password } = {}) => {
       const res = await baseFetch(`${JAVA_API_BASE}/profile/login`, {
@@ -508,7 +513,9 @@ export const javaApi = {
       if (!res.ok || json.status === 'error') {
         throw new Error(json.message || 'Не удалось войти в профиль')
       }
-      return json.data
+      const data = json.data
+      if (data?.accessToken) saveClientSession(data, data.accessToken)
+      return data
     },
   },
 

@@ -17,7 +17,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "http://127.0.0.1:5173",
                         "http://127.0.0.1:3001"
                 )
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
                 .maxAge(3600); // Кэшировать preflight-запросы 1 час

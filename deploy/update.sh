@@ -27,7 +27,8 @@ fi
 # Жёсткий сброс к origin: никакие локальные изменения (target/, dist/, и т.д.) не блокируют обновление
 git reset --hard "origin/$BRANCH"
 git checkout -B "$BRANCH" "origin/$BRANCH"
-git clean -fd astrakhan-admin/target module2/dist 2>/dev/null || true
+# target/ — артефакт Maven; dist/ не трогаем до успешной сборки фронта (иначе 403 на /)
+git clean -fd astrakhan-admin/target 2>/dev/null || true
 
 echo "[1/7] Миграция БД routes (priority, status)..."
 if [ -f "$APP_DIR/deploy/migrate-routes-db.sh" ]; then
@@ -67,8 +68,27 @@ fi
 
 echo "[3/7] Сборка фронта (npm)..."
 cd "$APP_DIR/module2"
-npm ci
-npm run build
+if ! npm ci; then
+  echo "  ОШИБКА: npm ci. Проверьте node/npm: node -v && npm -v"
+  exit 1
+fi
+if ! npm run build; then
+  echo "  ОШИБКА: npm run build. Статика module2/dist не обновлена."
+  if [ ! -f "$APP_DIR/module2/dist/index.html" ]; then
+    echo "  На главной будет 403 — восстановите: cd $APP_DIR/module2 && npm run build"
+    echo "  или: sudo bash $APP_DIR/deploy/fix-static-403.sh"
+  fi
+  exit 1
+fi
+# Права для nginx (www-data): без этого часто 403 Forbidden на /
+echo "  Права на module2/dist..."
+chmod 755 /opt "$APP_DIR" "$APP_DIR/module2" 2>/dev/null || true
+find "$APP_DIR/module2/dist" -type d -exec chmod 755 {} \;
+find "$APP_DIR/module2/dist" -type f -exec chmod 644 {} \;
+if [ -f "$APP_DIR/deploy/favicon.svg" ]; then
+  cp "$APP_DIR/deploy/favicon.svg" "$APP_DIR/module2/dist/favicon.svg" 2>/dev/null || true
+  cp "$APP_DIR/deploy/favicon.svg" "$APP_DIR/module2/dist/favicon.ico" 2>/dev/null || true
+fi
 
 echo "[4/7] Nginx (актуальный конфиг без rewrite /java-api)..."
 if [ -f "$APP_DIR/deploy/nginx-astramicro.conf" ]; then
@@ -94,4 +114,21 @@ else
   echo "  unit не установлен — пропуск (см. README-DEPLOY п. 5.1)."
 fi
 
-echo "Готово. Статика из module2/dist, Nginx перезагружать не нужно."
+echo ""
+echo "=== Проверка после обновления ==="
+if [ -f "$APP_DIR/module2/dist/index.html" ]; then
+  echo "  module2/dist/index.html: OK"
+else
+  echo "  ВНИМАНИЕ: нет module2/dist/index.html → sudo bash $APP_DIR/deploy/fix-static-403.sh"
+fi
+for port in 8080 5000 3001; do
+  if ss -tlnp 2>/dev/null | grep -q ":$port "; then
+    echo "  :$port — слушается"
+  else
+    echo "  :$port — не слушается (см. systemctl / journalctl)"
+  fi
+done
+CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://127.0.0.1/java-api/api/v1/routes?published=true" 2>/dev/null || echo "000")
+echo "  GET /java-api/api/v1/routes (через nginx): HTTP $CODE"
+echo ""
+echo "Готово. При проблемах: sudo bash $APP_DIR/deploy/diagnose.sh"

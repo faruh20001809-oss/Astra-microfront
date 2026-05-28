@@ -5,7 +5,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import ru.astrakhan.admin.security.ClientAuth;
+import ru.astrakhan.admin.security.ClientJwtService;
+import ru.astrakhan.admin.security.ClientPrincipal;
 import ru.astrakhan.admin.entity.*;
 import ru.astrakhan.admin.repository.ReviewRepository;
 import ru.astrakhan.admin.dto.CreateOrderRequest;
@@ -45,6 +49,7 @@ public class ApiController {
     private final SharedUserSyncService sharedUserSyncService;
     private final PickupPointsService pickupPointsService;
     private final PreorderService preorderService;
+    private final ClientJwtService clientJwtService;
 
     /** Тот же справочник пунктов самовывоза, что в админке (модалка заказа). */
     @GetMapping("/pickup-points")
@@ -196,10 +201,11 @@ public class ApiController {
     @GetMapping("/routes/{id}")
     public ResponseEntity<Map<String, Object>> getRoute(
             @PathVariable Long id,
-            @RequestParam(required = false) String email) {
+            Authentication authentication) {
         return routeService.findById(id).map(r -> {
             analyticsService.trackEvent("route_view", r.getId(), r.getName());
-            boolean accessGranted = routeProgressService.hasAccessToRoute(email, r.getId());
+            String accessEmail = ClientAuth.emailForAccess(authentication);
+            boolean accessGranted = routeProgressService.hasAccessToRoute(accessEmail, r.getId());
             return okSingle(routeMapDetail(r, accessGranted));
         }).orElse(ResponseEntity.notFound().build());
     }
@@ -227,44 +233,14 @@ public class ApiController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /**
-     * Ручная смена статуса маршрута оператором (например, перевод из OUTDATED в ACTIVE после починки точек).
-     * Тело: { "status": "ACTIVE" | "DRAFT" | "OUTDATED", "outdatedReason": "..." }
-     */
-    @PatchMapping("/routes/{id}/status")
-    public ResponseEntity<Map<String, Object>> updateRouteStatus(
-            @PathVariable Long id,
-            @RequestBody(required = false) Map<String, Object> body) {
-        Map<String, Object> b = body != null ? body : Collections.emptyMap();
-        String statusStr = b.get("status") instanceof String ? (String) b.get("status") : "";
-        String reason = b.get("outdatedReason") instanceof String ? (String) b.get("outdatedReason") : null;
-        return routeService.findById(id).map(r -> {
-            try {
-                Route.RouteStatus newStatus = Route.RouteStatus.valueOf(statusStr);
-                r.setStatus(newStatus);
-                if (newStatus == Route.RouteStatus.OUTDATED) {
-                    r.setOutdatedReason(reason != null ? reason : "Установлено вручную оператором");
-                } else {
-                    r.setOutdatedReason(null);
-                }
-                routeService.save(r);
-                log.info("Route {} status changed to {} (reason: {})", id, newStatus, reason);
-                return okSingle(routeMapDetail(r));
-            } catch (IllegalArgumentException e) {
-                return apiError(HttpStatus.BAD_REQUEST,
-                        "Недопустимый статус: " + statusStr + ". Допустимы: DRAFT, ACTIVE, OUTDATED.");
-            }
-        }).orElse(ResponseEntity.notFound().build());
-    }
-
     /** Проверка доступа к платному маршруту. Бесплатные маршруты → всегда accessGranted=true. */
     @GetMapping("/routes/{id}/access")
     public ResponseEntity<Map<String, Object>> checkRouteAccess(
             @PathVariable Long id,
-            @RequestParam(required = false) String email) {
+            Authentication authentication) {
         return routeService.findById(id).map(r -> {
             boolean isPaid = Boolean.TRUE.equals(r.getPaid());
-            boolean access = routeProgressService.hasAccessToRoute(email, r.getId());
+            boolean access = routeProgressService.hasAccessToRoute(ClientAuth.emailForAccess(authentication), r.getId());
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("routeId", id);
             data.put("isPaid", isPaid);
@@ -277,10 +253,9 @@ public class ApiController {
     @PostMapping("/routes/{id}/complete")
     public ResponseEntity<Map<String, Object>> completeRoute(
             @PathVariable Long id,
-            @RequestBody(required = false) Map<String, Object> body) {
-        Map<String, Object> b = body != null ? body : Collections.emptyMap();
-        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+            Authentication authentication) {
         try {
+            String email = ClientAuth.requireEmail(authentication);
             analyticsService.trackEvent("route_completed", id, "route_" + id);
             return okSingle(routeProgressService.markCompleted(email, id));
         } catch (IllegalArgumentException e) {
@@ -601,29 +576,20 @@ public class ApiController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    /** Переключение статуса предзаказа (для админки). */
-    @PatchMapping("/preorders/{preorderId}/status")
-    public ResponseEntity<Map<String, Object>> updatePreorderStatus(
-            @PathVariable String preorderId,
-            @RequestBody(required = false) Map<String, Object> body) {
-        Map<String, Object> b = body != null ? body : Collections.emptyMap();
-        String statusStr = b.get("status") instanceof String ? (String) b.get("status") : "";
-        try {
-            Preorder.PreorderStatus next = Preorder.PreorderStatus.valueOf(statusStr);
-            Preorder saved = preorderService.updateStatus(preorderId, next);
-            return okSingle(preorderMap(saved));
-        } catch (IllegalArgumentException e) {
-            return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
-        }
-    }
-
     // ===== Telegram link (deep-link account confirmation / order notifications) =====
     @PostMapping("/telegram/link/request")
-    public ResponseEntity<Map<String, Object>> requestTelegramLink(@RequestBody(required = false) Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> requestTelegramLink(
+            Authentication authentication,
+            @RequestBody(required = false) Map<String, Object> body) {
         Map<String, Object> b = body != null ? body : Collections.emptyMap();
-        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
+        String email = ClientAuth.principal(authentication)
+                .map(ClientPrincipal::getEmail)
+                .orElseGet(() -> b.get("email") instanceof String ? ((String) b.get("email")).trim().toLowerCase() : "");
         String phone = b.get("phone") instanceof String ? (String) b.get("phone") : "";
         try {
+            if (email.isBlank() || !email.contains("@")) {
+                return apiError(HttpStatus.BAD_REQUEST, "Укажите корректный email.");
+            }
             return okSingle(telegramLinkService.requestLink(email, phone));
         } catch (IllegalArgumentException e) {
             return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -634,8 +600,9 @@ public class ApiController {
 
     // ===== User progress sync (этап 2: серверный профиль прогресса) =====
     @GetMapping("/user-progress")
-    public ResponseEntity<Map<String, Object>> getUserProgress(@RequestParam String email) {
+    public ResponseEntity<Map<String, Object>> getUserProgress(Authentication authentication) {
         try {
+            String email = ClientAuth.requireEmail(authentication);
             return okSingle(userProgressService.getSnapshotByEmail(email));
         } catch (IllegalArgumentException e) {
             return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -643,12 +610,14 @@ public class ApiController {
     }
 
     @PostMapping("/user-progress/sync")
-    public ResponseEntity<Map<String, Object>> syncUserProgress(@RequestBody(required = false) Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> syncUserProgress(
+            Authentication authentication,
+            @RequestBody(required = false) Map<String, Object> body) {
         Map<String, Object> b = body != null ? body : Collections.emptyMap();
-        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
         @SuppressWarnings("unchecked")
         Map<String, Object> snapshot = b.get("snapshot") instanceof Map ? (Map<String, Object>) b.get("snapshot") : new LinkedHashMap<>();
         try {
+            String email = ClientAuth.requireEmail(authentication);
             return okSingle(userProgressService.upsertSnapshot(email, snapshot));
         } catch (IllegalArgumentException e) {
             return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -663,7 +632,8 @@ public class ApiController {
         String email = b.get("email") instanceof String ? (String) b.get("email") : "";
         String password = b.get("password") instanceof String ? (String) b.get("password") : "";
         try {
-            return okSingle(sharedUserSyncService.registerClient(login, email, password));
+            Map<String, Object> profile = sharedUserSyncService.registerClient(login, email, password);
+            return okSingle(withClientToken(profile));
         } catch (IllegalArgumentException e) {
             return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
         }
@@ -675,15 +645,17 @@ public class ApiController {
         String loginOrEmail = b.get("loginOrEmail") instanceof String ? (String) b.get("loginOrEmail") : "";
         String password = b.get("password") instanceof String ? (String) b.get("password") : "";
         try {
-            return okSingle(sharedUserSyncService.loginClient(loginOrEmail, password));
+            Map<String, Object> profile = sharedUserSyncService.loginClient(loginOrEmail, password);
+            return okSingle(withClientToken(profile));
         } catch (IllegalArgumentException e) {
             return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
         }
     }
 
     @GetMapping("/user-progress/confirmed")
-    public ResponseEntity<Map<String, Object>> getConfirmedProgress(@RequestParam String email) {
+    public ResponseEntity<Map<String, Object>> getConfirmedProgress(Authentication authentication) {
         try {
+            String email = ClientAuth.requireEmail(authentication);
             return okSingle(routeProgressService.getConfirmedStats(email));
         } catch (IllegalArgumentException e) {
             return apiError(HttpStatus.BAD_REQUEST, e.getMessage());
@@ -691,12 +663,14 @@ public class ApiController {
     }
 
     @PostMapping("/rewards/redeem")
-    public ResponseEntity<Map<String, Object>> redeemReward(@RequestBody(required = false) Map<String, Object> body) {
+    public ResponseEntity<Map<String, Object>> redeemReward(
+            Authentication authentication,
+            @RequestBody(required = false) Map<String, Object> body) {
         Map<String, Object> b = body != null ? body : Collections.emptyMap();
-        String email = b.get("email") instanceof String ? (String) b.get("email") : "";
         Long routeId = null;
         if (b.get("routeId") instanceof Number n) routeId = n.longValue();
         try {
+            String email = ClientAuth.requireEmail(authentication);
             if (routeId == null) throw new IllegalArgumentException("routeId обязателен.");
             analyticsService.trackEvent("reward_redeemed", routeId, "route_" + routeId);
             return okSingle(routeProgressService.redeemReward(email, routeId));
@@ -843,6 +817,22 @@ public class ApiController {
     private ResponseEntity<Map<String, Object>> ok(Object data) {
         Map<String, Object> r = new LinkedHashMap<>(); r.put("status", "success"); r.put("data", data); return ResponseEntity.ok(r);
     }
+    private Map<String, Object> withClientToken(Map<String, Object> profile) {
+        Object idObj = profile.get("id");
+        Object emailObj = profile.get("email");
+        Object usernameObj = profile.get("username");
+        if (!(idObj instanceof Number idNum) || emailObj == null) {
+            return profile;
+        }
+        String token = clientJwtService.createToken(
+                idNum.longValue(),
+                String.valueOf(emailObj),
+                usernameObj != null ? String.valueOf(usernameObj) : "");
+        Map<String, Object> out = new LinkedHashMap<>(profile);
+        out.putAll(clientJwtService.tokenMeta(token));
+        return out;
+    }
+
     private ResponseEntity<Map<String, Object>> okSingle(Object data) { return ok(data); }
 
     private static ResponseEntity<Map<String, Object>> apiError(HttpStatus status, String message) {

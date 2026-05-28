@@ -23,6 +23,8 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class AdminUserDetailsService implements UserDetailsService {
 
+    private static final String CLIENT_ROLE_NAME = "Клиент";
+
     private final SharedUserRepository sharedUserRepository;
 
     @Override
@@ -34,7 +36,11 @@ public class AdminUserDetailsService implements UserDetailsService {
     }
 
     private UserDetails toUserDetails(SharedUser u) {
-        String authority = roleNameToAuthority(u.getRole() != null ? u.getRole().getName() : null);
+        String roleName = u.getRole() != null ? u.getRole().getName() : null;
+        if (CLIENT_ROLE_NAME.equalsIgnoreCase(roleName != null ? roleName.trim() : "")) {
+            throw new UsernameNotFoundException("Клиентские аккаунты входят через профиль на сайте.");
+        }
+        String authority = roleNameToAuthority(roleName);
         return new User(
                 u.getUsername(),
                 u.getPassword(),

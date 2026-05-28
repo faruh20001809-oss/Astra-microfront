@@ -367,6 +367,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { javaApi } from '@/api/backend.js'
+import { isClientLoggedIn } from '@/auth/clientAuth.js'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import RouteCoverImage from '@/components/routes/RouteCoverImage.vue'
@@ -586,7 +587,7 @@ async function load(id) {
     return
   }
   try {
-    const data = await javaApi.routes.getById(num, guestEmail.value || undefined)
+    const data = await javaApi.routes.getById(num)
     if (data && (data.id != null || data.title || data.name)) {
       route.value = normalizeRouteFromApi(data)
     } else {
@@ -602,14 +603,22 @@ async function load(id) {
   }
 }
 
+function onClientProfileUpdated() {
+  void refreshProgress()
+  const id = vueRoute.params.id
+  if (id) void load(id)
+}
+
 onMounted(() => {
   load(vueRoute.params.id)
   refreshProgress()
   window.addEventListener('scroll', onScroll, { passive: true })
+  window.addEventListener('astra:client-profile-updated', onClientProfileUpdated)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
+  window.removeEventListener('astra:client-profile-updated', onClientProfileUpdated)
   if (revealObserver) revealObserver.disconnect()
   if (stopObserver) stopObserver.disconnect()
 })
@@ -617,10 +626,9 @@ onUnmounted(() => {
 watch(() => vueRoute.params.id, (id) => load(id))
 
 async function refreshProgress() {
-  const email = guestEmail.value.trim()
-  if (!email) return
+  if (!isClientLoggedIn()) return
   try {
-    const stats = await javaApi.userProgress.getConfirmedByEmail(email)
+    const stats = await javaApi.userProgress.getConfirmed()
     confirmedProgress.value = { ...confirmedProgress.value, ...stats }
   } catch {}
 }
@@ -635,16 +643,19 @@ function onStartRoute() {
   toastStore.push('Открываем маршрут на карте…', 'success')
 }
 
+function requireProfileAuth(message) {
+  if (isClientLoggedIn()) return true
+  toastStore.push(message, 'info')
+  router.push({ path: '/profile/auth', query: { redirect: vueRoute.fullPath } })
+  return false
+}
+
 async function markCompleted() {
   const r = route.value
-  const email = guestEmail.value.trim()
   if (!r?.id) return
-  if (!email) {
-    toastStore.push('Для фиксации прохождения войдите в кабинет (email + код).', 'info')
-    return
-  }
+  if (!requireProfileAuth('Для фиксации прохождения войдите в профиль.')) return
   try {
-    const stats = await javaApi.routes.markCompleted(r.id, email)
+    const stats = await javaApi.routes.markCompleted(r.id)
     confirmedProgress.value = { ...confirmedProgress.value, ...stats }
     markRouteCompleted(r.id, { paid: !!r.isPaid })
     toastStore.push('Маршрут отмечен как пройденный', 'success')
@@ -655,16 +666,12 @@ async function markCompleted() {
 
 async function onPaidRoute() {
   const r = route.value
-  const email = guestEmail.value.trim()
   if (!r?.id) return
-  if (!email) {
-    toastStore.push('Для разблокировки маршрута войдите в кабинет (email + код).', 'info')
-    return
-  }
+  if (!requireProfileAuth('Для разблокировки маршрута войдите в профиль.')) return
   try {
     await refreshProgress()
     if (Number(confirmedProgress.value.availableRewards || 0) > 0) {
-      await javaApi.rewards.redeemByEmail(email, r.id)
+      await javaApi.rewards.redeem(r.id)
       toastStore.push('Награда применена — маршрут разблокирован!', 'success')
       consumeReward(r.id)
       await load(r.id)
@@ -803,6 +810,10 @@ async function copyShareLink() {
 
 /* ===== Progress Sidebar ===== */
 .route-progress-nav {
+  --nav-dot-size: 28px;
+  --nav-rail-w: 3px;
+  --nav-rail-x: calc(var(--nav-dot-size) / 2);
+
   position: sticky;
   top: calc(var(--nav-h) + var(--spacing-lg));
   height: fit-content;
@@ -815,21 +826,26 @@ async function copyShareLink() {
   min-width: 0;
   width: 100%;
   padding-right: 2px;
+  isolation: isolate;
 }
 
 .route-progress-nav::-webkit-scrollbar {
   display: none;
 }
 
+/* Вертикальная линия — под точками, по центру кружков */
 .route-progress-nav__track {
   position: absolute;
-  left: 14px;
-  top: 0;
-  bottom: 0;
-  width: 3px;
+  left: var(--nav-rail-x);
+  top: calc(var(--nav-dot-size) / 2 + var(--spacing-xs));
+  bottom: calc(var(--nav-dot-size) / 2 + var(--spacing-xs));
+  width: var(--nav-rail-w);
+  transform: translateX(-50%);
   background: var(--gray-700);
   border-radius: 2px;
   overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .route-progress-nav__fill {
@@ -837,13 +853,14 @@ async function copyShareLink() {
   height: 100%;
   background: linear-gradient(to bottom, var(--accent), var(--accent-dark));
   border-radius: 2px;
-  transform-origin: top;
+  transform-origin: top center;
   will-change: transform;
   transition: transform 400ms var(--ease-spring);
 }
 
 .route-progress-nav__dots {
   position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: var(--spacing-md);
@@ -851,9 +868,12 @@ async function copyShareLink() {
 }
 
 .route-progress-nav__dot {
-  display: flex;
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: var(--nav-dot-size) minmax(0, 1fr);
   align-items: center;
-  gap: var(--spacing-xs);
+  column-gap: var(--spacing-xs);
   background: none;
   border: none;
   border-radius: var(--radius-sm);
@@ -880,9 +900,13 @@ async function copyShareLink() {
 }
 
 .route-progress-nav__dot-num {
-  width: 28px;
-  height: 28px;
-  flex-shrink: 0;
+  box-sizing: border-box;
+  width: var(--nav-dot-size);
+  height: var(--nav-dot-size);
+  margin: 0;
+  justify-self: center;
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -892,6 +916,7 @@ async function copyShareLink() {
   color: var(--gray-400);
   font-family: var(--font-mono);
   font-size: 0.65rem;
+  line-height: 1;
   transition: border-color 300ms var(--ease-spring), color 300ms var(--ease-spring), background 300ms var(--ease-spring), box-shadow 300ms var(--ease-spring);
 }
 
@@ -910,6 +935,7 @@ async function copyShareLink() {
 
 .route-progress-nav__dot-label {
   display: none;
+  grid-column: 2;
   font-size: 0.68rem;
   line-height: 1.3;
   color: var(--gray-500);
@@ -917,7 +943,6 @@ async function copyShareLink() {
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
-  flex: 1;
 }
 
 /* Только активная остановка — подпись внутри колонки, без налезания на контент */
