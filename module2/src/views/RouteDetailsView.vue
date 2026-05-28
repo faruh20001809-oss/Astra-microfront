@@ -38,7 +38,10 @@
           </div>
           <span :class="['tag', route.isPaid ? (isLocked ? 'tag-locked' : '') : 'tag-accent']">
             <template v-if="!route.isPaid">Бесплатно</template>
-            <template v-else-if="isLocked">🔒 {{ route.price }} ₽</template>
+            <template v-else-if="isLocked">
+              <svg class="tag-lock-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+              {{ route.price }} ₽
+            </template>
             <template v-else>Разблокирован</template>
           </span>
         </div>
@@ -58,10 +61,11 @@
               type="button"
               :class="['route-progress-nav__dot', { active: activeStopIndex === i, visited: i < activeStopIndex }]"
               :aria-label="`Остановка ${i + 1}: ${stop.name}`"
+              :title="stop.name"
               @click="scrollToStop(i)"
             >
               <span class="route-progress-nav__dot-num">{{ i + 1 }}</span>
-              <span class="route-progress-nav__dot-label">{{ stop.name }}</span>
+              <span class="route-progress-nav__dot-label" aria-hidden="true">{{ stop.name }}</span>
             </button>
           </div>
         </aside>
@@ -287,7 +291,7 @@
                   class="route-stop-card__walk-time"
                   aria-hidden="true"
                 >
-                  <span class="walk-icon">🚶</span>
+                  <svg class="walk-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="14" height="14"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/></svg>
                   <span>~{{ estimateWalkMinutes(i) }} мин</span>
                 </div>
               </article>
@@ -789,11 +793,12 @@ async function copyShareLink() {
 /* ===== Body Layout ===== */
 .route-body {
   display: grid;
-  grid-template-columns: 170px 1fr;
-  gap: var(--spacing-lg);
+  grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+  gap: clamp(var(--spacing-md), 3vw, var(--spacing-xl));
   max-width: 1100px;
   padding-top: var(--spacing-2xl);
   padding-bottom: var(--spacing-2xl);
+  align-items: start;
 }
 
 /* ===== Progress Sidebar ===== */
@@ -801,10 +806,15 @@ async function copyShareLink() {
   position: sticky;
   top: calc(var(--nav-h) + var(--spacing-lg));
   height: fit-content;
-  max-height: calc(100vh - var(--nav-h) - 3rem);
-  overflow: hidden;
-  scrollbar-width: none;
+  max-height: calc(100dvh - var(--nav-h) - 3rem);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-600) transparent;
   min-width: 0;
+  width: 100%;
+  padding-right: 2px;
 }
 
 .route-progress-nav::-webkit-scrollbar {
@@ -846,11 +856,27 @@ async function copyShareLink() {
   gap: var(--spacing-xs);
   background: none;
   border: none;
+  border-radius: var(--radius-sm);
   cursor: pointer;
-  padding: 2px 0;
+  padding: 0.35rem 0.25rem 0.35rem 0;
   text-align: left;
   min-width: 0;
-  transition: color 300ms var(--ease-spring);
+  min-height: 44px;
+  width: 100%;
+  transition: color 200ms var(--ease-spring), background 200ms var(--ease-spring);
+}
+
+.route-progress-nav__dot:hover {
+  background: rgba(212, 184, 150, 0.06);
+}
+
+.route-progress-nav__dot:focus {
+  outline: none;
+}
+
+.route-progress-nav__dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .route-progress-nav__dot-num {
@@ -883,19 +909,27 @@ async function copyShareLink() {
 }
 
 .route-progress-nav__dot-label {
+  display: none;
   font-size: 0.68rem;
+  line-height: 1.3;
   color: var(--gray-500);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
   flex: 1;
-  transition: color 300ms var(--ease-spring);
 }
 
+/* Только активная остановка — подпись внутри колонки, без налезания на контент */
 .route-progress-nav__dot.active .route-progress-nav__dot-label {
+  display: block;
   color: var(--cream);
   font-weight: 500;
+}
+
+.route-progress-nav__dot:hover .route-progress-nav__dot-label,
+.route-progress-nav__dot:focus-visible .route-progress-nav__dot-label {
+  display: block;
 }
 
 /* ===== Content Column ===== */
@@ -1057,6 +1091,8 @@ async function copyShareLink() {
 
 /* Card body */
 .route-stop-card__body {
+  container-type: inline-size;
+  container-name: stop-card;
   padding: var(--spacing-lg);
   border: 1px solid var(--gray-700);
   border-radius: var(--radius-md);
@@ -1073,13 +1109,28 @@ async function copyShareLink() {
 /* Horizontal layout: text left, image right */
 .route-stop-card__layout {
   display: grid;
-  grid-template-columns: 1fr 240px;
-  gap: var(--spacing-lg);
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 38%);
+  gap: clamp(var(--spacing-md), 3cqi, var(--spacing-lg));
   align-items: start;
 }
 
 .route-stop-card__layout--no-img {
   grid-template-columns: 1fr;
+}
+
+@container stop-card (max-width: 560px) {
+  .route-stop-card__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .route-stop-card__image-wrap {
+    order: -1;
+    max-width: 100%;
+  }
+
+  .route-stop-card__image {
+    max-height: clamp(160px, 40vw, 220px);
+  }
 }
 
 .route-stop-card__info {
@@ -1092,12 +1143,14 @@ async function copyShareLink() {
 
 .route-stop-card__name {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: clamp(1rem, 2.5cqi + 0.75rem, 1.15rem);
   margin: 0 0 0.25rem;
   color: var(--cream);
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.02em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .route-stop-card__header-meta {
@@ -1110,22 +1163,34 @@ async function copyShareLink() {
 .route-stop-card__poi-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.35rem;
   font-size: 0.8rem;
   color: var(--accent);
   text-decoration: none;
   font-weight: 500;
-  padding: 4px 12px;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
   border: 1px solid var(--accent);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   margin-top: var(--spacing-sm);
-  transition: background 200ms, color 200ms;
+  cursor: pointer;
+  transition: background 200ms var(--ease-spring), color 200ms var(--ease-spring), border-color 200ms var(--ease-spring);
 }
 
 .route-stop-card__poi-link:hover {
   background: var(--accent);
   color: var(--gray-900);
   text-decoration: none;
+}
+
+.route-stop-card__poi-link:focus {
+  outline: none;
+}
+
+.route-stop-card__poi-link:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
 }
 
 .route-stop-card__text p {
@@ -1242,8 +1307,14 @@ async function copyShareLink() {
 }
 
 .walk-icon {
-  font-size: 0.9rem;
-  opacity: 0.7;
+  flex-shrink: 0;
+  opacity: 0.75;
+  color: var(--gray-400);
+}
+
+.tag-lock-icon {
+  vertical-align: -0.15em;
+  margin-right: 0.2rem;
 }
 
 /* ===== Paywall ===== */
@@ -1354,8 +1425,8 @@ async function copyShareLink() {
   left: 50%;
   transform: translateX(-50%);
   z-index: 100;
-  background: rgba(42, 35, 30, 0.95);
-  backdrop-filter: blur(12px);
+  background: var(--header-bg-solid, rgba(42, 35, 30, 0.96));
+  backdrop-filter: blur(8px);
   border: 1px solid var(--gray-600);
   border-radius: 999px;
   padding: 0.6rem 1.2rem;
@@ -1531,17 +1602,6 @@ async function copyShareLink() {
   }
 }
 
-@media (max-width: 768px) {
-  .route-stop-card__layout {
-    grid-template-columns: 1fr 180px;
-  }
-
-  .route-stop-card__image {
-    max-height: 160px;
-    min-height: 100px;
-  }
-}
-
 @media (max-width: 600px) {
   .route-hero-parallax {
     min-height: 45vh;
@@ -1563,18 +1623,6 @@ async function copyShareLink() {
 
   .route-stop-card__body {
     padding: var(--spacing-md);
-  }
-
-  .route-stop-card__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .route-stop-card__image-wrap {
-    order: -1;
-  }
-
-  .route-stop-card__image {
-    max-height: 180px;
   }
 
   .route-stop-card__walk-time {

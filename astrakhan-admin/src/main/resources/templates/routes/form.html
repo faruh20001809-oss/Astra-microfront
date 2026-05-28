@@ -1,79 +1,8 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org"><head th:replace="~{fragments/layout :: head(${isEdit}?'Редактирование':'Новый маршрут')}"></head><body class="astra-app"><div class="layout"><nav th:replace="~{fragments/layout :: sidebar}"></nav><main class="main-content">
 <div class="page-header"><h1 th:text="${isEdit}?'Редактирование маршрута':'Новый маршрут'"></h1><a th:href="@{/admin/routes}" class="btn">← Назад</a></div>
 
-<style>
-.rc-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--gray-700,#333)}
-.rc-tab{padding:8px 16px;border:none;background:none;color:var(--gray-400,#999);cursor:pointer;font-size:13px;font-weight:500;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
-.rc-tab:hover{color:var(--gray-200,#ccc)}
-.rc-tab.active{color:var(--accent,#c8a96e);border-bottom-color:var(--accent,#c8a96e)}
-.rc-panel{display:none}.rc-panel.active{display:block}
-
-.stop-card{border:1px solid var(--gray-700,#444);border-radius:10px;padding:16px;background:var(--gray-900,rgba(0,0,0,0.15));margin-bottom:12px;transition:box-shadow .2s,border-color .2s,opacity .2s;position:relative}
-.stop-card:hover{border-color:var(--gray-500,#666)}
-.stop-card.dragging{opacity:.4;border-color:var(--accent,#c8a96e);box-shadow:0 4px 20px rgba(200,169,110,.2)}
-.stop-card.drag-over-above{border-top:3px solid var(--accent,#c8a96e);margin-top:-1px}
-.stop-card.drag-over-below{border-bottom:3px solid var(--accent,#c8a96e);margin-bottom:-1px}
-.stop-card-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.stop-drag-handle{cursor:grab;padding:4px 2px;color:var(--gray-500,#888);font-size:18px;line-height:1;user-select:none;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:0}
-.stop-drag-handle:active{cursor:grabbing;color:var(--accent,#c8a96e)}
-.stop-drag-handle svg{pointer-events:none}
-.stop-number{width:32px;height:32px;border-radius:50%;background:var(--accent,#c8a96e);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
-.stop-custom-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--blue,#4a9eff);color:#fff;font-weight:500}
-.stop-name{font-weight:600;font-size:14px;flex:1}
-.stop-move-btns{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
-.stop-move-btn{background:none;border:1px solid var(--gray-600,#555);border-radius:4px;color:var(--gray-400,#aaa);cursor:pointer;padding:1px 5px;font-size:11px;line-height:1.2;transition:border-color .15s,color .15s}
-.stop-move-btn:hover:not(:disabled){border-color:var(--accent,#c8a96e);color:var(--accent,#c8a96e)}
-.stop-move-btn:disabled{opacity:.25;cursor:default}
-.stop-toggle{background:none;border:none;color:var(--gray-400,#999);cursor:pointer;padding:4px;transition:transform .2s}
-.stop-toggle.collapsed{transform:rotate(-90deg)}
-.stop-remove{background:none;border:none;color:var(--red,#e55);cursor:pointer;padding:4px;font-size:16px}
-.stop-remove:hover{color:#f77}
-.stop-body{overflow:hidden;transition:max-height .3s ease}
-.stop-body.collapsed{max-height:0!important;padding:0;margin:0;overflow:hidden}
-
-.stop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media(max-width:700px){.stop-grid{grid-template-columns:1fr}}
-.stop-grid .full{grid-column:1/-1}
-
-.stop-img-preview{width:100%;max-height:140px;object-fit:cover;border-radius:6px;margin-top:6px;display:none}
-
-.drop-zone{border:2px dashed var(--gray-600,#555);border-radius:10px;padding:24px;text-align:center;color:var(--gray-500,#777);font-size:13px;margin:8px 0;transition:all .2s}
-.drop-zone.over{border-color:var(--accent,#c8a96e);background:rgba(200,169,110,.05);color:var(--accent,#c8a96e)}
-
-.timeline-visual{display:flex;flex-direction:column;gap:0;padding:8px 0}
-.timeline-item{display:flex;align-items:flex-start;gap:12px;position:relative}
-.timeline-line{width:2px;background:var(--accent,#c8a96e);position:absolute;left:15px;top:32px;bottom:-4px}
-.timeline-item:last-child .timeline-line{display:none}
-.timeline-dot{width:32px;height:32px;border-radius:50%;background:var(--accent,#c8a96e);color:#000;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;z-index:1}
-.timeline-info{flex:1;padding:4px 0 16px}
-.timeline-info-name{font-weight:600;font-size:13px}
-.timeline-info-meta{font-size:11px;color:var(--gray-500,#999);margin-top:2px}
-
-.add-stop-panel{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:16px;padding:12px;border:1px dashed var(--gray-600,#555);border-radius:10px}
-.add-stop-panel select,.add-stop-panel input{font-size:13px}
-.custom-fields{display:none;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;width:100%}
-.custom-fields.visible{display:flex}
-
-.media-field-wrap{position:relative}
-.media-field-wrap .form-control{padding-right:32px}
-.media-field-status{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:14px;pointer-events:none}
-.media-field-wrap.valid .form-control{border-color:var(--green,#5a5)}
-.media-field-wrap.invalid .form-control{border-color:var(--red,#e55)}
-.media-errors{margin-top:4px;font-size:11px;color:var(--red,#e55);line-height:1.4}
-.media-errors:empty{display:none}
-.media-hint{font-size:11px;color:var(--gray-500,#888);margin-top:4px}
-
-.media-formats-card{background:var(--gray-900,rgba(0,0,0,.15));border:1px solid var(--gray-700,#444);border-radius:10px;padding:14px 18px;margin:16px 0;font-size:12px;line-height:1.6}
-.media-formats-card summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--accent,#c8a96e);user-select:none}
-.media-formats-card summary::-webkit-details-marker{color:var(--accent,#c8a96e)}
-.media-formats-card h5{margin:10px 0 4px;font-size:12px;font-weight:600;color:var(--gray-300,#ccc)}
-.media-formats-card code{background:rgba(200,169,110,.1);padding:1px 5px;border-radius:3px;font-size:11px;color:var(--accent,#c8a96e)}
-.media-formats-card ul{margin:0;padding-left:16px;color:var(--gray-400,#aaa)}
-.media-formats-card li{margin:2px 0}
-</style>
-
-<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start">
-<div class="card"><form id="routeForm" th:action="@{/admin/routes/save}" method="post" enctype="multipart/form-data" th:object="${route}"><input type="hidden" th:field="*{id}"/><input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+<div class="route-editor-layout">
+<div class="card route-editor-main"><form id="routeForm" th:action="@{/admin/routes/save}" method="post" enctype="multipart/form-data" th:object="${route}"><input type="hidden" th:field="*{id}"/><input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
 <div class="rc-tabs">
   <button type="button" class="rc-tab active" data-tab="tab-basic">Основное</button>
@@ -93,18 +22,18 @@
 
 <!-- ═══════ TAB: Точки маршрута (конфигуратор) ═══════ -->
 <div id="tab-stops" class="rc-panel">
-<p style="font-size:13px;color:var(--gray-400,#999);margin:0 0 12px">Добавляйте точки из базы или создавайте кастомные. Перетаскивайте карточки за &#9776; или используйте кнопки &#9650;&#9660; для изменения порядка. Порядок карточек = порядок точек в маршруте.</p>
+<p class="route-stops-lead">Добавляйте точки из базы или создавайте кастомные. Перетаскивайте карточки за &#9776; или используйте кнопки &#9650;&#9660; для изменения порядка. Порядок карточек = порядок точек в маршруте.</p>
 
 <details class="media-formats-card">
 <summary>Поддерживаемые форматы медиа-ссылок (модуль пользователя)</summary>
-<h5>&#127909; Видео</h5>
+<h5>Видео</h5>
 <ul>
   <li><strong>YouTube</strong> — <code>youtube.com/watch?v=...</code>, <code>youtu.be/...</code>, <code>youtube.com/shorts/...</code>, <code>youtube.com/embed/...</code></li>
   <li><strong>Rutube</strong> — <code>rutube.ru/video/...</code></li>
   <li><strong>Прямые файлы</strong> — любой URL с расширением <code>.mp4</code>, <code>.webm</code>, <code>.ogg</code></li>
   <li><strong>Другие URL</strong> — любой <code>https://</code> URL будет встроен как iframe (VK Video, Vimeo, Дзен и т.д.)</li>
 </ul>
-<h5>&#127911; Аудио</h5>
+<h5>Аудио</h5>
 <ul>
   <li><strong>Прямые файлы</strong> — URL с расширением <code>.mp3</code>, <code>.ogg</code>, <code>.wav</code>, <code>.aac</code>, <code>.m4a</code></li>
   <li>Ссылка должна быть прямой (открывается в браузере как аудио-файл)</li>
@@ -116,18 +45,18 @@
 <div id="stopsContainer"></div>
 
 <div class="add-stop-panel">
-  <select id="addPoiSelect" class="form-control" style="flex:1;min-width:200px">
+  <select id="addPoiSelect" class="form-control">
     <option value="">— Выберите точку из базы —</option>
     <option th:each="poi:${allPois}" th:value="${poi.id}" th:text="${poi.name}+' ('+${poi.category}+')'" th:attr="data-name=${poi.name},data-category=${poi.category}"></option>
   </select>
-  <button type="button" class="btn btn-primary" id="addPoiBtn" style="white-space:nowrap">+ Добавить точку</button>
-  <button type="button" class="btn btn-ghost" id="addCustomBtn" style="white-space:nowrap">+ Кастомная точка</button>
+  <button type="button" class="btn btn-primary btn-nowrap" id="addPoiBtn">+ Добавить точку</button>
+  <button type="button" class="btn btn-ghost btn-nowrap" id="addCustomBtn">+ Кастомная точка</button>
 </div>
 
 <div id="customFieldsPanel" class="custom-fields">
-  <input type="text" id="customName" class="form-control" placeholder="Название точки *" style="flex:2;min-width:180px"/>
-  <input type="number" step="0.000001" id="customLat" class="form-control" placeholder="Широта" style="flex:1;min-width:100px"/>
-  <input type="number" step="0.000001" id="customLng" class="form-control" placeholder="Долгота" style="flex:1;min-width:100px"/>
+  <input type="text" id="customName" class="form-control form-control--name" placeholder="Название точки *"/>
+  <input type="number" step="0.000001" id="customLat" class="form-control form-control--coord" placeholder="Широта"/>
+  <input type="number" step="0.000001" id="customLng" class="form-control form-control--coord" placeholder="Долгота"/>
   <button type="button" class="btn btn-primary" id="confirmCustomBtn">Создать</button>
   <button type="button" class="btn btn-ghost" id="cancelCustomBtn">Отмена</button>
 </div>
@@ -135,8 +64,8 @@
 <input type="hidden" name="selectedPois" id="selectedPois" th:value="${route.poiIds}"/>
 <input type="hidden" name="stopContentsJson" id="stopContentsJson" th:value="${stopContentsJson}"/>
 
-<h4 style="margin:24px 0 8px;font-size:14px">Таймлайн маршрута</h4>
-<div id="routeTimelineVisual" class="timeline-visual"><p style="color:var(--gray-500,#777);font-size:13px">Добавьте точки маршрута</p></div>
+<h4 class="route-timeline-heading">Таймлайн маршрута</h4>
+<div id="routeTimelineVisual" class="timeline-visual"><p class="text-muted-admin">Добавьте точки маршрута</p></div>
 </div>
 
 <!-- ═══════ TAB: Медиа (уровень маршрута) ═══════ -->
@@ -144,17 +73,17 @@
 <div class="form-group"><label>Обложка маршрута</label><input type="file" class="form-control" name="imageFile" accept="image/*"/></div>
 <div class="form-group"><label>Видео маршрута (общие)</label><textarea class="form-control route-media-field" data-media-type="video" th:field="*{videoUrls}" rows="3" placeholder="По одной ссылке в строке: YouTube, Rutube, .mp4"></textarea><div class="media-errors" id="route-video-errors"></div><p class="media-hint">YouTube, Rutube, VK Video, прямые .mp4/.webm/.ogg ссылки</p></div>
 <div class="form-group"><label>Аудио маршрута (общие)</label><textarea class="form-control route-media-field" data-media-type="audio" th:field="*{audioUrls}" rows="3" placeholder="По одной ссылке в строке"></textarea><div class="media-errors" id="route-audio-errors"></div><p class="media-hint">Прямые ссылки на .mp3/.ogg/.wav/.aac/.m4a или стриминговые URL</p></div>
-<p style="font-size:12px;color:var(--gray-500,#999);margin-bottom:12px">Это медиа-файлы для маршрута в целом. Медиа для каждой отдельной точки настраивается во вкладке «Точки маршрута».</p>
+<p class="text-muted-admin" style="margin-bottom:12px">Это медиа-файлы для маршрута в целом. Медиа для каждой отдельной точки настраивается во вкладке «Точки маршрута».</p>
 <details class="media-formats-card">
 <summary>Какие форматы ссылок принимает пользовательский модуль?</summary>
-<h5>&#127909; Видео</h5>
+<h5>Видео</h5>
 <ul>
   <li><strong>YouTube</strong> — <code>youtube.com/watch?v=...</code>, <code>youtu.be/...</code>, <code>/shorts/</code>, <code>/embed/</code></li>
   <li><strong>Rutube</strong> — <code>rutube.ru/video/...</code></li>
   <li><strong>Прямые файлы</strong> — <code>.mp4</code>, <code>.webm</code>, <code>.ogg</code></li>
   <li><strong>Любой https:// URL</strong> — встроится как iframe (VK Video, Vimeo, Дзен)</li>
 </ul>
-<h5>&#127911; Аудио</h5>
+<h5>Аудио</h5>
 <ul>
   <li>Прямые ссылки на <code>.mp3</code>, <code>.ogg</code>, <code>.wav</code>, <code>.aac</code>, <code>.m4a</code></li>
   <li>Ссылка должна открываться как аудио-файл в браузере</li>
@@ -164,13 +93,13 @@
 
 <!-- ═══════ TAB: Настройки ═══════ -->
 <div id="tab-settings" class="rc-panel">
-<h3 style="margin:0 0 16px">Монетизация</h3>
+<h3 class="route-settings-heading">Монетизация</h3>
 <div class="form-row"><div class="form-group"><label>Платный</label><select id="paidSelect" class="form-control" th:field="*{paid}"><option value="false">Нет</option><option value="true">Да</option></select></div><div class="form-group"><label>Цена (₽)</label><input id="priceInput" type="number" step="0.01" class="form-control" th:field="*{price}"/></div></div>
 <div class="form-group"><label>Статус</label><select id="publishedField" class="form-control" th:field="*{published}"><option value="false">Черновик</option><option value="true">Опубликован</option></select></div>
 </div>
 
-<p id="routeFormError" style="display:none;color:#d66;font-size:12px;padding:8px 12px;background:rgba(221,102,102,.08);border:1px solid rgba(221,102,102,.3);border-radius:6px;margin:8px 0;max-height:120px;overflow-y:auto;line-height:1.5"></p>
-<div class="form-actions" style="position:sticky;bottom:0;background:var(--gray-800);z-index:2;padding:12px 0;border-top:1px solid var(--gray-700,#333)">
+<p id="routeFormError" class="route-form-error" role="alert"></p>
+<div class="form-actions route-form-actions">
   <button type="button" class="btn btn-ghost" id="route-save-draft-btn">Сохранить как черновик</button>
   <button type="button" class="btn btn-primary" id="route-save-publish-btn">Сохранить и опубликовать</button>
   <a th:href="@{/admin/routes}" class="btn btn-ghost">Отмена</a>
@@ -178,20 +107,20 @@
 </form></div>
 
 <!-- ═══════ SIDEBAR ═══════ -->
-<aside class="card" style="position:sticky;top:16px;padding:12px">
-  <h3 style="margin-top:0">Сводка заполнения</h3>
-  <div id="routeSummary" style="font-size:12px;color:#bbb;line-height:1.6"></div>
-  <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-700,#333)">
-    <h4 style="margin:0 0 6px 0;font-size:13px">Preview карточки</h4>
-    <div id="routePreview" style="border:1px solid var(--gray-700,#333);border-radius:8px;padding:10px;font-size:12px">
-      <p id="pvRouteName" style="margin:0 0 4px 0;font-weight:600">Маршрут</p>
-      <p id="pvRouteMeta" style="margin:0;color:#999">Категория · длительность · дистанция</p>
-      <p id="pvRoutePrice" style="margin:6px 0 0 0;color:#c8a96e">Бесплатно</p>
+<aside class="card route-editor-aside" aria-label="Сводка маршрута">
+  <h3>Сводка заполнения</h3>
+  <div id="routeSummary"></div>
+  <div class="route-editor-aside__section">
+    <h4>Preview карточки</h4>
+    <div id="routePreview" class="route-editor-preview">
+      <p id="pvRouteName" class="route-editor-preview__name">Маршрут</p>
+      <p id="pvRouteMeta" class="route-editor-preview__meta">Категория · длительность · дистанция</p>
+      <p id="pvRoutePrice" class="route-editor-preview__price">Бесплатно</p>
     </div>
   </div>
-  <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--gray-700,#333)">
-    <h4 style="margin:0 0 6px;font-size:13px">Точки (<span id="stopCount">0</span>)</h4>
-    <div id="sidebarStopList" style="font-size:12px;color:#bbb;max-height:200px;overflow-y:auto"></div>
+  <div class="route-editor-aside__section">
+    <h4>Точки (<span id="stopCount">0</span>)</h4>
+    <div id="sidebarStopList"></div>
   </div>
 </aside>
 </div></main></div>
@@ -295,27 +224,27 @@ function renderStops(){
       '</div>' +
       '<div class="stop-body" id="stop-body-'+idx+'">' +
         '<div class="stop-grid">' +
-          '<div class="full"><label style="font-size:12px;color:var(--gray-400,#aaa)">Тематическое описание</label>' +
+          '<div class="full"><label>Тематическое описание</label>' +
           '<textarea class="form-control sc-field" data-idx="'+idx+'" data-field="thematicDescription" rows="4" placeholder="Текст об этой точке в контексте маршрута">'+(s.thematicDescription||'')+'</textarea></div>' +
-          '<div class="full"><label style="font-size:12px;color:var(--gray-400,#aaa)">Краткое описание точки</label>' +
+          '<div class="full"><label>Краткое описание точки</label>' +
           '<textarea class="form-control sc-field" data-idx="'+idx+'" data-field="description" rows="2" placeholder="Краткое описание для карточки точки">'+(s.description||'')+'</textarea></div>' +
-          '<div><label style="font-size:12px;color:var(--gray-400,#aaa)">Картинка (URL)</label>' +
+          '<div><label>Картинка (URL)</label>' +
           '<input type="text" class="form-control sc-field" data-idx="'+idx+'" data-field="imageUrl" value="'+escAttr(s.imageUrl||'')+'" placeholder="https://..."/>' +
           '<img class="stop-img-preview" id="img-preview-'+idx+'" src="'+(s.imageUrl||'')+'" alt=""/></div>' +
-          '<div><label style="font-size:12px;color:var(--gray-400,#aaa)">Время на точке (мин)</label>' +
+          '<div><label>Время на точке (мин)</label>' +
           '<input type="number" class="form-control sc-field" data-idx="'+idx+'" data-field="durationMinutes" value="'+(s.durationMinutes||'')+'" placeholder="15"/></div>' +
-          '<div><label style="font-size:12px;color:var(--gray-400,#aaa)">Ссылки на видео</label>' +
+          '<div><label>Ссылки на видео</label>' +
           '<textarea class="form-control sc-field" data-idx="'+idx+'" data-field="videoUrls" rows="2" placeholder="YouTube, Rutube, VK, .mp4 — по ссылке в строке">'+(s.videoUrls||'')+'</textarea>' +
           '<p class="media-hint">YouTube, Rutube, VK Video, Vimeo, .mp4/.webm</p></div>' +
-          '<div><label style="font-size:12px;color:var(--gray-400,#aaa)">Ссылки на аудио</label>' +
+          '<div><label>Ссылки на аудио</label>' +
           '<textarea class="form-control sc-field" data-idx="'+idx+'" data-field="audioUrls" rows="2" placeholder=".mp3, .ogg, .wav — по ссылке в строке">'+(s.audioUrls||'')+'</textarea>' +
           '<p class="media-hint">Прямые ссылки: .mp3/.ogg/.wav/.aac/.m4a</p></div>' +
           (isCustom ?
-            '<div><label style="font-size:12px;color:var(--gray-400,#aaa)">Название точки</label>' +
+            '<div><label>Название точки</label>' +
             '<input type="text" class="form-control sc-field" data-idx="'+idx+'" data-field="customName" value="'+escAttr(s.customName||'')+'"/></div>' +
-            '<div style="display:flex;gap:8px"><div style="flex:1"><label style="font-size:12px;color:var(--gray-400,#aaa)">Широта</label>' +
+            '<div class="stop-coords-row"><div><label>Широта</label>' +
             '<input type="number" step="0.000001" class="form-control sc-field" data-idx="'+idx+'" data-field="customLatitude" value="'+(s.customLatitude||'')+'"/></div>' +
-            '<div style="flex:1"><label style="font-size:12px;color:var(--gray-400,#aaa)">Долгота</label>' +
+            '<div><label>Долгота</label>' +
             '<input type="number" step="0.000001" class="form-control sc-field" data-idx="'+idx+'" data-field="customLongitude" value="'+(s.customLongitude||'')+'"/></div></div>'
           : '') +
         '</div>' +
@@ -568,7 +497,7 @@ document.getElementById('confirmCustomBtn').addEventListener('click',function(){
 /* ═══════ Timeline ═══════ */
 function renderTimeline(){
   var container=document.getElementById('routeTimelineVisual');
-  if(!stops.length){container.innerHTML='<p style="color:var(--gray-500,#777);font-size:13px">Добавьте точки маршрута</p>';return}
+  if(!stops.length){container.innerHTML='<p class="text-muted-admin">Добавьте точки маршрута</p>';return}
   var html='';
   stops.forEach(function(s,idx){
     var name=getStopName(s);
@@ -592,7 +521,7 @@ function renderTimeline(){
 function updateSidebar(){
   var list=document.getElementById('sidebarStopList');
   document.getElementById('stopCount').textContent=stops.length;
-  if(!stops.length){list.innerHTML='<span style="color:var(--gray-600,#666)">Нет точек</span>';return}
+  if(!stops.length){list.innerHTML='<span class="empty-state-muted">Нет точек</span>';return}
   list.innerHTML=stops.map(function(s,i){
     var icon=s.isCustom?'&#9733;':'&#9679;';
     return '<div style="padding:2px 0">'+icon+' '+(i+1)+'. '+escHtml(getStopName(s))+'</div>';

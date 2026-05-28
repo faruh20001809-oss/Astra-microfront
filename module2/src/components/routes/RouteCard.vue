@@ -85,7 +85,19 @@ const categoryGlyph = computed(() => {
 </script>
 
 <style scoped>
-.route-card { cursor: pointer; }
+.route-card {
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+
+.route-card:hover {
+  border-color: var(--gray-500);
+  box-shadow: var(--shadow-card);
+}
+
+.route-card:focus-within {
+  border-color: var(--accent);
+}
 
 .route-cover {
   position: relative;
@@ -117,8 +129,8 @@ const categoryGlyph = computed(() => {
 }
 
 .route-icon-btn {
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,6 +146,15 @@ const categoryGlyph = computed(() => {
 .route-icon-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.route-icon-btn:focus {
+  outline: none;
+}
+
+.route-icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .route-icon-btn.active {
