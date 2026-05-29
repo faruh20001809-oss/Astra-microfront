@@ -27,21 +27,9 @@
               <p class="cabinet-card-label text-mono" id="cabinet-identity-label">Аккаунт</p>
               <h2 id="cabinet-identity-title" class="cabinet-name">{{ profileName }}</h2>
               <p class="cabinet-line">{{ profileEmail || 'Email не указан' }}</p>
-              <p class="cabinet-line cabinet-line--status" :class="telegramLinked ? 'is-ok' : 'is-warn'">
-                <span class="cabinet-status-dot" aria-hidden="true" />
-                Telegram: {{ telegramLinked ? 'подтверждён' : 'не подтверждён' }}
-              </p>
             </div>
           </div>
           <div class="cabinet-actions">
-            <button
-              type="button"
-              class="btn btn-ghost btn-sm"
-              :disabled="!profileEmail || statusLoading"
-              @click="reloadClientStatus"
-            >
-              {{ statusLoading ? 'Проверка…' : 'Обновить статус' }}
-            </button>
             <button v-if="isAuthorized" type="button" class="btn btn-ghost btn-sm" @click="logout">
               Выйти
             </button>
@@ -317,32 +305,15 @@ const navLinks = [
 
 const clientEmail = ref(localStorage.getItem('astra_guest_email') || '')
 const profileState = ref(loadClientProfile())
-const telegramLinked = ref(false)
-const statusLoading = ref(false)
 
 const isAuthorized = computed(() => isClientLoggedIn() && Boolean(profileState.value?.username))
 const profileEmail = computed(() => profileState.value?.email || clientEmail.value || '')
 const profileName = computed(() => profileState.value?.name || profileState.value?.username || 'Гость')
 const initials = computed(() => String(profileName.value || 'G').trim().slice(0, 1).toUpperCase())
 
-async function reloadClientStatus() {
-  const email = String(profileEmail.value || '').trim()
-  if (!email) return
-  statusLoading.value = true
-  try {
-    const data = await javaApi.telegram.getLinkStatus({ email })
-    telegramLinked.value = !!data?.linked
-  } catch {
-    telegramLinked.value = false
-  } finally {
-    statusLoading.value = false
-  }
-}
-
 function refreshAll() {
   clientEmail.value = localStorage.getItem('astra_guest_email') || ''
   profileState.value = loadClientProfile()
-  void reloadClientStatus()
 }
 
 function handleProfileUpdated() {
@@ -353,7 +324,6 @@ function handleGuestEmailUpdated(event) {
   const nextEmail = String(event?.detail?.email || '').trim()
   if (nextEmail && nextEmail !== clientEmail.value) {
     clientEmail.value = nextEmail
-    void reloadClientStatus()
   }
 }
 
@@ -367,7 +337,6 @@ onMounted(() => {
   window.addEventListener('focus', refreshAll)
   window.addEventListener('astra:client-profile-updated', handleProfileUpdated)
   window.addEventListener('astra:guest-email-updated', handleGuestEmailUpdated)
-  void reloadClientStatus()
 })
 
 onUnmounted(() => {
@@ -521,38 +490,6 @@ onUnmounted(() => {
   font-size: 0.92rem;
   color: var(--gray-500);
   line-height: 1.5;
-}
-
-.cabinet-line--status {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-}
-
-.cabinet-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: var(--gray-600);
-}
-
-.cabinet-line.is-ok .cabinet-status-dot {
-  background: var(--success);
-  box-shadow: 0 0 0 2px rgba(45, 107, 69, 0.35);
-}
-
-.cabinet-line.is-warn .cabinet-status-dot {
-  background: var(--warning);
-  box-shadow: 0 0 0 2px rgba(201, 162, 39, 0.3);
-}
-
-.cabinet-line.is-ok {
-  color: var(--success);
-}
-
-.cabinet-line.is-warn {
-  color: var(--warning);
 }
 
 .cabinet-actions {
@@ -793,7 +730,6 @@ onUnmounted(() => {
   background: linear-gradient(90deg, var(--accent-dark), var(--accent));
   border-radius: 999px;
   transform-origin: left;
-  will-change: transform;
   transition: transform 0.35s ease;
 }
 
@@ -1007,7 +943,6 @@ onUnmounted(() => {
   border-radius: 999px;
   background: linear-gradient(90deg, var(--accent-dark), var(--accent));
   transform-origin: left;
-  will-change: transform;
   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 

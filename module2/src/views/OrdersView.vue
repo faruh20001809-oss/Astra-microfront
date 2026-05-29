@@ -16,19 +16,8 @@
           <p v-if="formError" class="form-error" style="margin-top:0.75rem">{{ formError }}</p>
           <form v-if="codeRequested" class="contact-form" style="margin-top:1rem" @submit.prevent="verifyAndLoad">
             <div class="form-group"><label class="form-label">Код *</label><input v-model.trim="codeInput" type="text" class="form-input" /></div>
-            <button type="submit" class="btn btn-accent btn-lg" :disabled="verifyLoading || requestLoading || !telegramConfirmed">{{ verifyLoading ? 'Загрузка…' : 'Показать заказы' }}</button>
+            <button type="submit" class="btn btn-accent btn-lg" :disabled="verifyLoading || requestLoading">{{ verifyLoading ? 'Загрузка…' : 'Показать заказы' }}</button>
           </form>
-          <div class="divider" style="margin:1.25rem 0" />
-          <div class="telegram-bind-block">
-            <h3 class="section-heading" style="font-size:1rem">Привязка Telegram</h3>
-            <div class="telegram-bind-actions">
-              <button type="button" class="btn btn-ghost btn-sm" :disabled="telegramStatusLoading || !emailInput.trim()" @click="checkTelegramStatus">{{ telegramStatusLoading ? 'Проверка…' : 'Проверить статус' }}</button>
-              <button type="button" class="btn btn-accent btn-sm" :disabled="telegramLoading || !emailInput.trim()" @click="requestTelegramLink">{{ telegramLoading ? 'Генерация…' : 'Получить ссылку' }}</button>
-              <a v-if="telegramDeepLink" class="btn btn-primary btn-sm" :href="telegramDeepLink" target="_blank" rel="noopener noreferrer" @click="startTelegramStatusPolling">Открыть бота</a>
-            </div>
-            <p v-if="telegramStatusText" :class="telegramConfirmed ? 'form-success' : 'form-error'" style="margin-top:0.75rem">{{ telegramStatusText }}</p>
-            <p v-if="telegramHint" class="orders-lead" style="font-size:0.8rem;margin-top:0.5rem">{{ telegramHint }}</p>
-          </div>
 
           <div v-if="orders.length" style="margin-top:1.25rem">
             <h3 class="section-heading" style="font-size:1rem">История заказов</h3>
@@ -65,7 +54,7 @@
 </template>
 
 <script setup>
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { javaApi } from '@/api/backend.js'
 import { isClientLoggedIn } from '@/auth/clientAuth.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
@@ -81,12 +70,6 @@ const formError = ref('')
 const networkError = ref('')
 const orders = ref([])
 const emptyAfterVerify = ref(false)
-const telegramLoading = ref(false)
-const telegramStatusLoading = ref(false)
-const telegramConfirmed = ref(false)
-const telegramDeepLink = ref('')
-const telegramStatusText = ref('')
-const telegramHint = ref('')
 const orderTypeFilter = ref('all')
 const periodFilter = ref('all')
 
@@ -101,14 +84,6 @@ const {
 const { favoritePoisList } = useFavorites()
 
 let lastAction = null
-let telegramPollTimer = null
-
-watch(emailInput, () => {
-  telegramConfirmed.value = false
-  telegramDeepLink.value = ''
-  telegramStatusText.value = ''
-  telegramHint.value = ''
-})
 
 function statusLabel(s) {
   const map = {
@@ -272,10 +247,6 @@ async function verifyAndLoad() {
     formError.value = 'Укажите email и код'
     return
   }
-  if (!telegramConfirmed.value) {
-    formError.value = 'Сначала подтвердите Telegram-привязку. Без неё доступ к заказам заблокирован.'
-    return
-  }
 
   verifyLoading.value = true
   try {
@@ -304,66 +275,6 @@ function retryLast() {
   if (lastAction === 'verify') verifyAndLoad()
   else if (lastAction === 'send') sendCode()
 }
-
-async function checkTelegramStatus() {
-  telegramStatusLoading.value = true
-  telegramStatusText.value = ''
-  telegramHint.value = ''
-  try {
-    const data = await javaApi.telegram.getLinkStatus({ email: emailInput.value.trim() })
-    telegramConfirmed.value = !!data?.linked
-    if (telegramConfirmed.value) {
-      const who = data?.username ? `@${data.username}` : (data?.chatId ? `chat_id ${data.chatId}` : 'подключен')
-      telegramStatusText.value = `Telegram подтвержден (${who}).`
-    } else {
-      telegramStatusText.value = 'Telegram пока не подтвержден.'
-    }
-  } catch (e) {
-    telegramStatusText.value = e?.message || 'Не удалось проверить статус Telegram.'
-    telegramConfirmed.value = false
-  } finally {
-    telegramStatusLoading.value = false
-  }
-}
-
-async function requestTelegramLink() {
-  telegramLoading.value = true
-  telegramStatusText.value = ''
-  telegramHint.value = ''
-  telegramDeepLink.value = ''
-  try {
-    const data = await javaApi.telegram.requestLink({ email: emailInput.value.trim() })
-    telegramDeepLink.value = data?.botDeepLink || ''
-    const ttl = Number(data?.expiresInSec || 0)
-    telegramHint.value = ttl > 0
-      ? `Ссылка активна около ${Math.round(ttl / 60)} мин. После подтверждения нажмите «Проверить статус».`
-      : 'Ссылка создана. Подтвердите привязку в Telegram.'
-    telegramStatusText.value = 'Ссылка для привязки создана.'
-  } catch (e) {
-    telegramStatusText.value = e?.message || 'Не удалось создать ссылку Telegram.'
-  } finally {
-    telegramLoading.value = false
-  }
-}
-
-function startTelegramStatusPolling() {
-  if (telegramPollTimer) clearInterval(telegramPollTimer)
-  telegramPollTimer = setInterval(async () => {
-    await checkTelegramStatus()
-    if (telegramConfirmed.value && telegramPollTimer) {
-      clearInterval(telegramPollTimer)
-      telegramPollTimer = null
-    }
-  }, 5000)
-  setTimeout(async () => { await checkTelegramStatus() }, 1500)
-}
-
-onUnmounted(() => {
-  if (telegramPollTimer) {
-    clearInterval(telegramPollTimer)
-    telegramPollTimer = null
-  }
-})
 </script>
 
 <style scoped>
@@ -413,18 +324,5 @@ onUnmounted(() => {
 .timeline-chip.done { color:var(--gray-300); }
 .timeline-chip.current { border-color:var(--accent); color:var(--accent); }
 .timeline-chip.cancelled { border-color:#c55; color:#f09; }
-
-.telegram-bind-block {
-  border: 1px dashed var(--gray-700);
-  border-radius: var(--radius-sm);
-  padding: 0.9rem;
-}
-
-.telegram-bind-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-top: 0.75rem;
-}
 
 </style>

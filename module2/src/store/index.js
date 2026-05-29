@@ -210,10 +210,27 @@ export const useMapStore = defineStore('map', {
         if (cached?.id) return cached
       }
 
-      const raw = await javaApi.pois.getById(numId)
-      const normalized = normalizePoi(raw)
-      if (normalized?.id) cacheSet(cacheKey, normalized)
-      return normalized
+      try {
+        const raw = await javaApi.pois.getById(numId)
+        const normalized = normalizePoi(raw)
+        if (normalized?.id) {
+          cacheSet(cacheKey, normalized)
+          return normalized
+        }
+      } catch (err) {
+        console.error('Failed to fetch POI by id:', err)
+      }
+
+      // Фолбэк: берём точку из уже загруженного каталога или из мок-данных,
+      // чтобы страница работала при недоступном backend (как fetchPois).
+      const fromCatalog = (Array.isArray(this.pois) ? this.pois : [])
+        .find((p) => Number(p?.id) === numId)
+      if (fromCatalog?.id) return fromCatalog
+
+      const fromMock = getMockPois()
+        .map((p) => normalizePoi(p))
+        .find((p) => Number(p?.id) === numId)
+      return fromMock?.id ? fromMock : null
     },
 
     setSelected(poi) {

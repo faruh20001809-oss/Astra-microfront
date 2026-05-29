@@ -158,19 +158,32 @@ body {
   font-weight: 400;
   font-optical-sizing: auto;
   background-color: var(--ink);
-  background-image:
-    radial-gradient(ellipse 100% 70% at 50% -15%, var(--accent-glow), transparent 52%),
-    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(143, 111, 69, 0.12), transparent 45%),
-    linear-gradient(165deg, #1a1512 0%, var(--ink) 42%, #0f0c0a 100%);
-  background-attachment: fixed;
   color: var(--paper);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
+/* Фон-градиент вынесен в фиксированный слой: браузер композитит его на отдельном
+   GPU-слое и не перерисовывает на каждом кадре скролла (раньше тормозил из-за
+   background-attachment: fixed). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(ellipse 100% 70% at 50% -15%, var(--accent-glow), transparent 52%),
+    radial-gradient(ellipse 80% 50% at 100% 0%, rgba(143, 111, 69, 0.12), transparent 45%),
+    linear-gradient(165deg, #1a1512 0%, var(--ink) 42%, #0f0c0a 100%);
+}
+
 body.app-light-theme {
   background-color: var(--ink);
+}
+
+body.app-light-theme::before {
   background-image: none;
 }
 
