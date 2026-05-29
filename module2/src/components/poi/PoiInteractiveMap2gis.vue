@@ -5,6 +5,7 @@
       'poi-interactive-2gis--large': large,
       'poi-interactive-2gis--readonly': readonly,
       'poi-interactive-2gis--compact': compact,
+      'poi-interactive-2gis--fill': fill,
     }"
     :aria-label="ariaLabel"
   >
@@ -59,6 +60,8 @@ const props = defineProps({
   large: { type: Boolean, default: false },
   /** Компактное превью в карточке каталога */
   compact: { type: Boolean, default: false },
+  /** Заполняет высоту родителя (виртуальный музей — колонка с картой) */
+  fill: { type: Boolean, default: false },
   /**
    * Только просмотр: MapGL рисуется, но pointer-events отключены —
    * клики проходят к родителю (выбор карточки в музее).
@@ -204,6 +207,18 @@ onUnmounted(() => {
   height: 120px;
   min-height: 0;
   max-height: 120px;
+  aspect-ratio: auto;
+}
+
+.poi-interactive-2gis--fill {
+  height: 100%;
+  min-height: 0;
+}
+
+.poi-interactive-2gis--fill .poi-interactive-2gis__canvas {
+  height: 100%;
+  min-height: 0;
+  max-height: none;
   aspect-ratio: auto;
 }
 

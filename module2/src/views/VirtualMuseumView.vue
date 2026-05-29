@@ -18,6 +18,7 @@
           <PoiInteractiveMap2gis
             v-if="panelPoi && poiHasMapCoords(panelPoi)"
             :key="`panel-${panelPoi.id}`"
+            fill
             readonly
             :lat="Number(panelPoi.lat)"
             :lng="Number(panelPoi.lng)"
@@ -244,7 +245,9 @@ body.app-dark-theme .museum-virtual-page {
 
 .museum-feature-card {
   display: grid;
-  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 1fr);
+  align-items: stretch;
+  min-height: min(52vh, 480px);
   width: 100%;
   min-width: 0;
   background: #fff;
@@ -254,13 +257,17 @@ body.app-dark-theme .museum-virtual-page {
 }
 
 .museum-feature-map {
-  height: 180px;
-  max-height: 180px;
+  position: relative;
   min-width: 0;
+  min-height: 100%;
+  height: 100%;
+  align-self: stretch;
   background: #e8e8e8;
 }
 
 .museum-feature-map :deep(.poi-interactive-2gis) {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -269,15 +276,16 @@ body.app-dark-theme .museum-virtual-page {
 }
 
 .museum-feature-map :deep(.poi-interactive-2gis__canvas) {
-  height: 180px;
-  max-height: 180px;
+  height: 100%;
   min-height: 0;
+  max-height: none;
   aspect-ratio: auto;
 }
 
 .museum-feature-map__fallback {
   width: 100%;
-  height: 180px;
+  height: 100%;
+  min-height: min(52vh, 480px);
   background: linear-gradient(160deg, #ececec, #d4d4d4);
 }
 
@@ -466,12 +474,6 @@ body.app-dark-theme .museum-virtual-page {
   background: #d4d4d4;
 }
 
-@media (min-width: 1200px) {
-  .museum-feature-card {
-    grid-template-rows: minmax(400px, 520px);
-  }
-}
-
 @media (max-width: 900px) {
   .museum-virtual-head,
   .museum-feature-section,
@@ -482,7 +484,16 @@ body.app-dark-theme .museum-virtual-page {
 
   .museum-feature-card {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(280px, 45vw) auto;
+    grid-template-rows: minmax(240px, 42vw) auto;
+    min-height: 0;
+  }
+
+  .museum-feature-map {
+    min-height: min(240px, 42vw);
+  }
+
+  .museum-feature-map__fallback {
+    min-height: min(240px, 42vw);
   }
 
   .museum-feature-panel {

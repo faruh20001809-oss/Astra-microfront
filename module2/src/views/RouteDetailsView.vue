@@ -274,21 +274,6 @@
                           </div>
                         </div>
                       </div>
-
-                      <div
-                        v-if="stopHasCoords(stop)"
-                        class="route-stop-card__map"
-                      >
-                        <span class="route-stop-card__media-label text-mono">На карте</span>
-                        <PoiInteractiveMap2gis
-                          compact
-                          readonly
-                          :lat="stopLat(stop)"
-                          :lng="stopLng(stop)"
-                          :zoom="15"
-                          :aria-label="`Карта: ${stop.name}`"
-                        />
-                      </div>
                     </template>
                   </div>
                 </div>
@@ -379,10 +364,8 @@ import { isClientLoggedIn } from '@/auth/clientAuth.js'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import RouteCoverImage from '@/components/routes/RouteCoverImage.vue'
-import PoiInteractiveMap2gis from '@/components/poi/PoiInteractiveMap2gis.vue'
 import { normalizeRouteMedia, pickRouteCoverSource, resolveApiMediaUrl } from '@/utils/routeMedia.js'
 import { normalizeUrlList, resolveVideoEmbed } from '@/utils/mediaEmbed.js'
-import { poiHasValidCoords } from '@/utils/dgisLinks.js'
 
 const vueRoute = useRoute()
 const router = useRouter()
@@ -465,18 +448,6 @@ function stopAudioUrls(stop) {
 
 function stopHeroImage(stop) {
   return resolveApiMediaUrl(stop?.imageUrl || stop?.poiImage || '') || ''
-}
-
-function stopLat(stop) {
-  return Number(stop?.latitude ?? stop?.lat)
-}
-
-function stopLng(stop) {
-  return Number(stop?.longitude ?? stop?.lng)
-}
-
-function stopHasCoords(stop) {
-  return poiHasValidCoords(stopLat(stop), stopLng(stop))
 }
 
 function estimateWalkMinutes(fromIndex) {
@@ -1263,16 +1234,6 @@ async function copyShareLink() {
 
 .route-stop-card__media {
   margin-top: 0;
-}
-
-.route-stop-card__map {
-  margin-top: var(--spacing-md);
-  max-width: 280px;
-}
-
-.route-stop-card__map :deep(.poi-interactive-2gis__canvas) {
-  height: 100px;
-  max-height: 100px;
 }
 
 .route-stop-card__media-label {
