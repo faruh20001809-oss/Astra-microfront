@@ -18,7 +18,20 @@ public class RouteAdminController {
     private final RouteService routeService;
     private final PoiService poiService;
 
-    @GetMapping public String list(Model model) { model.addAttribute("routes", routeService.findAll()); return "routes/list"; }
+    @GetMapping public String list(Model model) {
+        List<Route> routes = new ArrayList<>(routeService.findAll());
+        routes.sort((a, b) -> {
+            int pa = a.getPriority() != null ? a.getPriority() : 0;
+            int pb = b.getPriority() != null ? b.getPriority() : 0;
+            int cmp = Integer.compare(pb, pa);
+            if (cmp != 0) return cmp;
+            return Long.compare(
+                    b.getId() != null ? b.getId() : 0L,
+                    a.getId() != null ? a.getId() : 0L);
+        });
+        model.addAttribute("routes", routes);
+        return "routes/list";
+    }
 
     @GetMapping("/create") public String createForm(Model model) {
         model.addAttribute("route", new Route());

@@ -154,9 +154,17 @@ function normalizeRouteFromApi(r) {
     ...r,
     title: r.title || r.name || 'Маршрут',
     isPaid: !!(r.isPaid ?? r.paid),
+    priority: Number(r.priority) || 0,
     stops: Array.isArray(r.stops) ? r.stops : [],
     pois,
   })
+}
+
+function compareRoutesByPriority(a, b) {
+  const pa = Number(a?.priority) || 0
+  const pb = Number(b?.priority) || 0
+  if (pb !== pa) return pb - pa
+  return (Number(b?.id) || 0) - (Number(a?.id) || 0)
 }
 
 const routes = ref([])
@@ -194,7 +202,7 @@ const filteredRoutes = computed(() => {
   if (showFree.value && !showPaid.value) list = list.filter(r => !r.isPaid)
   if (showPaid.value && !showFree.value) list = list.filter(r => r.isPaid)
   if (showFavoritesOnly.value) list = list.filter(r => favoriteIdSet.value.has(r.id))
-  return list
+  return [...list].sort(compareRoutesByPriority)
 })
 
 const featuredRoute = computed(() => filteredRoutes.value[0] || null)
@@ -256,7 +264,7 @@ onMounted(async () => {
   isLoading.value = true
   try {
     const data = await javaApi.routes.getList({ published: 'true' })
-    routes.value = unwrapJavaList(data).map(normalizeRouteFromApi)
+    routes.value = unwrapJavaList(data).map(normalizeRouteFromApi).sort(compareRoutesByPriority)
     if (!routes.value.length) {
       routes.value = getMockRoutes().map(normalizeRouteFromApi)
     }

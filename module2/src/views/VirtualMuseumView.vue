@@ -71,8 +71,15 @@
           @click="selectPoi(poi)"
         >
           <div class="museum-poi-card__media">
+            <img
+              v-if="poi.image"
+              :src="poi.image"
+              :alt="poi.name"
+              class="museum-poi-card__photo"
+              loading="lazy"
+            />
             <PoiInteractiveMap2gis
-              v-if="poiHasMapCoords(poi)"
+              v-else-if="poiHasMapCoords(poi)"
               :key="`card-${poi.id}`"
               readonly
               compact
@@ -237,8 +244,7 @@ body.app-dark-theme .museum-virtual-page {
 
 .museum-feature-card {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(280px, 0.88fr);
-  grid-template-rows: minmax(360px, min(52vw, 520px));
+  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
   width: 100%;
   min-width: 0;
   background: #fff;
@@ -248,7 +254,8 @@ body.app-dark-theme .museum-virtual-page {
 }
 
 .museum-feature-map {
-  min-height: 360px;
+  height: 180px;
+  max-height: 180px;
   min-width: 0;
   background: #e8e8e8;
 }
@@ -256,20 +263,21 @@ body.app-dark-theme .museum-virtual-page {
 .museum-feature-map :deep(.poi-interactive-2gis) {
   width: 100%;
   height: 100%;
-  min-height: 360px;
+  min-height: 0;
   border-radius: 0;
   box-shadow: none;
 }
 
 .museum-feature-map :deep(.poi-interactive-2gis__canvas) {
-  min-height: 360px;
+  height: 180px;
+  max-height: 180px;
+  min-height: 0;
   aspect-ratio: auto;
-  height: 100%;
 }
 
 .museum-feature-map__fallback {
   width: 100%;
-  min-height: 360px;
+  height: 180px;
   background: linear-gradient(160deg, #ececec, #d4d4d4);
 }
 
@@ -379,8 +387,18 @@ body.app-dark-theme .museum-virtual-page {
 
 .museum-poi-card__media {
   aspect-ratio: 2.3 / 1;
+  max-height: 140px;
   background: #c9c9c9;
   overflow: hidden;
+}
+
+.museum-poi-card__photo {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  max-height: 140px;
+  object-fit: cover;
+  display: block;
 }
 
 .museum-poi-card__media :deep(.poi-interactive-2gis) {

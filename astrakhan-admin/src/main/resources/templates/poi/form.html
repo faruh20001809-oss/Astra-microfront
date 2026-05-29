@@ -17,7 +17,8 @@
     <div class="form-group"><label>Категория *</label><select class="form-control" th:field="*{category}" required><option value="">—</option><option value="История">История</option><option value="Архитектура">Архитектура</option><option value="Музеи">Музеи</option><option value="Парки">Парки</option><option value="Памятники">Памятники</option></select></div>
     <div class="form-group"><label>Статус</label><select class="form-control" th:field="*{status}"><option value="DRAFT">Черновик</option><option value="PENDING">На модерации</option><option value="PUBLISHED">Опубликовано</option><option value="ARCHIVED">В архиве</option></select></div>
 </div>
-<div class="form-group"><label>Описание *</label><textarea class="form-control" id="poi-description-field" th:field="*{description}" rows="4" required minlength="20"></textarea><small id="descQualityHint" style="color:#999"></small></div>
+<div class="form-group"><label>Описание (краткое) *</label><textarea class="form-control" id="poi-description-field" th:field="*{description}" rows="4" required minlength="20"></textarea><small id="descQualityHint" style="color:#999"></small></div>
+<div class="form-group"><label>Развёрнутый текст (страница точки)</label><textarea class="form-control" th:field="*{detailText}" rows="6" placeholder="Абзацы для карточки в модуле пользователя"></textarea></div>
 <div class="form-group" th:if="${poiAiEnabled == true}">
     <label>Черновик описания (ИИ)</label>
     <div class="form-row" style="align-items:flex-end;gap:12px;flex-wrap:wrap">
@@ -44,7 +45,7 @@
 <div class="form-group"><label>Адрес</label><input type="text" class="form-control" th:field="*{address}"/></div>
 <h3 style="margin:24px 0 16px">Координаты (2ГИС MapGL)</h3>
 <p style="color:#888;font-size:13px;margin:0 0 8px 0">Кликните по карте, чтобы поставить маркер, или введите широту и долготу вручную.</p>
-<div id="dgisCoordMap" style="width:100%;height:280px;border-radius:8px;margin-bottom:10px;border:1px solid #444;min-height:200px;background:#1a1a1a"></div>
+<div id="dgisCoordMap" style="width:100%;height:180px;border-radius:8px;margin-bottom:10px;border:1px solid #444;min-height:140px;background:#1a1a1a"></div>
 <p id="dgisMapHint" style="color:#c66;font-size:12px;margin:0 0 8px 0"></p>
 <div class="form-row" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
     <button type="button" class="btn btn-sm" id="dgisPickModeBtn" style="margin-bottom:8px">Выбрать на карте</button>
@@ -146,9 +147,12 @@
 })();
 </script>
 <h3 style="margin:24px 0 16px">Медиа</h3>
-<div class="form-group"><label>Загрузить файл</label><input type="file" class="form-control" name="imageFile" accept="image/*"/><small style="color:#999">Передаётся в Модуль 2 вместе с JSON</small></div>
+<div class="form-group"><label>Фото объекта (файл)</label><input type="file" class="form-control" name="imageFile" accept="image/*"/><small style="color:#999">Отображается в верхней карточке точки в модуле пользователя</small></div>
 <div th:if="${isEdit and poi.imageData != null}" style="margin-top:8px"><img th:src="@{'/admin/poi/image/' + ${poi.id}}" style="max-width:200px;border-radius:8px"/></div>
-<div class="form-group"><label>Или URL</label><input type="text" class="form-control" th:field="*{imageUrl}"/></div>
+<div class="form-group"><label>Фото (URL)</label><input type="text" class="form-control" th:field="*{imageUrl}" placeholder="https://..."/></div>
+<div class="form-group"><label>Аудио (MAX / прямая ссылка)</label><input type="url" class="form-control" th:field="*{maxAudioUrl}" placeholder="https://...mp3"/></div>
+<div class="form-group"><label>Видео (MAX / прямая ссылка)</label><input type="url" class="form-control" th:field="*{maxVideoUrl}" placeholder="https://...mp4"/></div>
+<div class="form-group"><label>Плейлист MAX</label><input type="url" class="form-control" th:field="*{maxPlaylistUrl}" placeholder="https://..."/></div>
 <h3 style="margin:24px 0 16px">Дополнительно</h3>
 <div class="form-row"><div class="form-group"><label>Год основания</label><input type="number" class="form-control" th:field="*{foundedYear}"/></div><div class="form-group"><label>Архитектор</label><input type="text" class="form-control" th:field="*{architect}"/></div></div>
 <div class="form-row"><div class="form-group"><label>Материал</label><input type="text" class="form-control" th:field="*{material}"/></div><div class="form-group"><label>Стиль</label><input type="text" class="form-control" th:field="*{style}"/></div></div>

@@ -93,6 +93,12 @@
 
 <!-- ═══════ TAB: Настройки ═══════ -->
 <div id="tab-settings" class="rc-panel">
+<h3 class="route-settings-heading">Приоритет и публикация</h3>
+<div class="form-group">
+  <label>Приоритет в каталоге</label>
+  <input type="number" class="form-control" th:field="*{priority}" min="0" step="1" placeholder="0"/>
+  <p class="media-hint">Чем выше число, тем выше маршрут в списке и на карте. Порядок точек маршрута задаётся во вкладке «Точки маршрута» (перетаскивание).</p>
+</div>
 <h3 class="route-settings-heading">Монетизация</h3>
 <div class="form-row"><div class="form-group"><label>Платный</label><select id="paidSelect" class="form-control" th:field="*{paid}"><option value="false">Нет</option><option value="true">Да</option></select></div><div class="form-group"><label>Цена (₽)</label><input id="priceInput" type="number" step="0.01" class="form-control" th:field="*{price}"/></div></div>
 <div class="form-group"><label>Статус</label><select id="publishedField" class="form-control" th:field="*{published}"><option value="false">Черновик</option><option value="true">Опубликован</option></select></div>

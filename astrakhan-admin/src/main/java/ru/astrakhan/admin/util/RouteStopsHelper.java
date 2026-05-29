@@ -132,6 +132,23 @@ public final class RouteStopsHelper {
         return out;
     }
 
+    /**
+     * Порядок POI для карты и маршрута: сначала waypoints (как в редакторе),
+     * иначе fallback на csv {@code poi_ids}.
+     */
+    public static List<Long> orderedPoiIds(String waypointsJson, String poiIdsCsv) {
+        List<Long> fromWaypoints = new ArrayList<>();
+        for (StopContent c : parse(waypointsJson)) {
+            if (!Boolean.TRUE.equals(c.isCustom) && c.poiId != null) {
+                fromWaypoints.add(c.poiId);
+            }
+        }
+        if (!fromWaypoints.isEmpty()) {
+            return fromWaypoints;
+        }
+        return parsePoiIdsCsv(poiIdsCsv);
+    }
+
     public static String normalizeIncomingJson(String raw) {
         if (raw == null || raw.isBlank()) {
             return "[]";

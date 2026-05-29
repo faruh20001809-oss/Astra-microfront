@@ -23,7 +23,7 @@
         </nav>
 
         <article class="poi-detail-card" aria-labelledby="poi-page-title">
-          <div v-if="hasGallery" class="poi-detail-card__gallery">
+          <div v-if="hasGallery" class="poi-detail-card__hero">
             <div class="poi-gallery__viewport">
               <img
                 v-if="currentSlide?.type === 'photo'"
@@ -55,7 +55,7 @@
             </span>
           </div>
 
-          <div class="poi-detail-card__info">
+          <div class="poi-detail-card__info" :class="{ 'poi-detail-card__info--solo': !hasGallery }">
             <p class="poi-detail-card__eyebrow">{{ categoryLabel }}</p>
             <div class="poi-detail-card__title-row">
               <h1 id="poi-page-title" class="poi-detail-card__title">{{ poi.name }}</h1>
@@ -67,14 +67,7 @@
                 :aria-label="isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'"
                 @click="toggleFavorite"
               >
-                <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-                  <path
-                    d="M12 21s-6.7-4.3-9.3-8.1C.9 10.3 1.6 6.9 4.4 5.7c2-0.9 4.2-0.1 5.4 1.6l.2.3.2-.3c1.2-1.7 3.4-2.5 5.4-1.6 2.8 1.2 3.5 4.6 1.7 7.2C18.7 16.7 12 21 12 21z"
-                    :fill="isFavorite ? 'currentColor' : 'none'"
-                    stroke="currentColor"
-                    stroke-width="1.8"
-                  />
-                </svg>
+                <HeartIcon :filled="isFavorite" :size="20" />
               </button>
             </div>
             <p class="poi-detail-card__line">
@@ -95,32 +88,6 @@
         <div v-if="articleParagraphs.length" class="poi-detail-article">
           <p v-for="(par, i) in articleParagraphs" :key="i">{{ par }}</p>
         </div>
-
-        <section
-          v-if="hasCoords"
-          class="poi-detail-map-section"
-          aria-labelledby="poi-map-section-title"
-        >
-          <h2 id="poi-map-section-title" class="poi-detail-section-title">Расположение на карте</h2>
-          <p class="poi-detail-map-section__hint">
-            Приближайте и перемещайте карту 2ГИС, чтобы изучить окрестности объекта.
-          </p>
-          <PoiInteractiveMap2gis
-            large
-            :lat="Number(poi.lat)"
-            :lng="Number(poi.lng)"
-            :zoom="17"
-            :aria-label="`Интерактивная карта: ${poi.name}`"
-          />
-          <a
-            class="poi-detail-map-section__link"
-            :href="dgisWebUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Открыть в 2ГИС →
-          </a>
-        </section>
 
         <section class="poi-contacts" aria-labelledby="poi-contacts-title">
           <h2 id="poi-contacts-title" class="poi-detail-section-title">Контакты</h2>
@@ -144,8 +111,8 @@
           </dl>
         </section>
 
-        <section v-if="hasMaxMedia" class="poi-detail-extra" aria-label="Медиа MAX">
-          <p class="poi-detail-extra__label text-mono">MAX · Медиа</p>
+        <section v-if="hasMaxMedia" class="poi-detail-extra" aria-labelledby="poi-media-title">
+          <h2 id="poi-media-title" class="poi-detail-section-title">Медиа</h2>
           <div class="poi-detail-extra__grid">
             <audio v-if="poi.maxAudioUrl" :src="poi.maxAudioUrl" controls preload="none" class="poi-detail-extra__player" />
             <video
@@ -166,6 +133,29 @@
               Плейлист MAX →
             </a>
           </div>
+        </section>
+
+        <section
+          v-if="hasCoords"
+          class="poi-detail-map-section poi-detail-map-section--compact"
+          aria-labelledby="poi-map-section-title"
+        >
+          <h2 id="poi-map-section-title" class="poi-detail-section-title poi-detail-map-section__title">На карте</h2>
+          <PoiInteractiveMap2gis
+            compact
+            :lat="Number(poi.lat)"
+            :lng="Number(poi.lng)"
+            :zoom="16"
+            :aria-label="`Карта: ${poi.name}`"
+          />
+          <a
+            class="poi-detail-map-section__link"
+            :href="dgisWebUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Открыть в 2ГИС →
+          </a>
         </section>
 
         <section v-if="recommendations.length" class="poi-recos" aria-labelledby="poi-recos-title">
@@ -215,6 +205,8 @@ import { useMapStore } from '@/store/index.js'
 import { useFavorites } from '@/composables/useFavorites.js'
 import { get2gisWebUrl, poiHasValidCoords } from '@/utils/dgisLinks.js'
 import PoiInteractiveMap2gis from '@/components/poi/PoiInteractiveMap2gis.vue'
+import HeartIcon from '@/components/common/HeartIcon.vue'
+import { resolveApiMediaUrl } from '@/utils/routeMedia.js'
 
 const route = useRoute()
 const mapStore = useMapStore()
@@ -257,11 +249,22 @@ const addressLine = computed(() => {
 })
 
 const photoSlides = computed(() => {
-  if (!poi.value || !Array.isArray(poi.value.photos)) return []
+  if (!poi.value) return []
   const slides = []
-  for (const ph of poi.value.photos) {
-    const url = ph?.url || ph?.src
-    if (url) slides.push({ type: 'photo', url, caption: ph.caption || poi.value.name })
+  const seen = new Set()
+  const main = resolveApiMediaUrl(poi.value.image || poi.value.imageUrl)
+  if (main && !seen.has(main)) {
+    seen.add(main)
+    slides.push({ type: 'photo', url: main, caption: poi.value.name })
+  }
+  if (Array.isArray(poi.value.photos)) {
+    for (const ph of poi.value.photos) {
+      const url = resolveApiMediaUrl(ph?.url || ph?.src)
+      if (url && !seen.has(url)) {
+        seen.add(url)
+        slides.push({ type: 'photo', url, caption: ph.caption || poi.value.name })
+      }
+    }
   }
   return slides
 })
@@ -410,11 +413,10 @@ body.app-dark-theme .poi-details-page {
   color: #1d1d1b;
 }
 
-/* Карточка: галерея + инфо (без карты в шапке) */
+/* Карточка: фото сверху, текст ниже */
 .poi-detail-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.95fr);
-  gap: 0;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 2px;
   box-shadow: 0 10px 36px rgba(0, 0, 0, 0.1);
@@ -422,26 +424,21 @@ body.app-dark-theme .poi-details-page {
   margin-bottom: 2rem;
 }
 
-.poi-detail-card:not(:has(.poi-detail-card__gallery)) {
-  grid-template-columns: 1fr;
-}
-
-.poi-detail-card__gallery {
+.poi-detail-card__hero {
   position: relative;
   background: #d9d9d9;
-  min-height: 320px;
+  height: clamp(200px, 32vh, 320px);
+  max-height: 320px;
 }
 
 .poi-gallery__viewport {
   width: 100%;
   height: 100%;
-  min-height: 320px;
 }
 
 .poi-gallery__img {
   width: 100%;
   height: 100%;
-  min-height: 320px;
   display: block;
   object-fit: cover;
 }
@@ -494,11 +491,10 @@ body.app-dark-theme .poi-details-page {
   display: flex;
   flex-direction: column;
   padding: 1.35rem 1.5rem 1.5rem;
-  border-left: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.poi-detail-card:not(:has(.poi-detail-card__gallery)) .poi-detail-card__info {
-  border-left: 0;
+.poi-detail-card__info--solo {
+  border-top: none;
 }
 
 .poi-detail-card__eyebrow {
@@ -522,6 +518,10 @@ body.app-dark-theme .poi-details-page {
   font-size: 1.35rem;
   font-weight: 900;
   line-height: 1.05;
+}
+
+.poi-fav :deep(.heart-icon) {
+  display: block;
 }
 
 .poi-fav {
@@ -598,11 +598,18 @@ body.app-dark-theme .poi-details-page {
   margin-bottom: 2rem;
 }
 
-.poi-detail-map-section__hint {
-  margin: 0 0 0.75rem;
-  font-size: 0.88rem;
-  color: #5f5f5f;
-  line-height: 1.3;
+.poi-detail-map-section--compact {
+  max-width: 320px;
+}
+
+.poi-detail-map-section--compact :deep(.poi-interactive-2gis__canvas) {
+  height: 112px;
+  max-height: 112px;
+}
+
+.poi-detail-map-section__title {
+  margin-bottom: 0.5rem;
+  font-size: 1.15rem;
 }
 
 .poi-detail-map-section__link {
@@ -886,19 +893,8 @@ body.app-dark-theme .poi-details-page {
     padding-right: 1rem;
   }
 
-  .poi-detail-card {
-    grid-template-columns: 1fr;
-  }
-
-  .poi-detail-card__info {
-    border-left: 0;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-  }
-
-  .poi-detail-card__gallery,
-  .poi-gallery__viewport,
-  .poi-gallery__img {
-    min-height: 260px;
+  .poi-detail-card__hero {
+    max-height: 280px;
   }
 
   .poi-recos__grid {

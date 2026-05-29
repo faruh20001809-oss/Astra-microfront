@@ -182,18 +182,29 @@ onUnmounted(() => {
 }
 
 .poi-interactive-2gis--large .poi-interactive-2gis__canvas {
-  min-height: min(52vw, 420px);
+  height: 280px;
+  min-height: 0;
+  max-height: 280px;
+  aspect-ratio: auto;
 }
 
 .poi-interactive-2gis__canvas {
   width: 100%;
-  min-height: 200px;
-  aspect-ratio: 4 / 3;
+  height: 200px;
+  min-height: 0;
+  max-height: 200px;
+  aspect-ratio: auto;
+}
+
+.poi-interactive-2gis--compact {
+  max-width: 100%;
 }
 
 .poi-interactive-2gis--compact .poi-interactive-2gis__canvas {
-  min-height: 120px;
-  aspect-ratio: 2.3 / 1;
+  height: 120px;
+  min-height: 0;
+  max-height: 120px;
+  aspect-ratio: auto;
 }
 
 .poi-interactive-2gis--readonly {

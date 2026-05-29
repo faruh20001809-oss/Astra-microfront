@@ -15,7 +15,7 @@
           :aria-label="favorite ? 'Убрать из избранного' : 'В избранное'"
           @click.stop="$emit('toggleFavorite')"
         >
-          {{ favorite ? '♥' : '♡' }}
+          <HeartIcon :filled="favorite" :size="18" />
         </button>
         <button
           type="button"
@@ -65,6 +65,7 @@
 <script setup>
 import { computed } from 'vue'
 import RouteCoverImage from '@/components/routes/RouteCoverImage.vue'
+import HeartIcon from '@/components/common/HeartIcon.vue'
 import { pickRouteCoverSource } from '@/utils/routeMedia.js'
 
 const props = defineProps({
@@ -126,6 +127,10 @@ const categoryGlyph = computed(() => {
   display: flex;
   gap: 0.35rem;
   z-index: 2;
+}
+
+.route-icon-btn :deep(.heart-icon) {
+  display: block;
 }
 
 .route-icon-btn {

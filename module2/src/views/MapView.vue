@@ -316,7 +316,7 @@
                     :aria-label="isPoiFavorite(mapStore.selectedPoi.id) ? 'Убрать из избранного' : 'В избранное'"
                     @click.stop="togglePoi(mapStore.selectedPoi.id)"
                   >
-                    {{ isPoiFavorite(mapStore.selectedPoi.id) ? '♥' : '♡' }}
+                    <HeartIcon :filled="isPoiFavorite(mapStore.selectedPoi.id)" :size="18" />
                   </button>
                 </div>
                 <span class="poi-card-badge poi-type-badge">{{ mapStore.selectedPoi.category }}</span>
@@ -443,12 +443,12 @@
 
               <!-- Вкладка: Фото -->
               <div v-if="activeTab === 'photos'" class="poi-tab-content" role="tabpanel" aria-labelledby="tab-photos">
-                <div v-if="!mapStore.selectedPoi.photos?.length" class="empty-state">
+                <div v-if="!selectedPoiPhotoSlides.length" class="empty-state">
                   <p>Фотографии не добавлены</p>
                 </div>
                 <div v-else class="photo-grid">
                   <div
-                    v-for="(ph, i) in mapStore.selectedPoi.photos"
+                    v-for="(ph, i) in selectedPoiPhotoSlides"
                     :key="i"
                     class="photo-card"
                   >
@@ -494,6 +494,7 @@ import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import { javaApi } from '@/api/backend.js'
 import { fetch2gisRouteCoordinates, isDgisRoutingConfigured } from '@/api/dgisRouting.js'
 import { loadDgisMapFromEnv } from '@/api/dgisConfig.js'
+import HeartIcon from '@/components/common/HeartIcon.vue'
 
 const LS_POI_CATALOG_MAX = 'astra-poi-catalog-max-id'
 const LS_POI_DISMISSED = 'astra-poi-dismissed-new-ids'
@@ -514,6 +515,25 @@ watch(
     if (poi?.id != null) markPoiVisited(poi.id)
   },
 )
+
+const selectedPoiPhotoSlides = computed(() => {
+  const poi = mapStore.selectedPoi
+  if (!poi) return []
+  const slides = []
+  const seen = new Set()
+  if (poi.image && !seen.has(poi.image)) {
+    seen.add(poi.image)
+    slides.push({ url: poi.image, caption: poi.name })
+  }
+  for (const ph of poi.photos || []) {
+    const url = ph?.url || ph?.src
+    if (url && !seen.has(url)) {
+      seen.add(url)
+      slides.push({ url, caption: ph.caption, year: ph.year })
+    }
+  }
+  return slides
+})
 
 // Предложить точку: всплывающее окно на карте
 const suggestPoiOpen = ref(false)

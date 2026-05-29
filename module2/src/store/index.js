@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { javaApi } from '@/api/backend.js'
 import { CACHE_KEYS, cacheGet, cacheSet } from '@/utils/appCache.js'
+import { resolveApiMediaUrl } from '@/utils/routeMedia.js'
 
 /* ─────────────────────────────────────────
    Cart Store
@@ -369,8 +370,14 @@ export function normalizePoi(p) {
     style: p.style || extended.style || null,
     year: extended.foundedYear ?? p.year ?? p.foundedYear ?? null,
     architect: extended.architect ?? p.architect ?? null,
-    image: p.image || p.imageUrl || null,
-    photos: Array.isArray(p.photos) ? p.photos : [],
+    image: resolveApiMediaUrl(p.image || p.imageUrl || null),
+    photos: (Array.isArray(p.photos) ? p.photos : [])
+      .map((ph) => {
+        const url = resolveApiMediaUrl(ph?.url || ph?.src)
+        if (!url) return null
+        return { ...ph, url, src: url }
+      })
+      .filter(Boolean),
     tags: p.tags || [],
     maxAudioUrl: p.maxAudioUrl || extended.maxAudioUrl || null,
     maxVideoUrl: p.maxVideoUrl || extended.maxVideoUrl || null,

@@ -29,9 +29,22 @@ export function resolveApiMediaUrl(url) {
 export function normalizeRouteMedia(route) {
   if (!route || typeof route !== 'object') return route
   const coverImage = resolveApiMediaUrl(pickRouteCoverSource(route))
+  const stops = Array.isArray(route.stops)
+    ? route.stops.map((stop) => {
+        if (!stop || typeof stop !== 'object') return stop
+        const imageUrl = resolveApiMediaUrl(stop.imageUrl)
+        const poiImage = resolveApiMediaUrl(stop.poiImage)
+        return {
+          ...stop,
+          imageUrl: imageUrl || stop.imageUrl,
+          poiImage: poiImage || stop.poiImage,
+        }
+      })
+    : route.stops
   return {
     ...route,
     coverImage,
     image: coverImage,
+    stops,
   }
 }

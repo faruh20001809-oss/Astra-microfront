@@ -189,100 +189,108 @@
                 </div>
 
                 <div class="route-stop-card__body">
-                  <!-- Top row: text left, image right -->
-                  <div class="route-stop-card__layout" :class="{ 'route-stop-card__layout--no-img': !stop.imageUrl && !stop.poiImage }">
-                    <div class="route-stop-card__info">
-                      <div class="route-stop-card__header">
-                        <h3 class="route-stop-card__name">{{ stop.name }}</h3>
-                        <div class="route-stop-card__header-meta">
-                          <span v-if="stop.durationMinutes && !isLocked" class="route-stop-card__duration">
-                            <span class="meta-icon">⏱</span> {{ stop.durationMinutes }} мин
-                          </span>
-                        </div>
-                        <div v-if="!isLocked" class="route-stop-card__badges">
-                          <router-link
-                            v-if="stop.poiId && !stop.isCustom"
-                            :to="{ name: 'poi-details', params: { id: stop.poiId } }"
-                            class="route-stop-card__poi-link"
-                          >
-                            Перейти к месту →
-                          </router-link>
-                          <span v-if="stop.isCustom" class="route-stop-card__custom-badge">Особая точка</span>
-                          <span v-if="stop.address" class="route-stop-card__address">{{ stop.address }}</span>
-                        </div>
-                      </div>
-
-                      <!-- Locked stub -->
-                      <template v-if="isLocked">
-                        <div class="route-stop-card__locked-stub">
-                          <div class="route-stop-card__locked-blur" aria-hidden="true">
-                            <div class="locked-blur-line" style="width: 85%"></div>
-                            <div class="locked-blur-line" style="width: 70%"></div>
-                            <div class="locked-blur-line" style="width: 60%"></div>
-                          </div>
-                          <div class="route-stop-card__locked-badge">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
-                            Контент скрыт
-                          </div>
-                        </div>
-                      </template>
-
-                      <!-- Text content (unlocked) -->
-                      <template v-else>
-                        <div v-if="stopThematicParagraphs(stop).length" class="route-stop-card__text">
-                          <p v-for="(par, pi) in stopThematicParagraphs(stop)" :key="'t-' + pi">{{ par }}</p>
-                          <p v-if="stop.description" class="route-stop-card__ref">
-                            {{ stop.description }}
-                          </p>
-                        </div>
-                        <p v-else-if="stop.description" class="route-stop-card__desc">{{ stop.description }}</p>
-                      </template>
-                    </div>
-
-                    <!-- Image on the right -->
-                    <div v-if="(stop.imageUrl || stop.poiImage) && !isLocked" class="route-stop-card__image-wrap">
-                      <img
-                        :src="stop.imageUrl || stop.poiImage"
-                        :alt="stop.name"
-                        loading="lazy"
-                        class="route-stop-card__image"
-                      />
-                    </div>
+                  <div
+                    v-if="stopHeroImage(stop) && !isLocked"
+                    class="route-stop-card__hero"
+                  >
+                    <img
+                      :src="stopHeroImage(stop)"
+                      :alt="stop.name"
+                      loading="lazy"
+                      class="route-stop-card__hero-img"
+                    />
                   </div>
 
-                  <!-- Full-width media below the layout row -->
-                  <template v-if="!isLocked">
-                    <!-- Stop media: Video -->
-                    <div v-if="stopVideoEmbeds(stop).length" class="route-stop-card__media">
-                      <span class="route-stop-card__media-label text-mono">Видео</span>
-                      <div class="route-media-grid route-media-grid--sm">
-                        <div v-for="(item, vi) in stopVideoEmbeds(stop)" :key="'sv-' + vi" class="route-media-item">
-                          <iframe
-                            v-if="item.type === 'iframe'"
-                            :src="item.src"
-                            :title="`Видео: ${stop.name}`"
-                            loading="lazy"
-                            allowfullscreen
-                          />
-                          <video v-else :src="item.src" controls playsinline preload="metadata" />
-                        </div>
+                  <div class="route-stop-card__content">
+                    <div class="route-stop-card__header">
+                      <h3 class="route-stop-card__name">{{ stop.name }}</h3>
+                      <div class="route-stop-card__header-meta">
+                        <span v-if="stop.durationMinutes && !isLocked" class="route-stop-card__duration">
+                          <span class="meta-icon">⏱</span> {{ stop.durationMinutes }} мин
+                        </span>
+                      </div>
+                      <div v-if="!isLocked" class="route-stop-card__badges">
+                        <router-link
+                          v-if="stop.poiId && !stop.isCustom"
+                          :to="{ name: 'poi-details', params: { id: stop.poiId } }"
+                          class="route-stop-card__poi-link"
+                        >
+                          Перейти к месту →
+                        </router-link>
+                        <span v-if="stop.isCustom" class="route-stop-card__custom-badge">Особая точка</span>
+                        <span v-if="stop.address" class="route-stop-card__address">{{ stop.address }}</span>
                       </div>
                     </div>
 
-                    <!-- Stop media: Audio -->
-                    <div v-if="stopAudioUrls(stop).length" class="route-stop-card__media">
-                      <span class="route-stop-card__media-label text-mono">Аудио-гид</span>
-                      <div class="route-stop-card__audio-list">
-                        <audio
-                          v-for="(url, ai) in stopAudioUrls(stop)"
-                          :key="'sa-' + ai"
-                          :src="url"
-                          controls
-                          preload="none"
+                    <template v-if="isLocked">
+                      <div class="route-stop-card__locked-stub">
+                        <div class="route-stop-card__locked-blur" aria-hidden="true">
+                          <div class="locked-blur-line" style="width: 85%"></div>
+                          <div class="locked-blur-line" style="width: 70%"></div>
+                          <div class="locked-blur-line" style="width: 60%"></div>
+                        </div>
+                        <div class="route-stop-card__locked-badge">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"/></svg>
+                          Контент скрыт
+                        </div>
+                      </div>
+                    </template>
+
+                    <template v-else>
+                      <div v-if="stopThematicParagraphs(stop).length" class="route-stop-card__text">
+                        <p v-for="(par, pi) in stopThematicParagraphs(stop)" :key="'t-' + pi">{{ par }}</p>
+                      </div>
+                      <p v-if="stop.description" class="route-stop-card__desc">{{ stop.description }}</p>
+
+                      <div
+                        v-if="stopVideoEmbeds(stop).length || stopAudioUrls(stop).length"
+                        class="route-stop-card__media-block"
+                      >
+                        <div v-if="stopVideoEmbeds(stop).length" class="route-stop-card__media">
+                          <span class="route-stop-card__media-label text-mono">Видео</span>
+                          <div class="route-media-grid route-media-grid--sm">
+                            <div v-for="(item, vi) in stopVideoEmbeds(stop)" :key="'sv-' + vi" class="route-media-item">
+                              <iframe
+                                v-if="item.type === 'iframe'"
+                                :src="item.src"
+                                :title="`Видео: ${stop.name}`"
+                                loading="lazy"
+                                allowfullscreen
+                              />
+                              <video v-else :src="item.src" controls playsinline preload="metadata" />
+                            </div>
+                          </div>
+                        </div>
+                        <div v-if="stopAudioUrls(stop).length" class="route-stop-card__media">
+                          <span class="route-stop-card__media-label text-mono">Аудио-гид</span>
+                          <div class="route-stop-card__audio-list">
+                            <audio
+                              v-for="(url, ai) in stopAudioUrls(stop)"
+                              :key="'sa-' + ai"
+                              :src="url"
+                              controls
+                              preload="none"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+                        v-if="stopHasCoords(stop)"
+                        class="route-stop-card__map"
+                      >
+                        <span class="route-stop-card__media-label text-mono">На карте</span>
+                        <PoiInteractiveMap2gis
+                          compact
+                          readonly
+                          :lat="stopLat(stop)"
+                          :lng="stopLng(stop)"
+                          :zoom="15"
+                          :aria-label="`Карта: ${stop.name}`"
                         />
                       </div>
-                    </div>
-                  </template>
+                    </template>
+                  </div>
                 </div>
 
                 <!-- Walking time between stops -->
@@ -371,8 +379,10 @@ import { isClientLoggedIn } from '@/auth/clientAuth.js'
 import { useMapStore, useToastStore } from '@/store/index.js'
 import { useGuestProgress } from '@/composables/useGuestProgress.js'
 import RouteCoverImage from '@/components/routes/RouteCoverImage.vue'
-import { normalizeRouteMedia, pickRouteCoverSource } from '@/utils/routeMedia.js'
+import PoiInteractiveMap2gis from '@/components/poi/PoiInteractiveMap2gis.vue'
+import { normalizeRouteMedia, pickRouteCoverSource, resolveApiMediaUrl } from '@/utils/routeMedia.js'
 import { normalizeUrlList, resolveVideoEmbed } from '@/utils/mediaEmbed.js'
+import { poiHasValidCoords } from '@/utils/dgisLinks.js'
 
 const vueRoute = useRoute()
 const router = useRouter()
@@ -453,6 +463,22 @@ function stopAudioUrls(stop) {
   return normalizeUrlList(stop?.audioUrls)
 }
 
+function stopHeroImage(stop) {
+  return resolveApiMediaUrl(stop?.imageUrl || stop?.poiImage || '') || ''
+}
+
+function stopLat(stop) {
+  return Number(stop?.latitude ?? stop?.lat)
+}
+
+function stopLng(stop) {
+  return Number(stop?.longitude ?? stop?.lng)
+}
+
+function stopHasCoords(stop) {
+  return poiHasValidCoords(stopLat(stop), stopLng(stop))
+}
+
 function estimateWalkMinutes(fromIndex) {
   const nextStop = route.value?.stops?.[fromIndex + 1]
   if (nextStop?.durationMinutes) return nextStop.durationMinutes
@@ -481,6 +507,13 @@ function normalizeRouteFromApi(r) {
 }
 
 function extractPoiIdsFromRoute(r) {
+  if (Array.isArray(r.stops) && r.stops.length) {
+    const fromStops = r.stops
+      .filter((s) => s && !s.isCustom && s.poiId != null)
+      .map((s) => Number(s.poiId))
+      .filter(Number.isFinite)
+    if (fromStops.length) return fromStops
+  }
   if (Array.isArray(r.pois) && r.pois.length) {
     return r.pois.map(Number).filter(Number.isFinite)
   }
@@ -1130,34 +1163,23 @@ async function copyShareLink() {
   background: var(--accent-glow);
 }
 
-/* Horizontal layout: text left, image right */
-.route-stop-card__layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(140px, 38%);
-  gap: clamp(var(--spacing-md), 3cqi, var(--spacing-lg));
-  align-items: start;
+.route-stop-card__hero {
+  margin: calc(-1 * var(--spacing-lg)) calc(-1 * var(--spacing-lg)) var(--spacing-md);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  max-height: 240px;
+  background: var(--gray-800);
 }
 
-.route-stop-card__layout--no-img {
-  grid-template-columns: 1fr;
+.route-stop-card__hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
-@container stop-card (max-width: 560px) {
-  .route-stop-card__layout {
-    grid-template-columns: 1fr;
-  }
-
-  .route-stop-card__image-wrap {
-    order: -1;
-    max-width: 100%;
-  }
-
-  .route-stop-card__image {
-    max-height: clamp(160px, 40vw, 220px);
-  }
-}
-
-.route-stop-card__info {
+.route-stop-card__content {
   min-width: 0;
 }
 
@@ -1224,22 +1246,33 @@ async function copyShareLink() {
   margin-bottom: var(--spacing-sm);
 }
 
-.route-stop-card__ref {
-  font-size: 0.82rem;
-  color: var(--paper);
-  opacity: 0.6;
-  font-style: italic;
-}
-
 .route-stop-card__desc {
   color: var(--paper);
-  opacity: 0.72;
+  opacity: 0.82;
   line-height: 1.65;
   font-size: 0.9rem;
+  margin: 0 0 var(--spacing-md);
+}
+
+.route-stop-card__media-block {
+  margin-top: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
 }
 
 .route-stop-card__media {
+  margin-top: 0;
+}
+
+.route-stop-card__map {
   margin-top: var(--spacing-md);
+  max-width: 280px;
+}
+
+.route-stop-card__map :deep(.poi-interactive-2gis__canvas) {
+  height: 100px;
+  max-height: 100px;
 }
 
 .route-stop-card__media-label {
@@ -1295,23 +1328,6 @@ async function copyShareLink() {
 .route-stop-card__address {
   font-size: 0.72rem;
   color: var(--gray-500);
-}
-
-.route-stop-card__image-wrap {
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  border: 1px solid var(--gray-700);
-  flex-shrink: 0;
-  align-self: start;
-}
-
-.route-stop-card__image {
-  width: 100%;
-  height: 100%;
-  min-height: 140px;
-  max-height: 220px;
-  object-fit: cover;
-  display: block;
 }
 
 /* Walking time indicator between stops */

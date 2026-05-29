@@ -858,6 +858,15 @@ public class ApiController {
         Map<String, Object> m = poiMap(p);
         m.put("email", p.getEmail());
         m.put("detailText", p.getDetailText());
+        List<Map<String, Object>> photos = new ArrayList<>();
+        String cover = poiCoverImageUrl(p);
+        if (cover != null && !cover.isBlank()) {
+            Map<String, Object> ph = new LinkedHashMap<>();
+            ph.put("url", cover);
+            ph.put("caption", p.getName());
+            photos.add(ph);
+        }
+        m.put("photos", photos);
         m.put("style", p.getStyle() != null ? p.getStyle() : "");
         m.put("maxAudioUrl", p.getMaxAudioUrl());
         m.put("maxVideoUrl", p.getMaxVideoUrl());
@@ -983,7 +992,7 @@ public class ApiController {
             m.put("audioUrls", parseUrlList(r.getAudioUrls()));
         }
 
-        List<Long> poiIdList = parseRoutePoiIds(r.getPoiIds());
+        List<Long> poiIdList = RouteStopsHelper.orderedPoiIds(r.getWaypoints(), r.getPoiIds());
         m.put("pois", poiIdList);
         if (withStops) {
             m.put("stops", locked ? buildLockedRouteStops(r) : buildRouteStops(r));
