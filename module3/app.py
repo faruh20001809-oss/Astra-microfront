@@ -260,6 +260,8 @@ def seed_roles_and_admin():
 # ---------------- ROUTES ✅ ПОЛНЫЙ СПИСОК ----------------
 @app.route('/')
 def index():
+    if not current_user.is_authenticated:
+        return redirect(url_for('login_page'))
     return render_template('index.html')
 
 @app.route('/login')
