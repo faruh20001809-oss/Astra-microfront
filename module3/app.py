@@ -15,6 +15,8 @@ from appl.extensions import db
 from appl.models import Role, User, Visit, Log
 from appl.schemas import ma, user_schema, users_schema, login_schema, user_update_schema, role_schema, roles_schema, role_update_schema
 from metrics_utils import extract_latency_ms, percentile
+from flask import abort
+
 
 def _compute_ops_snapshot(hours_window=24):
     rows = Log.query.filter(
@@ -172,6 +174,16 @@ with app.app_context():
         log.info('Тип столбца permissions успешно изменён на JSONB')
     except Exception as e:
         log.info('Тип столбца permissions уже исправлен или таблица не существует', error=str(e))
+    try:
+        db.session.execute(db.text('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE NOT NULL'))
+        db.session.commit()
+        db.session.execute(db.text('UPDATE users SET is_active = TRUE WHERE is_active IS NULL'))
+        db.session.commit()
+        db.session.execute(db.text('CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active)'))
+        db.session.commit()
+        log.info('Столбец is_active добавлен в таблицу users')
+    except Exception as e:
+        log.info('Столбец is_active уже существует или таблица не существует', error=str(e))
 
 # Инициализация Flask-Login
 login_manager = LoginManager()
@@ -236,6 +248,7 @@ def api_user_role():
     
     return jsonify({
         "role": g.user.role.name if g.user.role else "user"
+        "user_id": g.user.id
     })
 
 # Страница метрик
@@ -387,6 +400,7 @@ def api_get_users():
             "name": u.name,
             "email": u.email,
             "role": u.role.name if u.role else None,
+            "is_active": u.is_active,
             "user_type": _user_type_by_role(u.role.name if u.role else None),
             "created_at": u.created_at.isoformat() if u.created_at else None,
             "last_login": u.last_login.isoformat() if u.last_login else None,
@@ -462,6 +476,57 @@ def update_user_role(uid):
     return jsonify({
         "message": f"Роль пользователя {user.name} успешно обновлена на '{role.name}'"
     }), 200
+
+
+
+@app.route('/api/users/<int:uid>', methods=['DELETE'])
+@role_required("Администратор")
+def delete_user(uid):
+    user = User.query.get_or_404(uid)
+
+    if user.role and user.role.name == 'Администратор':
+        return jsonify({"error": "Нельзя удалить администратора"}), 403
+
+    if user.id == current_user.id:
+        return jsonify({"error": "Нельзя удалить самого себя"}), 403
+
+    visits_count = Visit.query.filter_by(user_id=user.id).count()
+    logs_count = Log.query.filter_by(user_id=user.id).count()
+
+    try:
+        if visits_count > 0 or logs_count > 0:
+            Visit.query.filter_by(user_id=user.id).update({"user_id": None})
+            db.session.query(Log).filter(Log.user_id == user.id).delete()
+            db.session.delete(user)
+            db.session.commit()
+            return jsonify({
+                "message": f"Пользователь '{user.name}' удалён. Также удалено записей: посещений {visits_count}, логов {logs_count}."
+            }), 200
+        else:
+            db.session.delete(user)
+            db.session.commit()
+            return jsonify({"message": f"Пользователь '{user.name}' успешно удалён"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Ошибка удаления: {str(e)}"}), 500
+
+@app.route('/api/users/<int:uid>/block', methods=['POST'])
+@role_required("Администратор")
+def toggle_block_user(uid):
+    user = User.query.get_or_404(uid)
+
+    if user.role and user.role.name == 'Администратор':
+        return jsonify({"error": "Нельзя заблокировать администратора"}), 403
+
+    if user.id == current_user.id:
+        return jsonify({"error": "Нельзя заблокировать самого себя"}), 403
+
+    user.is_active = not user.is_active
+    db.session.commit()
+
+    status = "заблокирован" if not user.is_active else "разблокирован"
+    return jsonify({"message": f"Пользователь '{user.name}' {status}", "is_active": user.is_active}), 200
+
 
 # ---------------- ROLES API ----------------
 @app.route('/api/roles', methods=['GET', 'POST'])
