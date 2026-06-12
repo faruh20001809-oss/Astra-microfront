@@ -21,6 +21,7 @@ class User(db.Model, UserMixin):
     role = db.relationship('Role', backref='users')
     created_at = db.Column(db.DateTime, server_default=db.func.now())
     last_login = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
 
 class Visit(db.Model):
     __tablename__ = 'visits'
